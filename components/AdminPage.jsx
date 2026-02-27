@@ -10,11 +10,11 @@ export default function AdminPage() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#6F9196]">
 
       {/* Background decorativo */}
-      <div className="absolute w-[600px] h-[600px] bg-[#E4C424] rounded-full blur-lg sm:blur-3xl opacity-30 -top-40 -left-40 animate-pulse"></div>
-      <div className="absolute w-[500px] h-[500px] bg-[#9BAEB3] rounded-full blur-lg sm:blur-3xl opacity-30 -bottom-40 -right-40 animate-pulse"></div>
+      <div className="absolute size-100 sm:size-150 bg-[#E4C424] rounded-full blur-3xl opacity-30 -top-40 -left-40 animate-pulse"></div>
+      <div className="absolute size-95 sm:size-125 bg-[#9BAEB3] rounded-full blur-3xl opacity-30 -bottom-40 -right-40 animate-pulse"></div>
 
       {/* Card */}
-      <div className="relative w-full max-w-md mx-4">
+      <div className="relative w-full max-w-sm mx-4">
 
         <div className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl p-8 transition-all duration-500 hover:scale-[1.02]">
 
@@ -71,8 +71,8 @@ export default function AdminPage() {
 
           </form>
           
+          <img src="chapeu.png" aria-hidden='true' className="absolute -top-6 -right-3 sm:-top-12 sm:-right-5 md:-top-19 md:-right-8 w-12 sm:w-20 md:w-28 lg:w-36 lg:-top-23 lg:-right-11 transform -scale-x-100 sm:rotate-12 object-contain pointer-events-none" />
         </div>
-          <img src="chapeu.png" className='absolute bottom-80 left-71 size-15 transform scale-x-[-1] rotate-20 sm:bottom-71 sm:left-92 sm:size-30' />
       </div>
     </div>
   )
