@@ -2,11 +2,12 @@
 @plugin "daisyui";
 
 @theme {
-  --color-palette-golden: #D4A017;
-  --color-palette-pale: #F7E9A1;
-  --color-palette-olive: #8A9B3B;
-  --color-palette-teal: #4B8F8C;
-  --color-palette-grayblue: #C9D6E3;
+  --color-bege: #EBD5AD;
+  --color-amarelo: #E89D10;
+  --color-amarelo-700: #D28D0F;
+  --color-vermelho: #DB4B23;
+  --color-preto: #382924;
+  --color-azul: #136066;
 
   --animate-float: float 6s ease-in-out infinite;
   --animate-shimmer: shimmer 3s linear infinite;
@@ -30,4 +31,10 @@
     display: none;
   }
 }
+
+@utility flex-center{
+  @apply flex justify-center items-center
+}
+
+
 

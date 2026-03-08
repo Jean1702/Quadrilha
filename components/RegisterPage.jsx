@@ -1,11 +1,10 @@
 'use client'
 
-
 import { useState } from 'react';
 import { Phone, User } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [phone, setPhone] = useState("");
 
   function formatPhone(value) {
@@ -42,7 +41,7 @@ export default function LoginPage() {
               Bem-vindo
             </h1>
             <p className="text-white/70 text-sm mt-2">
-              Faça login para continuar
+              Faça Registro para continuar
             </p>
           </div>
 
@@ -72,24 +71,24 @@ export default function LoginPage() {
               />
                 
             </div>
-            
+
             <Link
-                href="/register"
+                href="/login"
                 className="group relative mb-5 flex justify-center text-sm text-white/70 transition-all duration-300 hover:text-white"
               >
                 <span className="flex items-center gap-1">
-                  Não tem Cadastro?
+                  Já tem cadastro?
                   <span className="font-semibold relative">
-                    Registro
+                    Login
                     <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-white transition-all duration-300 group-hover:w-full"></span>
                   </span>
                 </span>
             </Link>
-            
+      
             <Link href={'/admin'}>
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl font-semibold text-preto bg-amarelo hover:bg-amarelo-700 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-amarelo/50"
+                className="relative group w-full py-3 rounded-xl font-semibold text-preto bg-amarelo hover:bg-amarelo-700 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-amarelo/50"
               >
                 Entrar
               </button>
