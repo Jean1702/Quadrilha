@@ -66,7 +66,7 @@ export default function LoginPage() {
                 type="tel"
                 value={phone}
                 onChange={handleChange}
-                maxlength={15}
+                maxLength={15}
                 placeholder="(99) 99999-9999"
                 className="w-full pl-12 pr-12 py-3 rounded-xl bg-white/20 text-white placeholder-white/60 outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
               />
@@ -102,7 +102,7 @@ export default function LoginPage() {
             <img
               src="chapeu.png"
               alt=""
-              className="absolute left-1/2 -top-0 -translate-x-1/2 -translate-y-1/2 sm:translate-x-28 sm:-translate-y-1 w-40 lg:translate-x-22 md:-top-20 lg:-top-23 lg:-right-11 sm:w-24 md:w-28 lg:w-36 object-contain pointer-events-none rotate-17 sm:rotate-12 sm:scale-x-[-1]"
+              className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 sm:translate-x-28 sm:-translate-y-1 w-40 lg:translate-x-22 md:-top-20 lg:-top-23 lg:-right-11 sm:w-24 md:w-28 lg:w-36 object-contain pointer-events-none rotate-17 sm:rotate-12 sm:scale-x-[-1]"
             />
     
         </div>
