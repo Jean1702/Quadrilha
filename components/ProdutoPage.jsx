@@ -1,7 +1,6 @@
-export default function ProdutoPage(){
+export default function ProdutoPage() {
     return(
-        <>
-        Bruno e Jean
-        </>
+    <>
+    </>
     )
 }
