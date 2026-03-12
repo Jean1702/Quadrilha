@@ -1,10 +1,10 @@
 import LoginPage from "../../components/LoginPage";
-export default function login(){
+
+export default  function login(){
+
     return(
         <>
-            <LoginPage/>
-            <Mauro></Mauro>
-            brunilda vai a roma
+            <LoginPage />
         </>
     )
 }

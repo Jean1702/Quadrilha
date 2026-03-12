@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { Phone, User } from 'lucide-react';
 import Link from 'next/link';
+import { useForm, Controller } from 'react-hook-form';
 
-export default function RegisterPage() {
+export default function RegisterPage({actions}) {
   const [phone, setPhone] = useState("");
+  const { control, handleSubmit } = useForm();
 
   function formatPhone(value) {
     const numbers = value.replace(/\D/g, "");
@@ -26,6 +28,8 @@ export default function RegisterPage() {
     setPhone(formatted);
   }
 
+
+
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-azul">
 
@@ -45,35 +49,53 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <form className="space-y-4">
+          <form className="space-y-4" action={actions}>
 
             <div className="relative group">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-amarelo group-focus-within:text-white transition-colors" size={20} />
 
-              <input
-                type="text"
-                placeholder="Nome"
-                className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/60 outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+              <Controller
+                name='name'
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <input
+                    placeholder="Nome"
+                    type="text"
+                    {...field}
+                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/60 outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+                  />
+                )}
               />
+
+              
             </div>
 
             <div className="relative group">
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-amarelo group-focus-within:text-white transition-colors" size={20} />
 
-              
-              <input
-                type="tel"
-                value={phone}
-                onChange={handleChange}
-                maxLength={15}
-                placeholder="(99) 99999-9999"
-                className="w-full pl-12 pr-12 py-3 rounded-xl bg-white/20 text-white placeholder-white/60 outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+              <Controller
+                name='phone'
+                control={control}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="tel"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                    maxLength={15}
+                
+                    placeholder="(99) 99999-9999"
+                    className="w-full pl-12 pr-12 py-3 rounded-xl bg-white/20 text-white placeholder-white/60 outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+                />
+                )}
               />
+
                 
             </div>
 
             <Link
-                href="/login"
+                href=""
                 className="group relative mb-5 flex justify-center text-sm text-white/70 transition-all duration-300 hover:text-white"
               >
                 <span className="flex items-center gap-1">
@@ -85,14 +107,14 @@ export default function RegisterPage() {
                 </span>
             </Link>
       
-            <Link href={'/admin'}>
               <button
                 type="submit"
                 className="relative group w-full py-3 rounded-xl font-semibold text-preto bg-amarelo hover:bg-amarelo-700 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-amarelo/50"
+                
               >
                 Entrar
               </button>
-            </Link>
+          
 
           </form>
 
