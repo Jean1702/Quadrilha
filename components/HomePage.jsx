@@ -1,6 +1,6 @@
 "use client";
 
-export default function HomePage(){
+export default function HomePage() {
     const categorias = [
         { nome: "Hamburguer", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop" },
         { nome: "Pizza", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop" },
@@ -16,9 +16,9 @@ export default function HomePage(){
         { titulo: "Pizza Gigante", desc: "Sabor dobrado, diversao garantida", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&h=400&fit=crop" },
     ];
 
-    return(
+    return (
         <div data-theme="dark" className="min-h-screen w-screen overflow-x-hidden bg-base-300">
-    
+
             <div className="navbar bg-base-100 shadow-sm">
                 <div className="navbar-start">
                     <figure className="h-16 overflow-hidden">
@@ -28,7 +28,7 @@ export default function HomePage(){
             </div>
 
             <div className="p-4 md:p-8">
-              
+
                 <h2 className="text-lg font-bold mb-3">Produtos</h2>
                 <div className="carousel carousel-center gap-4 w-full scrollbar-hide overflow-x-auto">
                     {categorias.map((cat) => (
@@ -45,7 +45,7 @@ export default function HomePage(){
                     ))}
                 </div>
 
-            
+
                 <h2 className="text-lg font-bold mt-8 mb-3">Restaurantes</h2>
                 <div className="flex flex-col gap-4 md:carousel md:carousel-center md:flex-row md:gap-4 md:w-full scrollbar-hide overflow-x-auto">
                     {destaques.map((item) => (
