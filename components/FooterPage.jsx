@@ -33,7 +33,7 @@ const FooterBar = () => {
                                 </div>
                             )}
 
-                            <div className={`relative z-20 ${isActive ? 'mb-1.5' : 'mb-1'}`}>
+                            <div className={`relative z-20 cursor-pointer ${isActive ? 'mb-1.5' : 'mb-1'}`}>
                                 <Icon
                                     size={25}
                                     strokeWidth={isActive ? 2 : 1.5}

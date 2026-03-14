@@ -26,13 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-br">
+      <HeaderPage></HeaderPage>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <HeaderPage></HeaderPage>
         {children}
-        <FooterPage></FooterPage>
       </body>
+      <FooterPage></FooterPage>
     </html>
   );
 }
