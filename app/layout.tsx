@@ -26,13 +26,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-br">
-      <HeaderPage></HeaderPage>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <HeaderPage></HeaderPage>
+        <main className="min-h-screen">
+          {children}
+        </main>
+        <FooterPage></FooterPage>
       </body>
-      <FooterPage></FooterPage>
     </html>
   );
 }
