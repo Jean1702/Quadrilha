@@ -6,7 +6,7 @@ import { Phone, User } from 'lucide-react';
 import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
 
-export default function LoginPage({action}) {
+export default function LoginAdminPage() {
   const { control, watch , handleSubmit} = useForm();
   const [phone, setPhone] = useState("");
 

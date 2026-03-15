@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
 import { isValidPhoneNumber } from "libphonenumber-js"
 
-export default function RegisterPage({actions, codigoconfirm}) {
+export default function RegisterPage({actions /*, codigoconfirm*/}) {
   const { control, watch , handleSubmit} = useForm();
-  const [openpopup, setOpenpopup] = useState(false);
+  // const [openpopup, setOpenpopup] = useState(false);
   const phoneValue = watch("phone")
   const phoneIsValid = validatePhone(phoneValue)
 
@@ -123,7 +123,6 @@ export default function RegisterPage({actions, codigoconfirm}) {
       
             <button
               type="submit"
-              onClick={() => setOpenpopup(true)}
               className="relative group w-full py-3 rounded-xl font-semibold text-preto bg-amarelo hover:bg-amarelo-700 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-amarelo/50"
               
             >
@@ -133,7 +132,7 @@ export default function RegisterPage({actions, codigoconfirm}) {
 
 
           </form>
-            {openpopup && (
+            {/* {openpopup && (
               <div className="fixed inset-0 bg-azul/70 rounded-2xl backdrop-blur-md flex items-center justify-center z-50">
 
                 <div className="relative w-full max-w-md mx-4 backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl p-8">
@@ -185,7 +184,7 @@ export default function RegisterPage({actions, codigoconfirm}) {
                     className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 sm:translate-x-28 sm:-translate-y-1 w-40 lg:translate-x-22 md:-top-20 lg:-top-23 lg:-right-11 sm:w-24 md:w-28 lg:w-36 object-contain pointer-events-none rotate-17 sm:rotate-12 sm:scale-x-[-1]"
                   />
               </div>
-            )}
+            )} */}
 
        
           
