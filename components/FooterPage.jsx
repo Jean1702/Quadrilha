@@ -1,15 +1,16 @@
 "use client"
 import React, { useState } from 'react';
 import { House, ShoppingCart, UserRound, Moon } from 'lucide-react';
-
+import Link from 'next/link';
 const FooterBar = () => {
     const [activeTab, setActiveTab] = useState('Comida');
 
     const menuItems = [
-        { id: 'Início', icon: House },
-        { id: 'Carrinho', icon: ShoppingCart },
-        { id: 'Usuário', icon: UserRound },
-        { id: 'Tema escuro', icon: Moon },
+        { id: 'Início', icon: House, href: "/" },
+        { id: 'Carrinho', icon: ShoppingCart, href: "/" },
+        { id: 'Usuário', icon: UserRound , href: "/user" },
+        { id: 'Tema escuro', icon: Moon, href: "/" },
+
     ];
 
     return (
@@ -20,7 +21,7 @@ const FooterBar = () => {
                 {menuItems.map((item) => {
                     const isActive = activeTab === item.id;
                     const Icon = item.icon;
-
+                    const href = item.href;
                     return (
                         <button
                             key={item.id}
@@ -32,14 +33,15 @@ const FooterBar = () => {
                                     <div className="w-20 h-17 bg-amarelo rounded-full shadow-sm" />
                                 </div>
                             )}
-
-                            <div className={`relative z-20 cursor-pointer ${isActive ? 'mb-1.5' : 'mb-1'}`}>
-                                <Icon
-                                    size={25}
-                                    strokeWidth={isActive ? 2 : 1.5}
-                                    className={isActive ? 'text-black' : 'text-gray-600'}
-                                />
-                            </div>
+                            <Link href={href}>
+                                <div className={`relative z-20 cursor-pointer ${isActive ? 'mb-1.5' : 'mb-1'}`}>
+                                    <Icon
+                                        size={25}
+                                        strokeWidth={isActive ? 2 : 1.5}
+                                        className={isActive ? 'text-black' : 'text-gray-600'}
+                                    />
+                                </div>
+                            </Link>
 
                             {!isActive && item.label && (
                                 <span className="text-xs font-medium text-gray-900">

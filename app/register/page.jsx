@@ -7,7 +7,7 @@ export default  function Register(){
 
     async function registerAction(formData) {
         "use server"
-        const admin = CreateAdminClient();
+        const admin = await CreateAdminClient();
 
         const numbers = formData.phone.replace(/\D/g, "");
         const formatado = `+55${numbers}`;
@@ -17,9 +17,11 @@ export default  function Register(){
             phone: formatado,
             phone_confirm: true,
             password: password,
-            meta_user:{
+            user_metadata:{
                 name: formData.name
-            
+            },
+            app_metadata: { 
+                role: "user"
             }
         });
 

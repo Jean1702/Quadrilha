@@ -27,7 +27,7 @@ export default  function login(){
 
         if (error) throw error;
         
-        redirect("/login");
+        redirect("/user");
     }
     
     return(

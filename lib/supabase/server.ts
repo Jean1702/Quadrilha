@@ -15,10 +15,12 @@ export async function CreateClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
+              cookieStore.set(name, value, options)
             );
-          } catch (error) {
-            console.error("Error setting cookies:", error);
+          } catch {
+            // O método setAll pode ser chamado em Server Components, 
+            // onde cookies não podem ser modificados. 
+            // Ignoramos o erro aqui porque o Middleware cuidará da atualização.
           }
         },
       },

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-
-export default function User() {
+import { CreateClient }from "../lib/supabase/client";
+import { redirect } from "next/navigation";
+export default function User({ name, phone }) {
   const [image, setImage] = useState(null);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
   const [showOrder, setShowOrder] = useState(false);
 
   function handleImageChange(e) {
@@ -13,6 +12,11 @@ export default function User() {
     if (file) {
       setImage(URL.createObjectURL(file));
     }
+  }
+  async function UserOut() {
+    const supabase = await CreateClient();
+    await supabase.auth.signOut();
+    redirect('/login');
   }
 
   return (
@@ -59,14 +63,12 @@ export default function User() {
 
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
             placeholder="Nome"
             className="border border-[#136066] rounded-xl px-4 py-3 bg-[#F2F2F2]"
           />
 
           <input
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
             placeholder="Telefone"
             className="border border-[#136066] rounded-xl px-4 py-3 bg-[#F2F2F2]"
           />
@@ -120,18 +122,7 @@ export default function User() {
       {/* BOTÃO EXCLUIR PERFIL (RODAPÉ) */}
       <button
         className="w-full max-w-md mb-50 bg-[#DB4B23] text-[#382924] py-3 rounded-xl text-lg shadow"
-        onClick={() => {
-          const confirmDelete = window.confirm(
-            "Tem certeza que deseja excluir o perfil?"
-          );
-
-          if (confirmDelete) {
-            setImage(null);
-            setName("");
-            setPhone("");
-            alert("Perfil excluído com sucesso!");
-          }
-        }}
+        onClick={UserOut}
       >
         Excluir Perfil
       </button>

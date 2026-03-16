@@ -1,13 +1,11 @@
 'use client'
 
-import { useState } from 'react';
 import { Phone, User } from 'lucide-react';
 import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
 
 export default function LoginAdminPage() {
   const { control, watch , handleSubmit} = useForm();
-  const [phone, setPhone] = useState("");
 
   function formatPhone(value) {
     const numbers = value.replace(/\D/g, "");

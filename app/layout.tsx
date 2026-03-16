@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Uai Rango",
+  title: "IFFOOD",
   description: "Quadrilha do Instituto Federal Goiano - Campus Trindade",
 };
 
