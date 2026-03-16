@@ -1,19 +1,20 @@
 "use client";
+import HeaderBar from "../components/HeaderPage";
 
 export default function HomePage() {
     const categorias = [
-        { nome: "Hamburguer", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop" },
+        { nome: "Hambúrguer", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop" },
         { nome: "Pizza", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop" },
         { nome: "Sushi", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=300&fit=crop" },
         { nome: "Batata Frita", img: "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=400&h=300&fit=crop" },
         { nome: "Salada", img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop" },
-        { nome: "Macarrao", img: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop" },
+        { nome: "Macarrão", img: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop" },
     ];
 
     const destaques = [
-        { titulo: "Combo Especial", desc: "Hamburguer + Batata + Refri", img: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=600&h=400&fit=crop" },
-        { titulo: "Festival de Sushi", desc: "30 pecas por um preco especial", img: "https://images.unsplash.com/photo-1553621042-f6e147245754?w=600&h=400&fit=crop" },
-        { titulo: "Pizza Gigante", desc: "Sabor dobrado, diversao garantida", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&h=400&fit=crop" },
+        { titulo: "Combo Especial", desc: "Hambúrguer + Batata + Refri", img: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=600&h=400&fit=crop" },
+        { titulo: "Festival de Sushi", desc: "30 peças por um preço especial", img: "https://images.unsplash.com/photo-1553621042-f6e147245754?w=600&h=400&fit=crop" },
+        { titulo: "Pizza Gigante", desc: "Sabor dobrado, diversão garantida", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&h=400&fit=crop" },
     ];
 
     return (
@@ -24,6 +25,9 @@ export default function HomePage() {
                     <figure className="h-16 overflow-hidden">
                         <img src="food (4).png" alt="Logo" className="h-full w-auto object-cover scale-300 translate-x-2.5" />
                     </figure>
+                </div>
+                <div className="navbar-end">
+                    <HeaderBar />
                 </div>
             </div>
 

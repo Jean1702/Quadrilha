@@ -13,7 +13,7 @@ const FooterBar = () => {
     ];
 
     return (
-        <div className="flex-center bg-transparent fixed bottom-1 w-full">
+        <div className="flex-center bg-transparent fixed bottom-2 w-full">
 
             <nav className="relative flex items-center bg-white rounded-full px-2.5 py-5 shadow-lg w-full max-w-md mx-2 ">
 
@@ -25,7 +25,7 @@ const FooterBar = () => {
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className="relative flex-2 flex flex-col items-center justify-center transition-all duration-200 z-10"
+                            className="relative flex-3 flex flex-col items-center justify-center transition-all duration-200 z-10"
                         >
                             {isActive && (
                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -33,11 +33,11 @@ const FooterBar = () => {
                                 </div>
                             )}
 
-                            <div className={`relative z-20 cursor-pointer ${isActive ? 'mb-1.5' : 'mb-1'}`}>
+                            <div className={`relative z-20 cursor-pointer ${isActive ? 'mb-1' : 'mb-1.5'}`}>
                                 <Icon
                                     size={25}
                                     strokeWidth={isActive ? 2 : 1.5}
-                                    className={isActive ? 'text-black' : 'text-gray-600'}
+                                    className={isActive ? 'text-black' : 'text-gray-800'}
                                 />
                             </div>
 
