@@ -49,58 +49,64 @@ export default function PagamentoPage() {
     const segundos = tempo % 60;
 
     return (
-        <div className="p-6 font-sans text-gray-900 max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-                <div className="text-right text-sm">
-                    {/* Remover ou adicionar a data conforme necessário */}
-                    {/* <p>{pagamento.data}</p> */}
+
+
+        
+        <div className="flex justify-center items-center min-h-screen relative overflow-hidden bg-azul">
+            <div className="absolute size-100 sm:size-150 bg-amarelo rounded-full blur-3xl opacity-30 -top-40 -left-40 animate-pulse"></div>
+            <div className="absolute size-95 sm:size-125 bg-bege rounded-full blur-3xl opacity-30 -bottom-40 -right-40 animate-pulse"></div>
+
+            
+            <div className="w-95 max-w-md bg-white rounded-lg shadow-xl p-6">
+                <div className="text-center mb-6">
+                    <h1 className="text-3xl font-bold text-teal-700">Pagamento</h1>
+                    <p className="text-lg text-teal-600">Complete o pagamento para finalizar seu pedido.</p>
                 </div>
-            </div>
 
-            {/* QR Code */}
-            <div className="flex justify-center mb-6">
-                <QRCode value={`pix:${pagamento.chavePix}`} size={256} />
-            </div>
+                {/* QR Code */}
+                <div className="flex justify-center mb-6">
+                    <QRCode value={`pix:${pagamento.chavePix}`} size={156} />
+                </div>
 
-            {/* Chave Pix */}
-            <div className="mb-6 text-center">
-                <p className="font-semibold">Código Pix:</p>
-                <p className="text-lg break-all">{pagamento.chavePix}</p>
-                <button
-                    onClick={copiarChavePix}
-                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
-                >
-                    Copiar Código Pix
-                </button>
-            </div>
+                {/* Chave Pix */}
+                <div className="mb-6 text-center">
+                    <p className="font-semibold text-teal-700">Código Pix:</p>
+                    <p className="text-lg text-teal-800 break-all">{pagamento.chavePix}</p>
+                    <button
+                        onClick={copiarChavePix}
+                        className="mt-2 px-4 py-2 bg-teal-600 text-white rounded-full hover:bg-teal-700 focus:outline-none"
+                    >
+                        Copiar Código Pix
+                    </button>
+                </div>
 
-            {/* Tempo restante para pagamento */}
-            <div className="text-center mb-6">
-                <p className="font-semibold">Tempo restante para pagamento:</p>
-                <p className="text-xl">{`${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`}</p>
-            </div>
+                {/* Tempo restante para pagamento */}
+                <div className="text-center mb-6">
+                    <p className="font-semibold text-teal-700">Tempo restante para pagamento:</p>
+                    <p className="text-xl text-teal-800">{`${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`}</p>
+                </div>
 
-            {/* Detalhes do pedido */}
-            <div className="bg-white p-4 rounded shadow-md mb-6">
-                <p className="font-semibold text-lg">PEDIDO #{pagamento.codigoPedido}</p>
-                <p className="text-sm">{pagamento.Barraca}</p>
-                <p className="text-sm">{/* pagamento.endereco */}</p> {/* Remover ou adicionar conforme necessário */}
-            </div>
+                {/* Detalhes do pedido */}
+                <div className="bg-teal-50 p-4 rounded-lg shadow-md mb-6">
+                    <p className="font-semibold text-lg text-teal-700">PEDIDO #{pagamento.codigoPedido}</p>
+                    <p className="text-sm text-teal-600">{pagamento.Barraca}</p>
+                </div>
 
-            {/* Itens do pedido */}
-            <div className="bg-white p-4 rounded shadow-md">
-                <h3 className="font-semibold text-lg">Itens:</h3>
-                {pagamento.itens.map((item, index) => (
-                    <div key={index} className="flex justify-between text-sm mt-2">
-                        <p>{item.nome}</p>
-                        <p>R$ {item.valor.toFixed(2)}</p>
+                {/* Itens do pedido */}
+                <div className="bg-teal-50 p-4 rounded-lg shadow-md">
+                    <h3 className="font-semibold text-lg text-teal-700">Itens:</h3>
+                    {pagamento.itens.map((item, index) => (
+                        <div key={index} className="flex justify-between text-sm text-teal-800 mt-2">
+                            <p>{item.nome}</p>
+                            <p>R$ {item.valor.toFixed(2)}</p>
+                        </div>
+                    ))}
+
+                    {/* Cálculo do total */}
+                    <div className="flex justify-between font-semibold text-lg text-teal-700 mt-4">
+                        <p>Total</p>
+                        <p>R$ {(pagamento.itens.reduce((acc, item) => acc + item.valor, 0)).toFixed(2)}</p>
                     </div>
-                ))}
-
-                {/* Cálculo do total */}
-                <div className="flex justify-between font-semibold text-lg mt-4">
-                    <p>Total</p>
-                    <p>R$ {(pagamento.itens.reduce((acc, item) => acc + item.valor, 0)).toFixed(2)}</p>
                 </div>
             </div>
         </div>
