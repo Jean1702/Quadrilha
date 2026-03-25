@@ -14,7 +14,7 @@ const HeaderBar = () => {
         <div className="flex justify-end items-center w-full">
             <div className="flex items-center gap-5">
                 
-                <Link href="/cart" className={commonClasses}>
+                <Link href="/carrinho" className={commonClasses}>
                     <ShoppingCart size={25} className="group-hover:animate-bounce" />
                     {cartItems > 0 && (
                         <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white shadow-sm">
