@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import HeaderBar from "@/components/HeaderPage";
 import FooterPage from "@/components/FooterPage";
 
 const geistSans = Geist({
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IFFOOD",
-  description: "Quadrilha do Instituto Federal Goiano - Campus Trindade",
+  title: "IF FOOD",
+  description: "App de comida do Instituto Federal Goiano - Campus Trindade",
 };
 
 export default function RootLayout({
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <HeaderBar></HeaderBar>
         <main className="min-h-screen">
           {children}
         </main>

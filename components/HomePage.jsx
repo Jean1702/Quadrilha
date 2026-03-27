@@ -20,17 +20,6 @@ export default function HomePage() {
     return (
         <div data-theme="dark" className="min-h-screen w-screen overflow-x-hidden bg-base-300">
 
-            <div className="navbar bg-base-100 shadow-sm">
-                <div className="navbar-start">
-                    <figure className="h-16 overflow-hidden">
-                        <img src="food (4).png" alt="Logo" className="h-full w-auto object-cover scale-300 translate-x-2.5" />
-                    </figure>
-                </div>
-                <div className="navbar-end">
-                    <HeaderBar />
-                </div>
-            </div>
-
             <div className="p-4 md:p-8">
 
                 <h2 className="text-lg font-bold mb-3">Produtos</h2>
