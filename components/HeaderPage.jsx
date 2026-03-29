@@ -49,7 +49,7 @@ const HeaderPage = () => {
 
       <div className="flex-none flex items-center gap-2">
         <NavIcon 
-          href="/carrinho" 
+          href="/cart" 
           icon={ShoppingCart} 
           showBadge={false} 
         />
