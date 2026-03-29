@@ -37,63 +37,81 @@ export default function Cart() {
     }, 0);
 
     return (
-        <div className="min-h-screen bg-[#F2F2F2] pt-8 pb-32 px-4 sm:pt-12">
-            <div className="container max-w-2xl mx-auto">
-                <div className="flex flex-col gap-6 sm:gap-10">
+        <div className="min-h-screen bg-[#DFD0AF] text-[#514442] pt-8 pb-32 px-4 sm:pt-12 font-sans">
+            <div className="container max-w-lg mx-auto">
+                
+                <h1 className="text-3xl font-black uppercase tracking-tight mb-8 pl-2">
+                    Seu Carrinho
+                </h1>
+
+                <div className="flex flex-col gap-6">
                     
                     {cartItems.map((product) => (
-                        <div key={product.id} className="flex flex-col gap-6 items-center p-6 sm:p-10 bg-white rounded-[40px] shadow-sm">
+                        /* Card Vertical Refinado */
+                        <div key={product.id} className="flex flex-col p-5 border-[1.5px] border-[#514442]/15 rounded-[32px] shadow-sm bg-white/20">
                             
-                            <div className="w-full max-w-[280px] sm:max-w-md">
-                                <div className="aspect-square w-full relative">
-                                    <img
-                                        src={product.url}
-                                        alt={product.nome}
-                                        className="w-full h-full object-contain drop-shadow-xl rounded-3xl"
-                                    />
-                                </div>
-                                <h1 className="text-2xl sm:text-3xl font-black uppercase text-[#0D0D0D] text-center mt-4 tracking-tight leading-none">
+                            {/* Imagem (Altura Controlada) */}
+                            <div className="w-full h-40 sm:h-48 flex justify-center items-center mb-4">
+                                <img
+                                    src={product.url}
+                                    alt={product.nome}
+                                    className="h-full object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
+                                />
+                            </div>
+
+                            {/* Título e Lixeira Alinhados */}
+                            <div className="flex justify-between items-start mb-4 gap-2">
+                                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight leading-tight text-[#514442]">
                                     {product.nome}
-                                </h1>
-                            </div>
-
-                            <div className="flex items-center border-[3px] border-[#0D0D0D] rounded-full overflow-hidden">
-                                <button
-                                    onClick={() => handleDecrease(product.id)}
-                                    className="p-3 sm:p-4 hover:bg-[#F2F2F2] transition-colors cursor-pointer"
+                                </h2>
+                                <button 
+                                    onClick={() => handleRemove(product.id)}
+                                    className="text-[#514442]/40 hover:text-[#D95032] transition-colors p-1 cursor-pointer shrink-0 mt-0.5"
+                                    title="Remover item"
                                 >
-                                    <Minus size={20} strokeWidth={3} />
-                                </button>
-                                <span className="w-12 sm:w-16 text-center font-black text-xl sm:text-2xl">{quantities[product.id]}</span>
-                                <button
-                                    onClick={() => handleIncrease(product.id)}
-                                    className="p-3 sm:p-4 hover:bg-[#F2F2F2] transition-colors cursor-pointer"
-                                >
-                                    <Plus size={20} strokeWidth={3} />
+                                    <Trash2 size={22} strokeWidth={2.5} />
                                 </button>
                             </div>
 
-                            <div className="text-center">
-                                <p className="text-xs sm:text-sm uppercase font-bold text-[#0D0D0D]/40 tracking-widest mb-1">Subtotal</p>
-                                <p className="text-3xl sm:text-4xl font-black text-[#D95032]">
-                                    R$ {(product.preco * (quantities[product.id] || 1)).toFixed(2)}
-                                </p>
+                            {/* Preço e Controles */}
+                            <div className="flex items-end justify-between mt-auto">
+                                <div>
+                                    <p className="text-[11px] sm:text-xs uppercase font-bold text-[#514442]/60 tracking-wider mb-1">
+                                        Subtotal
+                                    </p>
+                                    <p className="text-2xl sm:text-3xl font-black text-[#D95032] leading-none">
+                                        R$ {(product.preco * (quantities[product.id] || 1)).toFixed(2)}
+                                    </p>
+                                </div>
+
+                                {/* Novo Design de Quantidade (Estilo Pílula) */}
+                                <div className="flex items-center bg-[#514442] text-[#DFD0AF] rounded-full p-1 shadow-md">
+                                    <button
+                                        onClick={() => handleDecrease(product.id)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                                    >
+                                        <Minus size={16} strokeWidth={3} />
+                                    </button>
+                                    
+                                    <span className="w-8 text-center font-black text-sm">
+                                        {quantities[product.id]}
+                                    </span>
+                                    
+                                    <button
+                                        onClick={() => handleIncrease(product.id)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-full bg-[#D95032] hover:opacity-90 transition-opacity shadow-sm cursor-pointer text-[#DFD0AF]"
+                                    >
+                                        <Plus size={16} strokeWidth={3} />
+                                    </button>
+                                </div>
                             </div>
-
-                            <button 
-                                onClick={() => handleRemove(product.id)}
-                                className="group flex items-center justify-center p-3 rounded-full border-2 border-red-500/20 hover:border-red-500 transition-colors w-12 h-12 sm:w-14 sm:h-14 cursor-pointer"
-                            >
-                                <Trash2 className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 group-hover:text-red-500" />
-                            </button>
-
                         </div>
                     ))}
 
                     {cartItems.length > 0 ? (
-                        <div className="flex flex-col gap-6 p-6 sm:p-8 bg-white rounded-[40px] shadow-sm mt-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-xl sm:text-2xl font-black uppercase text-[#0D0D0D] tracking-wide">
+                        <div className="flex flex-col gap-6 p-6 sm:p-8 border-[1.5px] border-[#514442]/15 bg-white/20 rounded-[40px] shadow-sm mt-2">
+                            <div className="flex justify-between items-end border-b border-[#514442]/10 pb-4">
+                                <span className="text-lg sm:text-xl font-bold uppercase tracking-wide text-[#514442]/80">
                                     Total
                                 </span>
                                 <span className="text-3xl sm:text-4xl font-black text-[#D95032]">
@@ -101,14 +119,14 @@ export default function Cart() {
                                 </span>
                             </div>
 
-                            <button className="w-full bg-[#D95032] text-white text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-transform shadow-md cursor-pointer">
+                            <button className="w-full bg-[#514442] hover:bg-[#D95032] text-[#DFD0AF] text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
                                 Pagar Agora
                             </button>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center p-10 bg-white rounded-[40px] shadow-sm text-center">
-                            <p className="text-xl font-black text-[#0D0D0D] uppercase mb-2">Seu carrinho está vazio</p>
-                            <p className="text-[#0D0D0D]/60">Adicione alguns produtos para continuar.</p>
+                        <div className="flex flex-col items-center justify-center p-10 border-[1.5px] border-[#514442]/15 bg-white/20 rounded-[40px] text-center mt-2">
+                            <p className="text-xl font-black uppercase mb-2 text-[#514442]">Seu carrinho está vazio</p>
+                            <p className="text-[#514442]/60">Adicione alguns produtos para continuar.</p>
                         </div>
                     )}
 
