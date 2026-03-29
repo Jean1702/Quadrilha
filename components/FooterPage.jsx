@@ -4,7 +4,7 @@ import React from 'react';
 import { House, UserRound, Moon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
+import Darkmode from './Darkmode';
 const FooterBar = () => {
     const pathname = usePathname();
 
@@ -53,6 +53,7 @@ const FooterBar = () => {
                         </button>
                     );
                 })}
+                <Darkmode />
             </nav>
         </div>
     );
