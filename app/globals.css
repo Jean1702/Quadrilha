@@ -165,8 +165,7 @@ body {
 
 .card {
   background: var(--surface);
-  color: var(--text);
-  padding: 1.25rem;
+  color: var(--text); 
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);

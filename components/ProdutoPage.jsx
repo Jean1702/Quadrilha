@@ -4,6 +4,7 @@ import Stack from '@mui/material/Stack';
 import TextareaAutosize from '@mui/material/TextareaAutosize';
 import { useState } from 'react';
 import { Minus, Plus } from "lucide-react"
+import Link from 'next/link';
 
 export default function ProdutoPage() {
 
@@ -99,8 +100,10 @@ export default function ProdutoPage() {
                         </div>
                     </div>
 
-                    <button className="w-full bg-[#514442] hover:bg-[#D95032] text-[#DFD0AF] font-bold py-4 rounded-2xl uppercase tracking-widest transition-all transform active:scale-95 cursor-pointer">
-                        Adicionar ao Carrinho
+                    <button className="w-full bg-[#514442] hover:bg-[#D95032] text-[#DFD0AF] font-bold py-4 rounded-full uppercase tracking-widest transition-all transform active:scale-95 cursor-pointer">
+                        <Link href={'/cart'}>
+                            Adicionar ao Carrinho
+                        </Link>
                     </button>
                 </footer>
             </main>
