@@ -27,20 +27,6 @@ const FooterBar = () => {
         { id: 'Usuário', icon: UserRound, href: "/user" }
     ];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     return (
         <div className={`bg-[var] sticky bottom-1.5 w-full px-4 transition-all duration-300`}>
             <nav className="flex items-center justify-between rounded-full px-4 py-3 shadow-lg w-full max-w-md mx-auto footer">
