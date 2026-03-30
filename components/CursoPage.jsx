@@ -58,45 +58,45 @@ export default function CursoPage() {
                         </div>
                     ))}
                 </div>
-
-        <main className="min-h-screen ">
-            
-            <section className="px-4 pb-16 md:px-8 mt-10 lg:px-12">
-                <div className="mx-auto max-w-6xl b space-y-10">
-                    {produto.map((categoria) => (
-                        <div key={categoria.nome} className="space-y-5 rounded-[2rem] bg-[var(--surface)] p-5  md:p-8">
-                            <div className="flex flex-col gap-2 pb-4">
-                                <p className="text-md font-semibold uppercase tracking-[0.25em] text-vermelho">Produtos</p>
-                                <h2 className="text-2xl font-black md:text-3xl">{categoria.nome}</h2>
-                                <p className="max-w-3xl text-md leading-7 text-preto md:text-base">{categoria.descricao}</p>
-                            </div>
-
-                            <div className="space-y-4">
-                                {categoria.produtos.map((produto) => (
-                                    <Link
-                                        key={produto.nome}
-                                        href="/product"
-                                        className="flex flex-col rounded-[1.5rem] bg-[var(--card)] md:min-h-44 md:flex-row  hover:-translate-y-1 transition-transform duration-300"
-                                    >
-                                        <div className="h-48 md:h-auto md:w-1/5">
-                                            <img src={produto.imagem} className="h-full w-full object-cover"
-                                            />
-                                        </div>
-
-                                        <div className="flex flex-1 flex-col justify-center gap-3 px-5 py-5 md:px-7">
-                                            <h3 className="text-xl font-black  md:text-2xl">{produto.nome}</h3>
-                                            <p className="max-w-3xl text-md leading-7  md:text-base">
-                                                {produto.descricao}
-                                            </p>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
             </section>
-        </main>
+            <main className="min-h-screen ">
+                
+                <section className="px-4 pb-16 md:px-8 mt-10 lg:px-12">
+                    <div className="mx-auto max-w-6xl b space-y-10">
+                        {produto.map((categoria) => (
+                            <div key={categoria.nome} className="space-y-5 rounded-[2rem] bg-[var(--surface)] p-5  md:p-8">
+                                <div className="flex flex-col gap-2 pb-4">
+                                    <p className="text-md font-semibold uppercase tracking-[0.25em] text-vermelho">Produtos</p>
+                                    <h2 className="text-2xl font-black md:text-3xl">{categoria.nome}</h2>
+                                    <p className="max-w-3xl text-md leading-7 text-preto md:text-base">{categoria.descricao}</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {categoria.produtos.map((produto) => (
+                                        <Link
+                                            key={produto.nome}
+                                            href="/product"
+                                            className="flex flex-col rounded-[1.5rem] bg-[var(--card)] md:min-h-44 md:flex-row  hover:-translate-y-1 transition-transform duration-300"
+                                        >
+                                            <div className="h-48 md:h-auto md:w-1/5">
+                                                <img src={produto.imagem} className="h-full w-full object-cover"
+                                                />
+                                            </div>
+
+                                            <div className="flex flex-1 flex-col justify-center gap-3 px-5 py-5 md:px-7">
+                                                <h3 className="text-xl font-black  md:text-2xl">{produto.nome}</h3>
+                                                <p className="max-w-3xl text-md leading-7  md:text-base">
+                                                    {produto.descricao}
+                                                </p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            </main>
         </>
     )
 }

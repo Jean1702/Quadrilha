@@ -8,9 +8,9 @@ export default async function User() {
 
     const { data: { user }, error } = await supabase.auth.getUser();
 
-    // if (!user) {
-    //redirect('/login');
-    //}
+    if (!user) {
+    redirect('/register');
+    }
 
     const userName = user?.user_metadata?.name || "Usuário Teste"; //const userName = user.user_metadata?.name || user.identities?.[0]?.identity_data?.name || "Usuário";
     const userPhone = user?.user_metadata?.phone || user?.phone || "11999999999"; //const userPhone = user.user_metadata?.phone || user.phone || "Telefone não informado";

@@ -8,7 +8,7 @@ import { FiTrash, FiChevronDown } from "react-icons/fi";
 export default function User({ name, phone }) {
   const [image, setImage] = useState(null);
   const [showOrder, setShowOrder] = useState(true);
-  const [hasOrder, setHasOrder] = useState(false);
+  const [hasOrder, setHasOrder] = useState(true);
 
   function handleImageChange(e) {
     const file = e.target.files[0];
@@ -26,11 +26,12 @@ export default function User({ name, phone }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center ">
+    <div className="min-h-screen flex flex-col items-center justify-center">
 
-      <div className="w-full max-w-md bg-[var(--surface)] backdrop-blur-md rounded-[12px] p-6 shadow-lg border border-white/20">
+      {/* CARD */}
+      <div className="w-full max-w-sm bg-[var(--surface)] rounded-[12px] p-6 shadow-lg border border-[#000]/5">
 
-        <h1 className="text-2xl font-bold text-center mb-6">
+        <h1 className="text-2xl font-bold  text-center mb-6">
           Meu Perfil
         </h1>
 
@@ -44,19 +45,17 @@ export default function User({ name, phone }) {
           />
 
           <label htmlFor="profileImageInput" className="cursor-pointer">
-            <div className="w-24 h-24 rounded-full border-2 border-text overflow-hidden flex items-center justify-center bg-[var(--bg)]">
+            <div className="w-24 h-24 rounded-full border-2 border-card overflow-hidden flex items-center justify-center bg-[var(--bg)] shadow">
               {image ? (
                 <img src={image} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xs text-center">
-                  Foto
-                </span>
+                <span className="text-xs text-[#514442]">Foto</span>
               )}
             </div>
           </label>
 
           <button
-            className="mt-2 text-xs bg-card px-3 py-1 rounded"
+            className="mt-2 text-xs bg-card px-3 py-1 rounded-md hover:opacity-90"
             onClick={() =>
               document.getElementById("profileImageInput").click()
             }
@@ -70,20 +69,20 @@ export default function User({ name, phone }) {
           <input
             value={name}
             readOnly
-            className="rounded-xl px-4 py-3 border border-[var(--text)] outline-none"
+            className="rounded-md px-4 py-3 bg-[var(--bg)] outline-none"
           />
 
           <input
             value={phone}
             readOnly
-            className="rounded-xl px-4 py-3 placeholder: border border-[var(--text)] outline-none"
+            className="rounded-md px-4 py-3 bg-[var(--bg)]  outline-none"
           />
         </div>
 
         {/* STATUS */}
         <button
           onClick={() => setShowOrder(!showOrder)}
-          className="w-full mt-6 bg-card text-black py-3 rounded-xl font-semibold flex items-center justify-between px-4"
+          className="w-full mt-5 bg-card  py-3 rounded-md font-semibold flex items-center justify-between px-4"
         >
           <span>Status do Pedido</span>
 
@@ -93,16 +92,18 @@ export default function User({ name, phone }) {
         </button>
 
         {/* PEDIDO */}
-        {showOrder && (
-          <div className="mt-6 bg-[var(--bg)] rounded-xl p-4 ">
-            <h2 className="font-bold mb-2">Status do Pedido</h2>
+        {hasOrder && showOrder && (
+          <div className="mt-4 bg-[var(--bg)] rounded-md p-4 shadow-sm">
+            <h2 className="font-bold mb-2 text-primary">
+              Status do Pedido
+            </h2>
 
             <p><strong>Curso:</strong> Informática</p>
             <p><strong>Item:</strong> Pastel de Queijo</p>
             <p><strong>Quantidade:</strong> 2</p>
 
             <div className="flex items-center gap-2 mt-2">
-              <span className="w-3 h-3 rounded-full bg-[#D97016]"></span>
+              <span className="w-3 h-3 rounded-full bg-card"></span>
               <span>Sendo preparado</span>
             </div>
 
@@ -110,12 +111,11 @@ export default function User({ name, phone }) {
             <p className="mt-2 font-bold">Total: R$ 10,00</p>
           </div>
         )}
-        )}
 
-        {/* LOGOUT */}
-        <button
-          onClick={UserOut}
-          className="flex items-center gap-1 text-xl  hover:text-red-500 transition mt-6"
+        {/* EXCLUIR */}
+        <label
+          htmlFor="delete_modal"
+          className="flex items-center justify-center gap-2  hover:text-[#D95032] transition mt-6 cursor-pointer"
         >
           <FiTrash />
           <span>Excluir perfil</span>

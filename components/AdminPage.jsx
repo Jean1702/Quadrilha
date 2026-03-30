@@ -29,11 +29,11 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#DFD0AF] p-6 text-[#514442]">
+    <div className="min-h-screen  p-6 ">
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
-        <div className="bg-[#514442] text-white p-6 rounded-3xl shadow-lg mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="bg-[var(--surface)] p-6 rounded-[20px] shadow-lg mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight">
             🛍️ Painel da Loja
           </h1>
@@ -49,7 +49,7 @@ export default function AdminPage() {
 
             <button
               onClick={() => setStoreOpen(!storeOpen)}
-              className="bg-[#D97016] hover:bg-[#D98025] active:scale-95 px-5 py-2 rounded-full font-medium transition duration-300 shadow-md"
+              className="bg-card hover:bg-[#D98025] active:scale-95 px-5 py-2 rounded-full font-medium transition duration-300 shadow-md"
             >
               {storeOpen ? "Fechar Loja" : "Abrir Loja"}
             </button>
@@ -57,14 +57,14 @@ export default function AdminPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-white p-6 rounded-3xl shadow-lg mb-6">
+        <div className="bg-[var(--surface)] p-6 rounded-3xl shadow-lg mb-6">
           <h2 className="text-xl font-semibold mb-4 tracking-tight">
             Adicionar Produto
           </h2>
 
           <div className="grid md:grid-cols-3 gap-4">
             <input
-              className="p-3 rounded-full border border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
+              className="p-3 rounded-full border bg-[var(--bg)] border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
               placeholder="Nome do produto"
               value={newProduct.name}
               onChange={(e) =>
@@ -73,7 +73,7 @@ export default function AdminPage() {
             />
 
             <input
-              className="p-3 rounded-full border border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
+              className="p-3 rounded-full border bg-[var(--bg)] border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
               type="number"
               placeholder="Preço"
               value={newProduct.price}
@@ -83,7 +83,7 @@ export default function AdminPage() {
             />
 
             <input
-              className="p-3 rounded-full border border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
+              className="p-3 rounded-full border bg-[var(--bg)] border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
               placeholder="URL da imagem"
               value={newProduct.image}
               onChange={(e) =>
@@ -107,7 +107,7 @@ export default function AdminPage() {
           </h2>
 
           {products.length === 0 && (
-            <p className="text-[#514442]/70 rounded-lg">
+            <p className=" rounded-lg">
               Nenhum produto cadastrado
             </p>
           )}

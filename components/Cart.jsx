@@ -49,16 +49,10 @@ export default function Cart() {
                 <div className="flex flex-col gap-6">
 
                     {cartItems.map((product) => (
-<<<<<<< HEAD
                         /* Card Vertical Refinado */
                         <div key={product.id} className="flex flex-col p-5 border-[1.5px] border-[#514442]/15 rounded-[32px] shadow-sm bg-[var(--surface)]">
                             
                             {/* Imagem (Altura Controlada) */}
-=======
-                        <div key={product.id} className="flex flex-col p-5 border-[1.5px] border-[#514442]/15 rounded-[32px] shadow-sm bg-white/20">
-
-
->>>>>>> 39287272a96e7f2326b69a6b47ea94e4d3f9ba57
                             <div className="w-full h-40 sm:h-48 flex justify-center items-center mb-4">
                                 <img
                                     src={product.url}
@@ -90,12 +84,8 @@ export default function Cart() {
                                     </p>
                                 </div>
 
-<<<<<<< HEAD
                                 {/* Novo Design de Quantidade (Estilo Pílula) */}
                                 <div className="flex items-center bg-[var(--bg)] rounded-full p-1 shadow-md">
-=======
-                                <div className="flex items-center bg-[#514442] text-[#DFD0AF] rounded-full p-1 shadow-md">
->>>>>>> 39287272a96e7f2326b69a6b47ea94e4d3f9ba57
                                     <button
                                         onClick={() => handleDecrease(product.id)}
                                         className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors cursor-pointer"
@@ -128,17 +118,14 @@ export default function Cart() {
                                     R$ {totalAmount.toFixed(2)}
                                 </span>
                             </div>
+                            
+                            <Link href={'/payment'}>
+                                <button className="w-full bg-[var(--bg)] hover:bg-[#D95032]  text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
 
-<<<<<<< HEAD
-                            <button className="w-full bg-[var(--bg)] hover:bg-[#D95032]  text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
-                                Pagar Agora
-=======
-                            <button className="w-full bg-[#514442] hover:bg-[#D95032] text-[#DFD0AF] text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
-                                <Link href = {'/payment'}>
                                     Pagar Agora
-                                </Link>
->>>>>>> 39287272a96e7f2326b69a6b47ea94e4d3f9ba57
-                            </button>
+                            
+                                </button>
+                            </Link>    
                         </div>
                     ) : (
                         <div className="flex-center flex-col h-full p-10 border-[1.5px] border-[#514442]/15 bg-white/20 rounded-[40px] text-center mt-2">
