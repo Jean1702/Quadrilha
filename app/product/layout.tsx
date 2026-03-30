@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import HeaderBar from "@/components/HeaderPage";
 import FooterPage from "@/components/FooterPage";
 import { ThemeProvider } from "@/context/Theme";
@@ -31,11 +31,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased  `}
       >
         <ThemeProvider>
-          <HeaderBar></HeaderBar>
-          <main>
+          <main className="min-h-screen">
             {children}
           </main>
-          <FooterPage></FooterPage>
         </ThemeProvider>
       </body>
     </html>

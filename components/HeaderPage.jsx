@@ -39,12 +39,12 @@ const HeaderPage = () => {
     <header 
       className="sticky top-0 left-0 w-full z-50 navbar bg-base-100 shadow-sm px-10 md:px-5 flex justify-between items-center h-20 header"
     >
-      <div className="flex-1">
-        <Link href="/" className="relative h-20 flex items-center w-fit ">
+      <div className="flex-1 p-0 m-0">
+        <Link href="/" className="flex items-start w-fit p-0 m-0">
           <img 
             src={theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png'}
             alt="Logo Uai Rango" 
-            className="h-50 w-auto object-contain drop-shadow-md"         
+            className="h-50 w-50 -mt-0 -ml-7.5 object-fit"         
             />
         </Link>
       </div>
