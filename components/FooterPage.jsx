@@ -1,59 +1,57 @@
 "use client";
 
-import React from 'react';
-import { House, UserRound, Moon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { House, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Darkmode from './Darkmode';
+
 const FooterBar = () => {
     const pathname = usePathname();
+    const [isVisible, setIsVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            setIsVisible(currentScrollY < lastScrollY || currentScrollY < 10);
+            setLastScrollY(currentScrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [lastScrollY]);
 
     const menuItems = [
         { id: 'Início', icon: House, href: "/" },
-        { id: 'Usuário', icon: UserRound, href: "/user" },
-        { id: 'Tema escuro', icon: Moon }
+        { id: 'Usuário', icon: UserRound, href: "/user" }
     ];
 
     return (
-        <div className="flex justify-center bg-transparent sticky bottom-0 ">
-            <nav className="relative flex items-center  rounded-full px-2.5 py-3 shadow-lg w-full max-w-md mx-- footer">
-                {menuItems.map((item) => {
-                    const isActive = item.href ? pathname === item.href : false;
-                    const Icon = item.icon;
-                    const commonClasses = "relative flex-1 flex flex-col items-center justify-center transition-all duration-200 z-10 py-2";
-
-                    const content = (
-                        <>
+        <div className={`flex justify-center sticky bottom-1.5 w-full px-4 transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+            <nav className="flex items-center justify-between rounded-full px-4 py-3 shadow-lg w-full max-w-md mx-auto footer">
+                {menuItems.map(({ id, icon: Icon, href }) => {
+                    const isActive = pathname === href;
+                    
+                    return (
+                        <Link key={id} href={href} className="relative flex-1 flex flex-col items-center justify-center py-2 z-10">
                             {isActive && (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-22 h-16 bg-[var(--accent)] rounded-full shadow-sm" />
+                                    <div className="w-24 h-16 rounded-full bg-[var(--color-amarelo)] shadow-sm" />
                                 </div>
                             )}
-                            <div className="relative z-20">
-                                <Icon
-                                    size={24}
-                                    strokeWidth={isActive ? 2 : 1.5}
-                                    className={isActive ? 'text-black' : 'text-black-350'}  // Ícones brancos no tema escuro
-                                />
-                            </div>
-                        </>
-                    );
-
-                    if (item.href) {
-                        return (
-                            <Link key={item.id} href={item.href} className={commonClasses}>
-                                {content}
-                            </Link>
-                        );
-                    }
-
-                    return (
-                        <button key={item.id} onClick={item.onClick} className={commonClasses}>
-                            {content}
-                        </button>
+                            <Icon 
+                                size={25} 
+                                className={`relative z-20 transition-colors ${isActive ? 'text-white' : 'text-gray-350'}`} 
+                                strokeWidth={isActive ? 2 : 1.5}
+                            />
+                        </Link>
                     );
                 })}
-                <Darkmode />
+
+                <div className="flex-1 flex justify-center z-10">
+                    <Darkmode />
+                </div>
             </nav>
         </div>
     );

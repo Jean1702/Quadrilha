@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { CreateClient } from "../lib/supabase/client";
 import { redirect } from "next/navigation";
-import { FiTrash } from "react-icons/fi";
+import { FiTrash, FiChevronDown } from "react-icons/fi";
 
 export default function User({ name, phone }) {
   const [image, setImage] = useState(null);
   const [showOrder, setShowOrder] = useState(true);
+  const [hasOrder, setHasOrder] = useState(false);
 
   function handleImageChange(e) {
     const file = e.target.files[0];
@@ -16,23 +17,13 @@ export default function User({ name, phone }) {
     }
   }
 
-async function UserOut() {
-  const confirmDelete = confirm("Tem certeza que deseja excluir seu perfil?");
+  async function UserOut() {
+    if (hasOrder) return;
 
-  if (!confirmDelete) return;
-
-  // 🔒 verifica pedido pendente
-  const hasPendingOrder = showOrder; // usando seu estado atual
-
-  if (hasPendingOrder) {
-    alert("Você possui um pedido em andamento e não pode excluir o perfil.");
-    return;
+    const supabase = await CreateClient();
+    await supabase.auth.signOut();
+    redirect("/login");
   }
-
-  const supabase = await CreateClient();
-  await supabase.auth.signOut();
-  redirect("/login");
-}
 
   return (
     <div className="min-h-screen flex items-center justify-center ">
@@ -42,7 +33,6 @@ async function UserOut() {
         <h1 className="text-2xl font-bold text-center mb-6">
           Meu Perfil
         </h1>
-
 
         {/* FOTO */}
         <div className="flex flex-col items-center mb-6">
@@ -76,7 +66,7 @@ async function UserOut() {
         </div>
 
         {/* INPUTS */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <input
             value={name}
             readOnly
@@ -90,15 +80,16 @@ async function UserOut() {
           />
         </div>
 
-        {/* BOTÃO STATUS */}
+        {/* STATUS */}
         <button
           onClick={() => setShowOrder(!showOrder)}
           className="w-full mt-6 bg-card text-black py-3 rounded-xl font-semibold flex items-center justify-between px-4"
         >
           <span>Status do Pedido</span>
-          <span className={`transition-transform ${showOrder ? "rotate-180" : ""}`}>
-            ▼
-          </span>
+
+          <FiChevronDown
+            className={`transition-transform ${showOrder ? "rotate-180" : ""}`}
+          />
         </button>
 
         {/* PEDIDO */}
@@ -111,13 +102,14 @@ async function UserOut() {
             <p><strong>Quantidade:</strong> 2</p>
 
             <div className="flex items-center gap-2 mt-2">
-              <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
+              <span className="w-3 h-3 rounded-full bg-[#D97016]"></span>
               <span>Sendo preparado</span>
             </div>
 
             <p className="mt-2"><strong>Pagamento:</strong> Pix</p>
             <p className="mt-2 font-bold">Total: R$ 10,00</p>
           </div>
+        )}
         )}
 
         {/* LOGOUT */}
@@ -127,7 +119,45 @@ async function UserOut() {
         >
           <FiTrash />
           <span>Excluir perfil</span>
-        </button>
+        </label>
+      </div>
+
+
+      {/* MODAL */}
+      <input type="checkbox" id="delete_modal" className="modal-toggle" />
+
+      <div className="modal" role="dialog">
+        <div className="modal-box bg-[#F5E6C8] text-[#514442]">
+          <h3 className="text-lg font-bold text-[#D95032]">
+            Excluir perfil
+          </h3>
+
+          <p className="py-4">
+            Tem certeza que deseja excluir seu perfil?
+          </p>
+
+          {hasOrder && (
+            <p className="text-[#D95032] text-sm mb-2">
+              Você possui um pedido em andamento.
+            </p>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <label htmlFor="delete_modal" className="btn">
+              Cancelar
+            </label>
+
+            <button
+              onClick={UserOut}
+              disabled={hasOrder}
+              className="btn bg-[#D95032] text-white"
+            >
+              Confirmar
+            </button>
+          </div>
+        </div>
+
+        <label className="modal-backdrop" htmlFor="delete_modal" />
       </div>
     </div>
   );

@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import HeaderBar from "@/components/HeaderPage";
-import FooterPage from "@/components/FooterPage";
 import { ThemeProvider } from "@/context/Theme";
 
 const geistSans = Geist({
@@ -31,16 +28,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased  `}
       >
         <ThemeProvider>
-<<<<<<< HEAD
-          <HeaderBar />
           <main className="min-h-screen">
-=======
-          <HeaderBar></HeaderBar>
-          <main>
->>>>>>> 21c2424e04adf7f42172af9e4de6c6103afaf81a
             {children}
           </main>
-          <FooterPage></FooterPage>
         </ThemeProvider>
       </body>
     </html>

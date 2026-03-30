@@ -1,6 +1,7 @@
 'use client'
 import { Minus, Plus, Trash2 } from "lucide-react"
 import { useState } from 'react';
+import Link from "next/link";
 
 const initialProducts = [
     { id: 1, nome: 'Clássico Burger', url: 'hamburguer.png', preco: 39.90 },
@@ -39,18 +40,25 @@ export default function Cart() {
     return (
         <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] pt-8 pb-32 px-4 sm:pt-12 font-sans">
             <div className="container max-w-lg mx-auto">
-                
-                <h1 className="text-3xl font-black uppercase tracking-tight mb-8 pl-2">
-                    Seu Carrinho
-                </h1>
+                <div className="flex-center">
+                    <h1 className="text-5xl font-black uppercase tracking-tight mb-8 pl-2">
+                        Seu Carrinho
+                    </h1>
+                </div>
 
                 <div className="flex flex-col gap-6">
-                    
+
                     {cartItems.map((product) => (
+<<<<<<< HEAD
                         /* Card Vertical Refinado */
                         <div key={product.id} className="flex flex-col p-5 border-[1.5px] border-[#514442]/15 rounded-[32px] shadow-sm bg-[var(--surface)]">
                             
                             {/* Imagem (Altura Controlada) */}
+=======
+                        <div key={product.id} className="flex flex-col p-5 border-[1.5px] border-[#514442]/15 rounded-[32px] shadow-sm bg-white/20">
+
+
+>>>>>>> 39287272a96e7f2326b69a6b47ea94e4d3f9ba57
                             <div className="w-full h-40 sm:h-48 flex justify-center items-center mb-4">
                                 <img
                                     src={product.url}
@@ -59,12 +67,11 @@ export default function Cart() {
                                 />
                             </div>
 
-                            {/* Título e Lixeira Alinhados */}
                             <div className="flex justify-between items-start mb-4 gap-2">
                                 <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight leading-tight ">
                                     {product.nome}
                                 </h2>
-                                <button 
+                                <button
                                     onClick={() => handleRemove(product.id)}
                                     className=" hover:text-[#D95032] transition-colors p-1 cursor-pointer shrink-0 mt-0.5"
                                     title="Remover item"
@@ -73,7 +80,6 @@ export default function Cart() {
                                 </button>
                             </div>
 
-                            {/* Preço e Controles */}
                             <div className="flex items-end justify-between mt-auto">
                                 <div>
                                     <p className="text-[11px] sm:text-xs uppercase font-bold  tracking-wider mb-1">
@@ -84,19 +90,23 @@ export default function Cart() {
                                     </p>
                                 </div>
 
+<<<<<<< HEAD
                                 {/* Novo Design de Quantidade (Estilo Pílula) */}
                                 <div className="flex items-center bg-[var(--bg)] rounded-full p-1 shadow-md">
+=======
+                                <div className="flex items-center bg-[#514442] text-[#DFD0AF] rounded-full p-1 shadow-md">
+>>>>>>> 39287272a96e7f2326b69a6b47ea94e4d3f9ba57
                                     <button
                                         onClick={() => handleDecrease(product.id)}
                                         className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors cursor-pointer"
                                     >
                                         <Minus size={16} strokeWidth={3} />
                                     </button>
-                                    
+
                                     <span className="w-8 text-center font-black text-sm">
                                         {quantities[product.id]}
                                     </span>
-                                    
+
                                     <button
                                         onClick={() => handleIncrease(product.id)}
                                         className="w-8 h-8 flex items-center justify-center rounded-full bg-[#D95032] hover:opacity-90 transition-opacity shadow-sm cursor-pointer text-[#DFD0AF]"
@@ -119,8 +129,15 @@ export default function Cart() {
                                 </span>
                             </div>
 
+<<<<<<< HEAD
                             <button className="w-full bg-[var(--bg)] hover:bg-[#D95032]  text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
                                 Pagar Agora
+=======
+                            <button className="w-full bg-[#514442] hover:bg-[#D95032] text-[#DFD0AF] text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
+                                <Link href = {'/payment'}>
+                                    Pagar Agora
+                                </Link>
+>>>>>>> 39287272a96e7f2326b69a6b47ea94e4d3f9ba57
                             </button>
                         </div>
                     ) : (

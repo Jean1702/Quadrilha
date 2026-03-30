@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Bell, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/context/Theme';
+import { usePathname, useSearchParams } from 'next/navigation';
+import CourseLogo from '@/components/logos/LogoTipo.png';
 
 const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true }) => {
   const commonClasses = "group relative p-2 text-white-200 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center";
@@ -34,6 +36,73 @@ const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true }) 
 const HeaderPage = () => {
   const [notifications] = useState(1);
   const { theme } = useTheme();
+  const pathname = usePathname() || "";
+  const search = useSearchParams && useSearchParams();
+
+  // Priority: ?logo=... search param -> course mapping by pathname -> default theme logo
+  const logoFromParam = search?.get ? search.get('logo') : null;
+
+  const courseLogos = {
+    curso1: '/logos/LogoTipo.png',
+    curso2: '/logos/curso2.png',
+    curso3: '/logos/curso3.png',
+    curso4: '/logos/curso4.png',
+    curso5: '/logos/curso5.png',
+  };
+
+  // extract possible course key from path, supports paths like /course/curso1 or /curso/curso1
+  const segments = pathname.split('/').filter(Boolean);
+  let courseKey = null;
+  const idx = segments.indexOf('course');
+  if (idx !== -1 && segments.length > idx + 1) {
+    courseKey = segments[idx + 1];
+  } else if (segments[0] === 'curso' && segments.length > 1) {
+    courseKey = segments[1];
+  } else if (segments[0] && Object.keys(courseLogos).includes(segments[0])) {
+    courseKey = segments[0];
+  }
+
+  const mappedLogo = courseKey && courseLogos[courseKey] ? courseLogos[courseKey] : null;
+
+  // If we're on any /course route, always use the static CourseLogo from components/logos
+  if (pathname.includes('/course')) {
+    const staticLogo = CourseLogo?.src || CourseLogo;
+    const logoSrc = logoFromParam || staticLogo;
+    
+    return (
+      <header 
+        className="sticky top-0 left-0 w-full z-50 navbar bg-base-100 shadow-sm px-10 md:px-5 flex justify-between items-center h-20 header"
+      >
+        <div className="flex-1">
+          <Link href="/" className="relative h-20 flex items-center w-fit ">
+            <img 
+              src={logoSrc}
+              alt="Logo" 
+              className="h-18 ml-5 w-auto object-contain drop-shadow-md"         
+            />
+            <h2 className=' font-black text-xl ml-2'>Informática</h2>
+          </Link>
+        </div>
+
+        <div className="flex-none flex items-center gap-2">
+          <NavIcon 
+            href="/cart" 
+            icon={ShoppingCart} 
+            showBadge={false} 
+          />
+          
+          <NavIcon 
+            href="/notifications" /* Essa rota aqui ainda não existe, e está apenas como placeholder */
+            icon={Bell} 
+            count={notifications} 
+            isDot={true} 
+          />
+        </div>
+      </header>
+    );
+  }
+
+  const logoSrc = logoFromParam || mappedLogo || (theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png');
 
   return (
     <header 
@@ -42,10 +111,10 @@ const HeaderPage = () => {
       <div className="flex-1">
         <Link href="/" className="relative h-20 flex items-center w-fit ">
           <img 
-            src={theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png'}
-            alt="Logo Uai Rango" 
-            className="h-50 w-auto object-contain drop-shadow-md"         
-            />
+            src={logoSrc}
+            alt="Logo" 
+            className="h-50 mt-3 w-auto object-contain drop-shadow-md"         
+          />
         </Link>
       </div>
 

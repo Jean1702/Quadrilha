@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import HeaderBar from "../components/HeaderPage";
 export default function CursoPage() {
 
     const curso = {
@@ -43,7 +42,8 @@ export default function CursoPage() {
     ];
     return (
         <>
-        <h2 className="text-lg font-bold mb-3">Produtos</h2>
+            <section className="pl-10 ">
+                <h2 className="text-xl font-bold pl-10 mb-3 mt-2">Produtos</h2>
                 <div className="carousel carousel-center gap-4 w-full scrollbar-hide overflow-x-auto">
                     {categorias.map((cat) => (
                         <div key={cat.nome} className="carousel-item">

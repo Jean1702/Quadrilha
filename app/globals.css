@@ -15,6 +15,7 @@
   --color-preto: #382924;
   --color-azul: #136066;
 
+
   --animate-float: float 6s ease-in-out infinite;
   --animate-shimmer: shimmer 3s linear infinite;
 }
@@ -104,6 +105,7 @@
   --primary-hover: #C43F28;
   --card: #D28D0F;
   --accent: #D97016;
+  --select:#E89D10;
   --success: #026A4C;
   --muted: #5A4F4B;
   --footer: #514442;
@@ -117,6 +119,7 @@
   --primary-hover: #0E7A57;
   --card: #D97016;
   --accent: #D97016;
+  --select:#D97016;
   --muted: #CFC3B8;
   --footer: #DFD0AF;
 }
@@ -166,8 +169,7 @@ body {
 
 .card {
   background: var(--surface);
-  color: var(--text);
-  padding: 1.25rem;
+  color: var(--text); 
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
