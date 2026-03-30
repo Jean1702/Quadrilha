@@ -33,7 +33,7 @@ export default function LoginPage({action}) {
  
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-azul">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden ">
 
       <div className="absolute size-100 sm:size-150 bg-amarelo rounded-full blur-3xl opacity-30 -top-40 -left-40 animate-pulse"></div>
       <div className="absolute size-95 sm:size-125 bg-bege rounded-full blur-3xl opacity-30 -bottom-40 -right-40 animate-pulse"></div>
@@ -43,17 +43,17 @@ export default function LoginPage({action}) {
         <div className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl p-8 transition-all duration-500 hover:scale-[1.02]">
 
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white tracking-wide">
+            <h1 className="text-3xl font-bold tracking-wide">
               Bem-vindo
             </h1>
-            <p className="text-white/70 text-sm mt-2">
+            <p className=" text-sm mt-2">
               Faça login para continuar
             </p>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit(action)}>
 
-            <div className="relative group">
+            <div className="relative group ">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-amarelo group-focus-within:text-white transition-colors" size={20} />
 
               <Controller
@@ -65,7 +65,7 @@ export default function LoginPage({action}) {
                     placeholder="Nome"
                     type="text"
                     {...field}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/60 outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+                    className="w-full pl-12 pr-4 py-3 rounded-xl h-full w-full bg-white/20  outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
                   />
                 )}
               />
@@ -87,7 +87,7 @@ export default function LoginPage({action}) {
                     maxLength={15}
                 
                     placeholder="(99) 99999-9999"
-                    className="w-full pl-12 pr-12 py-3 rounded-xl bg-white/20 text-white placeholder-white/60 outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+                    className="w-full pl-12 pr-12 py-3 rounded-xl h-fullbg-white/20  outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
                 />
                 )}
               />
@@ -96,13 +96,13 @@ export default function LoginPage({action}) {
             
             <Link
                 href="/register"
-                className="group relative mb-5 flex justify-center text-sm text-white/70 transition-all duration-300 hover:text-white"
+                className="group relative mb-5 flex justify-center text-sm  transition-all duration-300 "
               >
                 <span className="flex items-center gap-1">
                   Não tem Cadastro?
                   <span className="font-semibold relative">
                     Registro
-                    <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-white transition-all duration-300 group-hover:w-full"></span>
+                    <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 transition-all duration-300 group-hover:w-full"></span>
                   </span>
                 </span>
             </Link>

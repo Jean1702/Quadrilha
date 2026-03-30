@@ -18,7 +18,7 @@ export default function HomePage() {
     ];
 
     return (
-        <div data-theme="dark" className="min-h-screen w-screen overflow-x-hidden bg-base-300">
+        <div className="min-h-screen w-screen overflow-x-hidden ">
 
             <div className="p-4 md:p-8">
 
@@ -43,10 +43,10 @@ export default function HomePage() {
                 <div className="flex flex-col gap-4 md:carousel md:carousel-center md:flex-row md:gap-4 md:w-full scrollbar-hide overflow-x-auto">
                     {destaques.map((item) => (
                         <div key={item.titulo} className="md:carousel-item w-full md:w-96">
-                            <div className="card card-compact bg-base-100 shadow-xl overflow-hidden">
+                            <div className="card card-compact bg-base-100 shadow-xl overflow-hidden ">
                                 <figure className="relative h-48 md:h-56">
                                     <img src={item.img} alt={item.titulo} className="w-full h-full object-cover" />
-                                    <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-black/70 to-transparent" />
+                                    <div className="absolute bottom-0 left-0 right-0 h-1/4  from-black/70 to-transparent" />
                                 </figure>
                                 <div className="card-body p-4">
                                     <h2 className="card-title text-lg md:text-xl">{item.titulo}</h2>

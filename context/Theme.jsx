@@ -9,15 +9,17 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
-    if (saved) {
-      setTheme(saved);
-      document.documentElement.classList.toggle("dark", saved === "dark");
-    }
+      if (saved) {
+        setTheme(saved);
+        document.documentElement.classList.remove("light", "dark");
+        document.documentElement.classList.add(saved);
+      }
   }, []);
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.classList.remove("light", "dark");
+    document.documentElement.classList.add(theme);
   }, [theme]);
 
   const toggleTheme = () => {

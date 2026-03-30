@@ -15,8 +15,8 @@ const FooterBar = () => {
     ];
 
     return (
-        <div className="flex justify-center bg-transparent fixed bottom-2 w-full">
-            <nav className="relative flex items-center bg-transparent bg-white rounded-full px-2.5 py-3 shadow-lg w-full max-w-md mx-2">
+        <div className="flex justify-center bg-transparent sticky bottom-0 ">
+            <nav className="relative flex items-center  rounded-full px-2.5 py-3 shadow-lg w-full max-w-md mx-- footer">
                 {menuItems.map((item) => {
                     const isActive = item.href ? pathname === item.href : false;
                     const Icon = item.icon;
@@ -26,7 +26,7 @@ const FooterBar = () => {
                         <>
                             {isActive && (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-22 h-16 bg-yellow-400 rounded-full shadow-sm" />
+                                    <div className="w-22 h-16 bg-[var(--accent)] rounded-full shadow-sm" />
                                 </div>
                             )}
                             <div className="relative z-20">

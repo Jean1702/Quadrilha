@@ -102,7 +102,7 @@ async function UserOut() {
         </button>
 
         {/* PEDIDO */}
-        {showOrder && (
+        {/* {showOrder && (
           <div className="mt-6 bg-white rounded-xl p-4 text-[#382924]">
             <h2 className="font-bold mb-2">Status do Pedido</h2>
 
@@ -118,7 +118,7 @@ async function UserOut() {
             <p className="mt-2"><strong>Pagamento:</strong> Pix</p>
             <p className="mt-2 font-bold">Total: R$ 10,00</p>
           </div>
-        )}
+        )} */}
 
         {/* LOGOUT */}
         <button

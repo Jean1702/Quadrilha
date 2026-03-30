@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import { Bell, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
+import { useTheme } from '@/context/Theme';
 
 const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true }) => {
   const commonClasses = "group relative p-2 text-white-200 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center";
+  
   
   const content = (
     <>
@@ -31,19 +33,19 @@ const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true }) 
 
 const HeaderPage = () => {
   const [notifications] = useState(1);
+  const { theme } = useTheme();
 
   return (
     <header 
-      data-theme="dark" 
-      className="fixed top-0 left-0 w-full z-50 navbar bg-base-100 shadow-sm px-10 md:px-5 flex justify-between items-center h-20"
+      className="sticky top-0 left-0 w-full z-50 navbar bg-base-100 shadow-sm px-10 md:px-5 flex justify-between items-center h-20 header"
     >
       <div className="flex-1">
-        <Link href="/" className="relative h-20 flex items-center w-fit">
+        <Link href="/" className="relative h-20 flex items-center w-fit ">
           <img 
-            src="logo_icon.png" 
+            src={theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png'}
             alt="Logo Uai Rango" 
-            className="h-50 w-auto object-contain drop-shadow-md"
-          />
+            className="h-50 w-auto object-contain drop-shadow-md"         
+            />
         </Link>
       </div>
 
