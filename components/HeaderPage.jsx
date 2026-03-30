@@ -4,12 +4,11 @@ import React, { useState } from 'react';
 import { Bell, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/context/Theme';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation'; // Removido useSearchParams
 import CourseLogo from '@/components/logos/LogoTipo.png';
 
 const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true }) => {
   const commonClasses = "group relative p-2 text-white-200 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center";
-  
   
   const content = (
     <>
@@ -37,10 +36,6 @@ const HeaderPage = () => {
   const [notifications] = useState(1);
   const { theme } = useTheme();
   const pathname = usePathname() || "";
-  const search = useSearchParams && useSearchParams();
-
-  // Priority: ?logo=... search param -> course mapping by pathname -> default theme logo
-  const logoFromParam = search?.get ? search.get('logo') : null;
 
   const courseLogos = {
     curso1: '/logos/LogoTipo.png',
@@ -50,10 +45,11 @@ const HeaderPage = () => {
     curso5: '/logos/curso5.png',
   };
 
-  // extract possible course key from path, supports paths like /course/curso1 or /curso/curso1
+  // Lógica baseada apenas no pathname para evitar erro de Suspense
   const segments = pathname.split('/').filter(Boolean);
   let courseKey = null;
   const idx = segments.indexOf('course');
+  
   if (idx !== -1 && segments.length > idx + 1) {
     courseKey = segments[idx + 1];
   } else if (segments[0] === 'curso' && segments.length > 1) {
@@ -64,19 +60,16 @@ const HeaderPage = () => {
 
   const mappedLogo = courseKey && courseLogos[courseKey] ? courseLogos[courseKey] : null;
 
-  // If we're on any /course route, always use the static CourseLogo from components/logos
+  // Renderização para rotas de curso
   if (pathname.includes('/course')) {
     const staticLogo = CourseLogo?.src || CourseLogo;
-    const logoSrc = logoFromParam || staticLogo;
     
     return (
-      <header 
-        className="sticky top-0 left-0 w-full z-50 navbar bg-base-100 shadow-sm px-10 md:px-5 flex justify-between items-center h-20 header"
-      >
+      <header className="sticky top-0 left-0 w-full z-50 navbar bg-base-100 shadow-sm px-10 md:px-5 flex justify-between items-center h-20 header">
         <div className="flex-1">
           <Link href="/" className="relative h-20 flex items-center w-fit ">
             <img 
-              src={logoSrc}
+              src={staticLogo}
               alt="Logo" 
               className="h-18 ml-5 w-auto object-contain drop-shadow-md"         
             />
@@ -85,29 +78,18 @@ const HeaderPage = () => {
         </div>
 
         <div className="flex-none flex items-center gap-2">
-          <NavIcon 
-            href="/cart" 
-            icon={ShoppingCart} 
-            showBadge={false} 
-          />
-          
-          <NavIcon 
-            href="/notifications" /* Essa rota aqui ainda não existe, e está apenas como placeholder */
-            icon={Bell} 
-            count={notifications} 
-            isDot={true} 
-          />
+          <NavIcon href="/cart" icon={ShoppingCart} showBadge={false} />
+          <NavIcon href="/notifications" icon={Bell} count={notifications} isDot={true} />
         </div>
       </header>
     );
   }
 
-  const logoSrc = logoFromParam || mappedLogo || (theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png');
+  // Logo padrão baseado no tema ou mapeamento de curso via URL
+  const logoSrc = mappedLogo || (theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png');
 
   return (
-    <header 
-      className="sticky top-0 left-0 w-full z-50 navbar bg-base-100 shadow-sm px-10 md:px-5 flex justify-between items-center h-20 header"
-    >
+    <header className="sticky top-0 left-0 w-full z-50 navbar bg-base-100 shadow-sm px-10 md:px-5 flex justify-between items-center h-20 header">
       <div className="flex-1">
         <Link href="/" className="relative h-20 flex items-center w-fit ">
           <img 
@@ -119,18 +101,8 @@ const HeaderPage = () => {
       </div>
 
       <div className="flex-none flex items-center gap-2">
-        <NavIcon 
-          href="/cart" 
-          icon={ShoppingCart} 
-          showBadge={false} 
-        />
-        
-        <NavIcon 
-          href="/notifications" /* Essa rota aqui ainda não existe, e está apenas como placeholder */
-          icon={Bell} 
-          count={notifications} 
-          isDot={true} 
-        />
+        <NavIcon href="/cart" icon={ShoppingCart} showBadge={false} />
+        <NavIcon href="/notifications" icon={Bell} count={notifications} isDot={true} />
       </div>
     </header>
   );
