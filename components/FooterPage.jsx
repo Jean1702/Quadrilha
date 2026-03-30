@@ -34,8 +34,13 @@ const FooterBar = () => {
 
 
 
-    
-    fdsajkhfdjaks
+
+
+
+
+
+
+
     return (
         <div className={`bg-[var] sticky bottom-1.5 w-full px-4 transition-all duration-300`}>
             <nav className="flex items-center justify-between rounded-full px-4 py-3 shadow-lg w-full max-w-md mx-auto footer">
@@ -58,12 +63,13 @@ const FooterBar = () => {
                     );
                 })}
 
-                <div className="flex-1 flex justify-center z-10">
+                <div className="flex flex-1  justify-center z-10">
                     <Darkmode />
                 </div>
             </nav>
         </div>
     );
 };
+
 
 export default FooterBar;
