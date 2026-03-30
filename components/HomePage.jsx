@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import HeaderBar from "../components/HeaderPage";
 
 export default function HomePage() {
@@ -26,14 +27,14 @@ export default function HomePage() {
                 <div className="carousel carousel-center gap-4 w-full scrollbar-hide overflow-x-auto">
                     {categorias.map((cat) => (
                         <div key={cat.nome} className="carousel-item">
-                            <div className="card card-compact bg-base-100 shadow-xl w-32 md:w-56">
+                            <Link href="/product" className="card card-compact bg-base-100 shadow-xl w-32 md:w-56 hover:-translate-y-1 transition-transform duration-300">
                                 <figure className="h-32 md:h-40">
                                     <img src={cat.img} alt={cat.nome} className="w-full h-full object-cover" />
                                 </figure>
                                 <div className="card-body items-center text-center p-2">
                                     <h2 className="card-title text-xs md:text-sm">{cat.nome}</h2>
                                 </div>
-                            </div>
+                            </Link>
                         </div>
                     ))}
                 </div>
