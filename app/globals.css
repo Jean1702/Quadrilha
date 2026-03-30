@@ -97,11 +97,12 @@
 }
 
 :root {
-  --bg: #DFD0AF;
-  --surface: #F5EFE6;
+  --bg: #D0BA8A;
+  --surface: #DFD0AF;
   --text: #2B2B2B;
   --primary: #D95032;
   --primary-hover: #C43F28;
+  --card: #D28D0F;
   --accent: #D97016;
   --success: #026A4C;
   --muted: #5A4F4B;
@@ -114,12 +115,12 @@
   --text: #EDE7E0;
   --primary: #026A4C;
   --primary-hover: #0E7A57;
+  --card: #D97016;
   --accent: #D97016;
   --muted: #CFC3B8;
   --footer: #DFD0AF;
 }
 
-/* Aplicando nas divs e componentes */
 body {
   background: var(--bg);
   color: var(--text);

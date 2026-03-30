@@ -36,11 +36,10 @@ export default function LoginPage({action}) {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden ">
 
       <div className="absolute size-100 sm:size-150 bg-amarelo rounded-full blur-3xl opacity-30 -top-40 -left-40 animate-pulse"></div>
-      <div className="absolute size-95 sm:size-125 bg-bege rounded-full blur-3xl opacity-30 -bottom-40 -right-40 animate-pulse"></div>
 
-      <div className="relative w-full max-w-sm mx-4">
+      <div className="relative w-full bg-[var(--surface)]  rounded-[30px] max-w-sm mx-4">
 
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl p-8 transition-all duration-500 hover:scale-[1.02]">
+        <div className="backdrop-blur-xl  border border-white/20 rounded-[30px] shadow-2xl  p-8 transition-all duration-500 hover:scale-[1.02]">
 
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold tracking-wide">
@@ -54,7 +53,7 @@ export default function LoginPage({action}) {
           <form className="space-y-4" onSubmit={handleSubmit(action)}>
 
             <div className="relative group ">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-amarelo group-focus-within:text-white transition-colors" size={20} />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-card group-focus-within:text-white transition-colors" size={20} />
 
               <Controller
                 name='name'
@@ -65,14 +64,14 @@ export default function LoginPage({action}) {
                     placeholder="Nome"
                     type="text"
                     {...field}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl h-full w-full bg-white/20  outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+                    className="w-full pl-12 pr-4 py-3 rounded-[6px] h-full placeholder:text-[var(--text)]) outline-none border border-text focus:border-[var(--card)] focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
                   />
                 )}
               />
             </div>
 
             <div className="relative group">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-amarelo group-focus-within:text-white transition-colors" size={20} />
+              <Phone className="absolute text-card left-4 top-1/2 -translate-y-1/2 text-amarelo group-focus-within:text-white transition-colors" size={20} />
 
               
               <Controller
@@ -87,7 +86,7 @@ export default function LoginPage({action}) {
                     maxLength={15}
                 
                     placeholder="(99) 99999-9999"
-                    className="w-full pl-12 pr-12 py-3 rounded-xl h-fullbg-white/20  outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+                    className="w-full pl-12 pr-4 py-3 rounded-[6px] h-full placeholder:text-[var(--text)]) outline-none border border-text focus:border-[var(--card)] focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
                 />
                 )}
               />
@@ -110,7 +109,7 @@ export default function LoginPage({action}) {
           
             <button
               type="submit"
-              className="w-full py-3 rounded-xl font-semibold text-preto bg-amarelo hover:bg-amarelo-700 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-amarelo/50"
+              className="w-full py-3 rounded-xl font-semibold  bg-[var(--bg)] active:scale-95 transition-all duration-300 shadow-lg hover:shadow-card"
             >
               Entrar
             </button>

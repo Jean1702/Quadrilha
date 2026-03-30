@@ -35,11 +35,11 @@ async function UserOut() {
 }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#5E7A5F] to-[#136066]">
+    <div className="min-h-screen flex items-center justify-center ">
 
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/20">
+      <div className="w-full max-w-md bg-[var(--surface)] backdrop-blur-md rounded-[12px] p-6 shadow-lg border border-white/20">
 
-        <h1 className="text-2xl font-bold text-white text-center mb-6">
+        <h1 className="text-2xl font-bold text-center mb-6">
           Meu Perfil
         </h1>
 
@@ -54,11 +54,11 @@ async function UserOut() {
           />
 
           <label htmlFor="profileImageInput" className="cursor-pointer">
-            <div className="w-24 h-24 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-white/20">
+            <div className="w-24 h-24 rounded-full border-2 border-text overflow-hidden flex items-center justify-center bg-[var(--bg)]">
               {image ? (
                 <img src={image} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xs text-white text-center">
+                <span className="text-xs text-center">
                   Foto
                 </span>
               )}
@@ -66,7 +66,7 @@ async function UserOut() {
           </label>
 
           <button
-            className="mt-2 text-xs bg-[#F2A007] text-black px-3 py-1 rounded"
+            className="mt-2 text-xs bg-card px-3 py-1 rounded"
             onClick={() =>
               document.getElementById("profileImageInput").click()
             }
@@ -80,20 +80,20 @@ async function UserOut() {
           <input
             value={name}
             readOnly
-            className="rounded-xl px-4 py-3 bg-white/20 text-white placeholder-white outline-none"
+            className="rounded-xl px-4 py-3 border border-[var(--text)] outline-none"
           />
 
           <input
             value={phone}
             readOnly
-            className="rounded-xl px-4 py-3 bg-white/20 text-white placeholder-white outline-none"
+            className="rounded-xl px-4 py-3 placeholder: border border-[var(--text)] outline-none"
           />
         </div>
 
         {/* BOTÃO STATUS */}
         <button
           onClick={() => setShowOrder(!showOrder)}
-          className="w-full mt-6 bg-[#F2A007] text-black py-3 rounded-xl font-semibold flex items-center justify-between px-4"
+          className="w-full mt-6 bg-card text-black py-3 rounded-xl font-semibold flex items-center justify-between px-4"
         >
           <span>Status do Pedido</span>
           <span className={`transition-transform ${showOrder ? "rotate-180" : ""}`}>
@@ -102,8 +102,8 @@ async function UserOut() {
         </button>
 
         {/* PEDIDO */}
-        {/* {showOrder && (
-          <div className="mt-6 bg-white rounded-xl p-4 text-[#382924]">
+        {showOrder && (
+          <div className="mt-6 bg-[var(--bg)] rounded-xl p-4 ">
             <h2 className="font-bold mb-2">Status do Pedido</h2>
 
             <p><strong>Curso:</strong> Informática</p>
@@ -118,12 +118,12 @@ async function UserOut() {
             <p className="mt-2"><strong>Pagamento:</strong> Pix</p>
             <p className="mt-2 font-bold">Total: R$ 10,00</p>
           </div>
-        )} */}
+        )}
 
         {/* LOGOUT */}
         <button
           onClick={UserOut}
-          className="flex items-center gap-1 text-xl text-white hover:text-red-500 transition mt-6"
+          className="flex items-center gap-1 text-xl  hover:text-red-500 transition mt-6"
         >
           <FiTrash />
           <span>Excluir perfil</span>

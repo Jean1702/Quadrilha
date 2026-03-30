@@ -52,15 +52,13 @@ export default function PagamentoPage() {
 
 
         
-        <div className="flex justify-center items-center min-h-screen relative overflow-hidden bg-azul">
-            <div className="absolute size-100 sm:size-150 bg-amarelo rounded-full blur-3xl opacity-30 -top-40 -left-40 animate-pulse"></div>
-            <div className="absolute size-95 sm:size-125 bg-bege rounded-full blur-3xl opacity-30 -bottom-40 -right-40 animate-pulse"></div>
+        <div className="flex justify-center items-center min-h-screen relative overflow-hidden ">
 
             
-            <div className="w-95 max-w-md bg-white rounded-lg shadow-xl p-6">
+            <div className="w-95 max-w-md bg-[var(--surface)] rounded-[4px] shadow-xl p-6">
                 <div className="text-center mb-6">
-                    <h1 className="text-3xl font-bold text-teal-700">Pagamento</h1>
-                    <p className="text-lg text-teal-600">Complete o pagamento para finalizar seu pedido.</p>
+                    <h1 className="text-3xl font-bold ">Pagamento</h1>
+                    <p className="text-lg ">Complete o pagamento para finalizar seu pedido.</p>
                 </div>
 
                 {/* QR Code */}
@@ -70,11 +68,11 @@ export default function PagamentoPage() {
 
                 {/* Chave Pix */}
                 <div className="mb-6 text-center">
-                    <p className="font-semibold text-teal-700">Código Pix:</p>
-                    <p className="text-lg text-teal-800 break-all">{pagamento.chavePix}</p>
+                    <p className="font-semibold ">Código Pix:</p>
+                    <p className="text-lg  break-all">{pagamento.chavePix}</p>
                     <button
                         onClick={copiarChavePix}
-                        className="mt-2 px-4 py-2 bg-teal-600 text-white rounded-full hover:bg-teal-700 focus:outline-none"
+                        className="mt-2 px-4 py-2 bg-card text-white rounded-full hover:bg-card/70 focus:outline-none"
                     >
                         Copiar Código Pix
                     </button>
@@ -82,28 +80,28 @@ export default function PagamentoPage() {
 
                 {/* Tempo restante para pagamento */}
                 <div className="text-center mb-6">
-                    <p className="font-semibold text-teal-700">Tempo restante para pagamento:</p>
-                    <p className="text-xl text-teal-800">{`${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`}</p>
+                    <p className="font-semibold ">Tempo restante para pagamento:</p>
+                    <p className="text-xl ">{`${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`}</p>
                 </div>
 
                 {/* Detalhes do pedido */}
-                <div className="bg-teal-50 p-4 rounded-lg shadow-md mb-6">
-                    <p className="font-semibold text-lg text-teal-700">PEDIDO #{pagamento.codigoPedido}</p>
-                    <p className="text-sm text-teal-600">{pagamento.Barraca}</p>
+                <div className="bg-[var(--bg)] p-4 rounded-lg shadow-md mb-6">
+                    <p className="font-semibold text-lg ">PEDIDO #{pagamento.codigoPedido}</p>
+                    <p className="text-sm ">{pagamento.Barraca}</p>
                 </div>
 
                 {/* Itens do pedido */}
-                <div className="bg-teal-50 p-4 rounded-lg shadow-md">
-                    <h3 className="font-semibold text-lg text-teal-700">Itens:</h3>
+                <div className="bg-[var(--bg)] p-4 rounded-lg shadow-md">
+                    <h3 className="font-semibold text-lg ">Itens:</h3>
                     {pagamento.itens.map((item, index) => (
-                        <div key={index} className="flex justify-between text-sm text-teal-800 mt-2">
+                        <div key={index} className="flex justify-between text-sm ">
                             <p>{item.nome}</p>
                             <p>R$ {item.valor.toFixed(2)}</p>
                         </div>
                     ))}
 
                     {/* Cálculo do total */}
-                    <div className="flex justify-between font-semibold text-lg text-teal-700 mt-4">
+                    <div className="flex justify-between font-semibold text-lg  mt-4">
                         <p>Total</p>
                         <p>R$ {(pagamento.itens.reduce((acc, item) => acc + item.valor, 0)).toFixed(2)}</p>
                     </div>
