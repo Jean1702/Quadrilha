@@ -1,4 +1,4 @@
-import CursoPage from "../../components/CursoPage";
+import CursoPage from "../../../components/CursoPage";
 
 export default function Curso() {
   return (
