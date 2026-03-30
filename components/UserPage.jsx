@@ -29,7 +29,7 @@ export default function User({ name, phone }) {
     <div className="min-h-screen flex flex-col items-center justify-center">
 
       {/* CARD */}
-      <div className="w-full max-w-sm bg-[var(--surface)] rounded-[12px] p-6 shadow-lg border border-[#000]/5">
+      <div className="w-full max-w-sm bg-(--surface) rounded-[12px] p-6 shadow-lg border border-[#000]/5">
 
         <h1 className="text-2xl font-bold  text-center mb-6">
           Meu Perfil
