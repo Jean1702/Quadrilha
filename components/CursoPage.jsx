@@ -1,3 +1,6 @@
+"use client";
+import Link from "next/link";
+import HeaderBar from "../components/HeaderPage";
 export default function CursoPage() {
 
     const curso = {
@@ -6,6 +9,15 @@ export default function CursoPage() {
     };
 
     const categorias = [
+        { nome: "Hambúrguer", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop" },
+        { nome: "Pizza", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop" },
+        { nome: "Sushi", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=300&fit=crop" },
+        { nome: "Batata Frita", img: "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=400&h=300&fit=crop" },
+        { nome: "Salada", img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop" },
+        { nome: "Macarrão", img: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop" },
+    ];
+
+    const produto = [
         {
             nome: "Hamburguer artesanal",
             descricao: "Hamburguers saborosos e suculentos.",
@@ -30,6 +42,23 @@ export default function CursoPage() {
         }
     ];
     return (
+        <>
+        <h2 className="text-lg font-bold mb-3">Produtos</h2>
+                <div className="carousel carousel-center gap-4 w-full scrollbar-hide overflow-x-auto">
+                    {categorias.map((cat) => (
+                        <div key={cat.nome} className="carousel-item">
+                            <Link href="/product" className="card card-compact bg-base-100 shadow-xl w-32 md:w-56 hover:-translate-y-1 transition-transform duration-300">
+                                <figure className="h-32 md:h-40">
+                                    <img src={cat.img} alt={cat.nome} className="w-full h-full object-cover" />
+                                </figure>
+                                <div className="card-body items-center text-center p-2">
+                                    <h2 className="card-title text-xs md:text-sm">{cat.nome}</h2>
+                                </div>
+                            </Link>
+                        </div>
+                    ))}
+                </div>
+
         <main className="min-h-screen bg-preto text-preto">
             <section className="px-4 pb-10 pt-6 md:px-8 lg:px-12">
                 <div className="mx-auto flex max-w-6xl flex-col overflow-hidden rounded-[2rem]  bg-bege text-white">
@@ -48,7 +77,7 @@ export default function CursoPage() {
             </section>
             <section className="px-4 pb-16 md:px-8 lg:px-12">
                 <div className="mx-auto max-w-6xl space-y-10">
-                    {categorias.map((categoria) => (
+                    {produto.map((categoria) => (
                         <div key={categoria.nome} className="space-y-5 rounded-[2rem] bg-bege p-5  md:p-8">
                             <div className="flex flex-col gap-2 pb-4">
                                 <p className="text-md font-semibold uppercase tracking-[0.25em] text-vermelho">Produtos</p>
@@ -58,8 +87,9 @@ export default function CursoPage() {
 
                             <div className="space-y-4">
                                 {categoria.produtos.map((produto) => (
-                                    <div
+                                    <Link
                                         key={produto.nome}
+                                        href="/product"
                                         className="flex flex-col rounded-[1.5rem] bg-amarelo-900 md:min-h-44 md:flex-row  hover:-translate-y-1 transition-transform duration-300"
                                     >
                                         <div className="h-48 md:h-auto md:w-1/5">
@@ -73,7 +103,7 @@ export default function CursoPage() {
                                                 {produto.descricao}
                                             </p>
                                         </div>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         </div>
@@ -81,5 +111,6 @@ export default function CursoPage() {
                 </div>
             </section>
         </main>
+        </>
     )
 }
