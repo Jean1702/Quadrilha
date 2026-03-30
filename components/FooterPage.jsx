@@ -24,7 +24,7 @@ const FooterBar = () => {
 
     const menuItems = [
         { id: 'Início', icon: House, href: "/" },
-        { id: 'Usuário', icon: UserRound, href: "/user" }
+        { id: 'Usuário', icon: UserRound, href: "/User" }
     ];
 
     return (
