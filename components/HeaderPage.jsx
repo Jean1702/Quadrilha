@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Bell, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/context/Theme';
-import { usePathname } from 'next/navigation'; // Removido useSearchParams
+import { usePathname } from 'next/navigation'; 
 import CourseLogo from '@/components/logos/LogoTipo.png';
 
 const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true }) => {
@@ -45,7 +45,6 @@ const HeaderPage = () => {
     curso5: '/logos/curso5.png',
   };
 
-  // Lógica baseada apenas no pathname para evitar erro de Suspense
   const segments = pathname.split('/').filter(Boolean);
   let courseKey = null;
   const idx = segments.indexOf('course');
@@ -60,7 +59,6 @@ const HeaderPage = () => {
 
   const mappedLogo = courseKey && courseLogos[courseKey] ? courseLogos[courseKey] : null;
 
-  // Renderização para rotas de curso
   if (pathname.includes('/course')) {
     const staticLogo = CourseLogo?.src || CourseLogo;
     
@@ -85,7 +83,6 @@ const HeaderPage = () => {
     );
   }
 
-  // Logo padrão baseado no tema ou mapeamento de curso via URL
   const logoSrc = mappedLogo || (theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png');
 
   return (
@@ -95,7 +92,7 @@ const HeaderPage = () => {
           <img 
             src={logoSrc}
             alt="Logo" 
-            className="h-50 mt-3 w-auto object-contain drop-shadow-md"         
+            className="h-50 mt-3 -ml-10 w-auto object-contain drop-shadow-md"         
           />
         </Link>
       </div>
