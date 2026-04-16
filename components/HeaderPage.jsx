@@ -69,9 +69,9 @@ const HeaderPage = () => {
             <img 
               src={staticLogo}
               alt="Logo" 
-              className="h-18 ml-5 w-auto object-contain drop-shadow-md"         
+              className="h-20 ml-1 w-auto object-contain drop-shadow-md"         
             />
-            <h2 className=' font-black text-xl ml-2'>Informática</h2>
+            <h2 className=' font-black text-xl ml-1'>Informática</h2>
           </Link>
         </div>
 

@@ -14,7 +14,14 @@ const FooterBar = () => {
     useEffect(() => {
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
-            setIsVisible(currentScrollY < lastScrollY || currentScrollY < 10);
+
+            if (currentScrollY < lastScrollY || currentScrollY < 10) {
+                setIsVisible(true);
+            } else if (currentScrollY > lastScrollY && currentScrollY > 50) {
+
+                setIsVisible(false);
+            }
+
             setLastScrollY(currentScrollY);
         };
 
@@ -28,11 +35,12 @@ const FooterBar = () => {
     ];
 
     return (
-        <div className={`bg-[var] sticky bottom-1.5 w-full px-4 transition-all duration-300`}>
+        <div className={`fixed bottom-1.5 left-0 w-full px-5 transition-all duration-300 ease-in-out z-50 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
+            }`}>
             <nav className="flex items-center justify-between rounded-full px-4 py-3 shadow-lg w-full max-w-md mx-auto footer">
                 {menuItems.map(({ id, icon: Icon, href }) => {
                     const isActive = pathname === href;
-                    
+
                     return (
                         <Link key={id} href={href} className="relative flex-1 flex flex-col items-center justify-center py-2 z-10">
                             {isActive && (
@@ -40,9 +48,9 @@ const FooterBar = () => {
                                     <div className="w-24 h-16 rounded-full bg-[var(--color-amarelo)] shadow-sm" />
                                 </div>
                             )}
-                            <Icon 
-                                size={25} 
-                                className={`relative z-20 transition-colors ${isActive ? 'text-white' : 'text-gray-350'}`} 
+                            <Icon
+                                size={25}
+                                className={`relative z-20 transition-colors ${isActive ? 'text-white' : 'text-gray-350'}`}
                                 strokeWidth={isActive ? 2 : 1.5}
                             />
                         </Link>
