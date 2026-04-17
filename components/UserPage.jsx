@@ -1,163 +1,226 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreateClient } from "../lib/supabase/client";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FiTrash, FiChevronDown } from "react-icons/fi";
 
 export default function User({ name, phone }) {
   const [image, setImage] = useState(null);
   const [showOrder, setShowOrder] = useState(true);
   const [hasOrder, setHasOrder] = useState(true);
+  const router = useRouter();
 
+  // 1. CARREGAR: Recupera a imagem salva assim que a página abre
+  useEffect(() => {
+    const savedImage = localStorage.getItem("user_profile_image");
+    if (savedImage) {
+      setImage(savedImage);
+    }
+  }, []);
+
+  // 2. SALVAR: Transforma a foto em Base64 e guarda no localStorage
   function handleImageChange(e) {
     const file = e.target.files[0];
+
     if (file) {
-      setImage(URL.createObjectURL(file));
+      // Verifica se a imagem não é grande demais (Limite de 2MB para segurança do localStorage)
+      if (file.size > 2 * 1024 * 1024) {
+        alert("A imagem é muito grande! Escolha uma de até 2MB.");
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setImage(base64String); // Atualiza na tela
+        localStorage.setItem("user_profile_image", base64String); // Salva no navegador
+      };
+
+      reader.readAsDataURL(file);
     }
   }
 
   async function UserOut() {
-    if (hasOrder) return;
+    if (hasOrder) {
+      alert("Você não pode excluir o perfil com um pedido em andamento!");
+      return;
+    }
 
     const supabase = await CreateClient();
     await supabase.auth.signOut();
-    redirect("/login");
+
+    // Opcional: Se quiser limpar a foto quando o usuário deletar/sair:
+    localStorage.removeItem("user_profile_image");
+
+    router.push("/login");
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
-
-      {/* CARD */}
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      {/* CARD PRINCIPAL */}
       <div className="w-full max-w-sm bg-(--surface) rounded-[12px] p-6 shadow-lg border border-[#000]/5">
-
-        <h1 className="text-2xl font-bold  text-center mb-6">
+        <h1 className="text-2xl font-bold text-center mb-6 text-[var(--text)]">
           Meu Perfil
         </h1>
 
-        {/* FOTO */}
+        {/* SEÇÃO DA FOTO */}
         <div className="flex flex-col items-center mb-6">
           <input
             type="file"
             className="hidden"
             id="profileImageInput"
+            accept="image/*"
             onChange={handleImageChange}
           />
 
-          <label htmlFor="profileImageInput" className="cursor-pointer">
-            <div className="w-24 h-24 rounded-full border-2 border-card overflow-hidden flex items-center justify-center bg-[var(--bg)] shadow">
+          <label htmlFor="profileImageInput" className="cursor-pointer group">
+            <div className="w-24 h-24 rounded-full border-2 border-card overflow-hidden flex items-center justify-center bg-[var(--bg)] shadow-inner relative">
               {image ? (
-                <img src={image} className="w-full h-full object-cover" />
+                <img
+                  src={image}
+                  className="w-full h-full object-cover"
+                  alt="Perfil"
+                />
               ) : (
-                <span className="text-xs text-[#514442]">Foto</span>
+                <span className="text-xs text-[#514442] font-medium">
+                  Sem Foto
+                </span>
               )}
+              {/* Overlay de hover */}
+              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </label>
 
           <button
-            className="mt-2 text-xs bg-card px-3 py-1 rounded-md hover:opacity-90"
-            onClick={() =>
-              document.getElementById("profileImageInput").click()
-            }
+            className="mt-2 text-xs bg-card px-4 py-1.5 rounded-md hover:opacity-80 transition font-medium"
+            onClick={() => document.getElementById("profileImageInput").click()}
           >
-            Editar
+            Alterar Foto
           </button>
         </div>
 
-        {/* INPUTS */}
+        {/* INPUTS DE INFORMAÇÃO */}
         <div className="flex flex-col gap-3">
-          <input
-            value={name}
-            readOnly
-            className="rounded-md px-4 py-3 bg-[var(--bg)] outline-none"
-          />
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase ml-1 font-bold text-[#514442]/50">
+              Nome
+            </label>
+            <input
+              value={name}
+              readOnly
+              className="rounded-md px-4 py-3 bg-[var(--bg)] outline-none border border-transparent focus:border-card transition"
+            />
+          </div>
 
-          <input
-            value={phone}
-            readOnly
-            className="rounded-md px-4 py-3 bg-[var(--bg)]  outline-none"
-          />
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase ml-1 font-bold text-[#514442]/50">
+              Telefone
+            </label>
+            <input
+              value={phone}
+              readOnly
+              className="rounded-md px-4 py-3 bg-[var(--bg)] outline-none border border-transparent focus:border-card transition"
+            />
+          </div>
         </div>
 
-        {/* STATUS */}
+        {/* BOTÃO STATUS DO PEDIDO */}
         <button
           onClick={() => setShowOrder(!showOrder)}
-          className="w-full mt-5 bg-card  py-3 rounded-md font-semibold flex items-center justify-between px-4"
+          className="w-full mt-6 bg-card py-3 rounded-md font-bold flex items-center justify-between px-4 hover:brightness-95 transition"
         >
           <span>Status do Pedido</span>
-
           <FiChevronDown
-            className={`transition-transform ${showOrder ? "rotate-180" : ""}`}
+            className={`transition-transform duration-300 ${showOrder ? "rotate-180" : ""}`}
           />
         </button>
 
-        {/* PEDIDO */}
+        {/* DETALHES DO PEDIDO */}
         {hasOrder && showOrder && (
-          <div className="mt-4 bg-[var(--bg)] rounded-md p-4 shadow-sm">
-            <h2 className="font-bold mb-2 text-primary">
-              Status do Pedido
+          <div className="mt-2 bg-[var(--bg)] rounded-md p-4 shadow-sm border border-black/5 animate-in fade-in slide-in-from-top-2">
+            <h2 className="font-bold mb-2 text-primary border-b border-black/5 pb-1">
+              Pedido Ativo
             </h2>
 
-            <p><strong>Curso:</strong> Informática</p>
-            <p><strong>Item:</strong> Pastel de Queijo</p>
-            <p><strong>Quantidade:</strong> 2</p>
+            <div className="text-sm space-y-1">
+              <p>
+                <strong>Curso:</strong> Informática
+              </p>
+              <p>
+                <strong>Item:</strong> Pastel de Queijo
+              </p>
+              <p>
+                <strong>Quantidade:</strong> 2
+              </p>
 
-            <div className="flex items-center gap-2 mt-2">
-              <span className="w-3 h-3 rounded-full bg-card"></span>
-              <span>Sendo preparado</span>
+              <div className="flex items-center gap-2 mt-3 bg-white/50 w-fit px-2 py-1 rounded-full">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-400 animate-pulse"></span>
+                <span className="text-xs font-bold uppercase">
+                  Sendo preparado
+                </span>
+              </div>
+
+              <div className="mt-3 pt-2 border-t border-black/5">
+                <p>
+                  <strong>Pagamento:</strong> Pix
+                </p>
+                <p className="text-lg font-bold text-primary">
+                  Total: R$ 10,00
+                </p>
+              </div>
             </div>
-
-            <p className="mt-2"><strong>Pagamento:</strong> Pix</p>
-            <p className="mt-2 font-bold">Total: R$ 10,00</p>
           </div>
         )}
 
-        {/* EXCLUIR */}
+        {/* BOTÃO EXCLUIR */}
         <label
           htmlFor="delete_modal"
-          className="flex items-center justify-center gap-2  hover:text-[#D95032] transition mt-6 cursor-pointer"
+          className="flex items-center justify-center gap-2 text-sm font-medium hover:text-[#D95032] transition mt-8 cursor-pointer opacity-70 hover:opacity-100"
         >
-          <FiTrash />
-          <span>Excluir perfil</span>
+          <FiTrash size={14} />
+          <span>Excluir meu perfil</span>
         </label>
       </div>
 
-
-      {/* MODAL */}
+      {/* MODAL DE CONFIRMAÇÃO (DaisyUI) */}
       <input type="checkbox" id="delete_modal" className="modal-toggle" />
-
       <div className="modal" role="dialog">
-        <div className="modal-box bg-[#F5E6C8] text-[#514442]">
-          <h3 className="text-lg font-bold text-[#D95032]">
-            Excluir perfil
-          </h3>
+        <div className="modal-box bg-[#F5E6C8] text-[#514442] border-2 border-[#D95032]/20">
+          <h3 className="text-xl font-bold text-[#D95032]">Atenção!</h3>
 
-          <p className="py-4">
-            Tem certeza que deseja excluir seu perfil?
+          <p className="py-4 font-medium">
+            Você tem certeza que deseja excluir seu perfil permanentemente? Esta
+            ação não pode ser desfeita.
           </p>
 
           {hasOrder && (
-            <p className="text-[#D95032] text-sm mb-2">
-              Você possui um pedido em andamento.
-            </p>
+            <div className="bg-[#D95032]/10 p-3 rounded-lg border border-[#D95032]/20 mb-4">
+              <p className="text-[#D95032] text-sm font-bold">
+                ⚠️ Bloqueado: Você possui um pedido em andamento e não pode
+                excluir a conta agora.
+              </p>
+            </div>
           )}
 
-          <div className="flex justify-end gap-3">
-            <label htmlFor="delete_modal" className="btn">
-              Cancelar
+          <div className="modal-action">
+            <label htmlFor="delete_modal" className="btn btn-ghost">
+              Voltar
             </label>
 
             <button
               onClick={UserOut}
               disabled={hasOrder}
-              className="btn bg-[#D95032] text-white"
+              className={`btn ${hasOrder ? "btn-disabled opacity-50" : "bg-[#D95032] hover:bg-[#b04028] text-white border-none"}`}
             >
-              Confirmar
+              Confirmar Exclusão
             </button>
           </div>
         </div>
-
-        <label className="modal-backdrop" htmlFor="delete_modal" />
+        <label className="modal-backdrop" htmlFor="delete_modal">
+          Close
+        </label>
       </div>
     </div>
   );
