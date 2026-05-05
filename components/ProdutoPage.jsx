@@ -2,16 +2,27 @@
 import Pagination from '@mui/material/Pagination';
 import Stack from '@mui/material/Stack';
 import TextareaAutosize from '@mui/material/TextareaAutosize';
-import { useState } from 'react';
+import { useState, useContext } from 'react';
+import { useParams } from 'next/navigation';
 import { Minus, Plus } from "lucide-react"
 import Link from 'next/link';
+import { ProductContext } from "@/context/ProductContext"
 
 
 export default function ProdutoPage() {
 
+    const { id } = useParams()
+    const { produtosGlobais, imagensGlobais } = useContext(ProductContext)
+
     const [page, setPage] = useState(1)
     const [itemquantity, setItemquantity] = useState(1);
-    const precoUnitario = 39.99;
+
+    const produtoSelecionado = produtosGlobais.find(p => String(p.idproduto) === String(id))
+    const imagensDesteProduto = imagensGlobais.filter(img => String(img.idproduto) == String(id))
+
+
+    // console.log("ID da URL:", id);
+    // console.log("Produtos no Contexto:", produtosGlobais);
 
     const products = [
         {
@@ -31,30 +42,53 @@ export default function ProdutoPage() {
         }
     ];
 
+
+    if (!produtoSelecionado) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center">
+                <p>Carregando informações do produto...</p>
+                <Link href="/" className="text-vermelho underline mt-4">Voltar para a listagem</Link>
+            </div>
+        );
+    }
+
     const handleIncrease = () => setItemquantity(prev => prev + 1);
     const handleDecrease = () => setItemquantity(prev => (prev > 1 ? prev - 1 : 1));
     const handleChangePage = (event, value) => {
         setPage(value);
     }
 
+    const imagemAtual = imagensDesteProduto[page - 1]?.url_imagem || `${products.find((e) => e.url === 'hamburguer2.png')}`;
+
     return (
         <div className="min-h-screen font-sans">
 
             <div className="w-full max-w-2xl mx-auto overflow-hidden sm:rounded-b-3xl shadow-lg">
                 <img className="w-full h-72 object-cover"
-                    src={products[page - 1]?.url}
-                    alt={products[page - 1]?.nome} />
+                    src={imagemAtual}
+                    alt={`${produtoSelecionado.nome} - Imagem ${page}`} />
             </div>
             <div className="flex justify-center -mt-6 relative z-10">
-                <Stack spacing={2} className='bg-[var(--bg)] shadow-md border border-[#514442]/10 rounded-full px-2 py-1'>
+                <Stack spacing={2} className='bg-[var(--bg)] shadow-md border border-[#514442]/10 rounded-full px-4 py-2'>
                     <Pagination
-                        count={products.length}
+                        count={imagensDesteProduto.length}
                         page={page}
-                        size="small"
+                        hidePrevButton 
+                        hideNextButton 
                         onChange={handleChangePage}
                         sx={{
-                            '& .MuiPaginationItem-root': { color: 'var(--text)' },
-                            '& .Mui-selected': { backgroundColor: 'var(--primary) !important', color: '#DFD0AF' }
+                            '& .MuiPaginationItem-root': {
+                                color: 'transparent', // Esconde os números
+                                minWidth: '8px',      // Força a largura
+                                width: '10px',
+                                height: '12px',        // Força a altura
+                                borderRadius: '50%',  // Deixa perfeitamente redondo
+                                backgroundColor: 'rgba(255, 255, 255, 0.3)', // Cor da bolinha inativa (branca com transparência)
+                                margin: '0 4px',
+                            },
+                            '& .Mui-selected': {
+                                backgroundColor: '#ffffff !important', // Cor da bolinha ativa (branca sólida)
+                            }
                         }}
                     />
                 </Stack>
@@ -64,10 +98,10 @@ export default function ProdutoPage() {
 
                 <section className="text-center space-y-4">
                     <h1 className="text-4xl font-black uppercase tracking-tighter ">
-                        {products[page - 1]?.nome}
+                        {produtoSelecionado.nome}
                     </h1>
                     <p className='text-sm leading-relaxed '>
-                        {products[page - 1]?.descricao}
+                        {produtoSelecionado.descricao}
                     </p>
                 </section>
 
@@ -96,7 +130,7 @@ export default function ProdutoPage() {
                         <div className="text-right">
                             <p className="text-xs uppercase font-bold ">Subtotal</p>
                             <p className="text-2xl font-black text-[var(--card)]">
-                                R$ {(precoUnitario * itemquantity).toFixed(2)}
+                                R$ {(produtoSelecionado.preco * itemquantity).toFixed(2)}
                             </p>
                         </div>
                     </div>

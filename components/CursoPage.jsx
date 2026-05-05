@@ -1,6 +1,19 @@
 "use client";
 import Link from "next/link";
-export default function CursoPage() {
+import { useContext, useEffect } from "react"
+import { ProductContext } from "@/context/ProductContext"
+export default function CursoPage({ categoria, imagem }) {
+
+    const { carregarDados } = useContext(ProductContext)
+
+    const produto = categoria.data
+    const imagens = imagem.data
+
+    useEffect(() => {
+        if (produto && imagens) {
+            carregarDados(produto, imagens)
+        }
+    }, [produto, imagens])
 
     const curso = {
         nome: "Informatíca",
@@ -16,30 +29,6 @@ export default function CursoPage() {
         { nome: "Macarrão", img: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop" },
     ];
 
-    const produto = [
-        {
-            nome: "Hamburguer artesanal",
-            descricao: "Hamburguers saborosos e suculentos.",
-            produtos: [
-                {
-                    nome: "Hamburguer Classico",
-                    descricao: "Pão brioche, hamburguer 160g, queijo cheddar, cebola, alface, tomate e maionese da casa.",
-                    imagem: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80",
-                },
-                {
-                    nome: "Hamburguer com Bacon",
-                    descricao: "Pao brioche, hamburguer 160g, queijo cheddar, bacon, cebola, alface, tomate e maionese da casa.",
-                    imagem: "https://images.unsplash.com/photo-1550317138-10000687a72b?auto=format&fit=crop&w=900&q=80",
-                },
-
-                {
-                    nome: "Hamburguer Duplo",
-                    descricao: "Pão brioche, 2 hamburguers 160g, queijo cheddar duplo, cebola, alface, tomate e maionese da casa.",
-                    imagem: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80",
-                },
-            ],
-        }
-    ];
     return (
         <>
             <section className="pl-10 ">
@@ -60,40 +49,87 @@ export default function CursoPage() {
                 </div>
             </section>
             <main className="min-h-screen ">
-                
+
                 <section className="px-4 pb-16 md:px-8 mt-10 lg:px-12">
                     <div className="mx-auto max-w-6xl b space-y-10">
-                        {produto.map((categoria) => (
-                            <div key={categoria.nome} className="space-y-5 rounded-[2rem] bg-[var(--surface)] p-5  md:p-8">
+
+                        {produto.map((prod) => {
+                            // 1. Procuramos na tabela de imagens apenas as fotos que tem o mesmo idproduto
+                            const imagensDoProduto = imagens.filter(img => img.idproduto === prod.idproduto);
+
+                            // 2. Pegamos só a primeira foto do array (posição 0). 
+                            // Se não tiver foto nenhuma, ele não quebra.
+                            const primeiraImagem = imagensDoProduto[0]?.url_imagem;
+
+                            return (
+                                <div key={prod.idproduto} className="space-y-4">
+
+                                    {/* === CAIXA DE TEXTO DO PRODUTO === */}
+                                    <Link
+                                        key={prod.idproduto}
+                                        href={`/product/${prod.idproduto}`}
+                                        // Adicionamos md:h-72 para travar a altura no computador. Todos terão o mesmo tamanho.
+                                        className="flex flex-col md:flex-row gap-6 rounded-[2rem] bg-[var(--surface)] p-5 md:p-8 hover:-translate-y-1 transition-transform duration-300 md:h-72"
+                                    >
+                                        {/* IMAGEM: No PC, ela ocupa 100% da altura fixa do card (md:h-full). Adicionado flex e center para centralizar a imagem */}
+                                        <div className="w-full h-56 md:h-full md:w-1/3 shrink-0 rounded-[1.5rem] overflow-hidden border border-black/5 flex items-center justify-center">
+                                            <img
+                                                src={primeiraImagem}
+                                                alt={prod.nome}
+                                                // Mudamos de object-cover para object-contain: a foto não é mais cortada
+                                                className="max-h-full max-w-full object-cover"
+                                            />
+                                        </div>
+
+                                        {/* INFORMAÇÕES: Mantidas as suas cores, mas agora ele se adapta à altura travada */}
+                                        <div className="flex flex-1 flex-col gap-2 pb-0 justify-center">
+                                            <p className="text-md font-semibold uppercase tracking-[0.25em] text-vermelho">Produtos</p>
+                                            <h2 className="text-2xl font-black md:text-3xl">{prod.nome}</h2>
+                                            <p className="max-w-3xl text-md leading-7 text-preto md:text-base line-clamp-3">
+                                                {prod.descricao}
+                                            </p>
+
+                                            {/* mt-auto garante que o preço cole lá no fundo do card, alinhando todos os preços na mesma linha invisível */}
+                                            <p className="text-xl md:text-2xl font-black text-vermelho mt-4 md:mt-auto">
+                                                R$ {prod.preco}
+                                            </p>
+                                        </div>
+                                    </Link>
+
+                                </div>
+                            );
+                        })}
+                        {/* {produto.map((categoria) => (
+                            <div key={categoria.idproduto} className="space-y-5 rounded-[2rem] bg-[var(--surface)] p-5  md:p-8">
                                 <div className="flex flex-col gap-2 pb-4">
                                     <p className="text-md font-semibold uppercase tracking-[0.25em] text-vermelho">Produtos</p>
                                     <h2 className="text-2xl font-black md:text-3xl">{categoria.nome}</h2>
                                     <p className="max-w-3xl text-md leading-7 text-preto md:text-base">{categoria.descricao}</p>
                                 </div>
 
-                                <div className="space-y-4">
-                                    {categoria.produtos.map((produto) => (
-                                        <Link
-                                            key={produto.nome}
-                                            href="/product"
-                                            className="flex flex-col rounded-[1.5rem] bg-[var(--card)] md:min-h-44 md:flex-row  hover:-translate-y-1 transition-transform duration-300"
-                                        >
-                                            <div className="h-48 md:h-auto md:w-1/5">
-                                                <img src={produto.imagem} className="h-full w-full object-cover"
-                                                />
-                                            </div>
-
-                                            <div className="flex flex-1 flex-col justify-center gap-3 px-5 py-5 md:px-7">
-                                                <h3 className="text-xl font-black  md:text-2xl">{produto.nome}</h3>
-                                                <p className="max-w-3xl text-md leading-7  md:text-base">
-                                                    {produto.descricao}
-                                                </p>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
                             </div>
                         ))}
+                        <div className="space-y-4">
+                            {imagens.map((imagem) => (
+                                <Link
+                                    key={imagem.idimagem}
+                                    href={`/product/${imagem.idproduto}`}
+                                    className="flex flex-col rounded-[1.5rem] bg-[var(--card)] md:min-h-44 md:flex-row  hover:-translate-y-1 transition-transform duration-300"
+                                >
+                                    <div className="h-48 md:h-auto md:w-1/5">
+                                        <img src={imagem.url_imagem} className="h-full w-full object-cover"
+                                        />
+                                    </div>
+
+                                    <div className="flex flex-1 flex-col justify-center gap-3 px-5 py-5 md:px-7">
+                                        <h3 className="text-xl font-black  md:text-2xl">{imagem.nome}</h3>
+                                         <p className="max-w-3xl text-md leading-7  md:text-base">
+                                            {produto.descricao}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div> */}
                     </div>
                 </section>
             </main>

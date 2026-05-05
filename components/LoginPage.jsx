@@ -37,7 +37,7 @@ export default function LoginPage({action}) {
 
       <div className="absolute size-100 sm:size-150 bg-amarelo rounded-full blur-3xl opacity-30 -top-40 -left-40 animate-pulse"></div>
 
-      <div className="relative w-full bg-[var(--surface)]  rounded-[30px] max-w-sm mx-4">
+      <div className="relative w-full bg-(--surface)  rounded-[30px] max-w-sm mx-4">
 
         <div className="backdrop-blur-xl  border border-white/20 rounded-[30px] shadow-2xl  p-8 transition-all duration-500 hover:scale-[1.02]">
 

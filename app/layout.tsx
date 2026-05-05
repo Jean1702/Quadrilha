@@ -4,6 +4,7 @@ import "./globals.css";
 import HeaderBar from "@/components/HeaderPage";
 import FooterPage from "@/components/FooterPage";
 import { ThemeProvider } from "@/context/Theme";
+import { ProductContext, ProductProvider } from "@/context/ProductContext"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,14 +29,16 @@ export default function RootLayout({
   return (
     <html lang="pt-br dark">
       <body
-      className={`${geistSans.variable} ${geistMono.variable} antialiased  `}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased  `}
       >
         <ThemeProvider>
-          <HeaderBar />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <FooterPage></FooterPage>
+          <ProductProvider>
+            <HeaderBar />
+            <main className="min-h-screen">
+              {children}
+            </main>
+            <FooterPage></FooterPage>
+          </ProductProvider>
         </ThemeProvider>
       </body>
     </html>

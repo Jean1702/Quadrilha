@@ -26,16 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-br dark">
-      <body
-      className={`${geistSans.variable} ${geistMono.variable} antialiased  `}
-      >
-        <ThemeProvider>
-          <main className="min-h-screen">
-            {children}
-          </main>
-        </ThemeProvider>
-      </body>
-    </html>
+    <div>
+      <ThemeProvider>
+
+        {children}
+
+      </ThemeProvider>
+    </div>
   );
 }
