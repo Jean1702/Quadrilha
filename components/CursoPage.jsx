@@ -2,12 +2,16 @@
 import Link from "next/link";
 import { useContext, useEffect } from "react"
 import { ProductContext } from "@/context/ProductContext"
-export default function CursoPage({ categoria, imagem }) {
+
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+export default function CursoPage({ produtos, imagem, categorias }) {
 
     const { carregarDados } = useContext(ProductContext)
 
-    const produto = categoria.data
-    const imagens = imagem.data
+    const produto = produtos?.data || []
+    const imagens = imagem?.data || []
+    const categoriasData = categorias?.data || []
 
     useEffect(() => {
         if (produto && imagens) {
@@ -20,33 +24,36 @@ export default function CursoPage({ categoria, imagem }) {
         chamada: "Venha saborear os melhores hamburgueres artesanais da região.",
     };
 
-    const categorias = [
-        { nome: "Hambúrguer", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop" },
-        { nome: "Pizza", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop" },
-        { nome: "Sushi", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=300&fit=crop" },
-        { nome: "Batata Frita", img: "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=400&h=300&fit=crop" },
-        { nome: "Salada", img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop" },
-        { nome: "Macarrão", img: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop" },
-    ];
-
     return (
         <>
-            <section className="pl-10 ">
-                <h2 className="text-xl font-bold pl-10 mb-3 mt-2">Produtos</h2>
-                <div className="carousel carousel-center gap-4 w-full scrollbar-hide overflow-x-auto">
-                    {categorias.map((cat) => (
-                        <div key={cat.nome} className="carousel-item">
-                            <Link href="/product" className="card card-compact bg-base-100 shadow-xl w-32 md:w-56 hover:-translate-y-1 transition-transform duration-300">
-                                <figure className="h-32 md:h-40">
-                                    <img src={cat.img} alt={cat.nome} className="w-full h-full object-cover" />
+            <section className="pl-5 ">
+                <h2 className="text-xl font-bold pl-3 mb-3 mt-2">Produtos</h2>
+                <Swiper
+                    spaceBetween={16}
+                    slidesPerView={2.5}
+                    breakpoints={{
+                        640: { slidesPerView: 3.5 },
+                        768: { slidesPerView: 4.5 },
+                        1024: { slidesPerView: 6.5 },
+                    }}
+                    className="w-full pb-4 pr-4"
+                >
+                    {categoriasData.map((cat) => (
+                        <SwiperSlide key={cat.idcategoria}>
+                            <Link
+                                href="/product"
+                                className="card card-compact bg-base-100 shadow-xl h-full w-full hover:-translate-y-1 transition-transform duration-300 overflow-hidden block"
+                            >
+                                <figure className="h-32 md:h-40 w-full">
+                                    <img src={cat.img_cat} alt={cat.nomecategoria} className="w-full h-full object-cover" />
                                 </figure>
-                                <div className="card-body items-center text-center p-2">
-                                    <h2 className="card-title text-xs md:text-sm">{cat.nome}</h2>
+                                <div className="card-body items-center text-center p-2 bg-[var(--surface)]">
+                                    <h2 className="card-title text-xs md:text-sm m-0">{cat.nomecategoria}</h2>
                                 </div>
                             </Link>
-                        </div>
+                        </SwiperSlide>
                     ))}
-                </div>
+                </Swiper>
             </section>
             <main className="min-h-screen ">
 
@@ -72,18 +79,33 @@ export default function CursoPage({ categoria, imagem }) {
                                         className="flex flex-col md:flex-row gap-6 rounded-[2rem] bg-[var(--surface)] p-5 md:p-8 hover:-translate-y-1 transition-transform duration-300 md:h-72"
                                     >
                                         {/* IMAGEM: No PC, ela ocupa 100% da altura fixa do card (md:h-full). Adicionado flex e center para centralizar a imagem */}
-                                        <div className="w-full h-56 md:h-full md:w-1/3 shrink-0 rounded-[1.5rem] overflow-hidden border border-black/5 flex items-center justify-center">
+                                        {/* IMAGEM: Container pai (relative e overflow-hidden) */}
+                                        <div className="relative w-full h-56 md:h-full md:w-1/3 shrink-0 rounded-[1.5rem] overflow-hidden border border-[#514442]/10 flex items-center justify-center bg-[var(--surface)]">
+
+                                            {/* 1. Imagem de Fundo (Repetida e Borrada) */}
+                                            <div
+                                                className="absolute inset-0 w-full h-full opacity-60 blur-[5px] scale-110"
+                                                style={{
+                                                    // Aqui está o truque: usamos a imagem como background e mandamos repetir
+                                                    backgroundImage: `url(${primeiraImagem})`,
+                                                    backgroundRepeat: 'repeat',
+                                                    backgroundSize: 'contain', // ou '100px 100px' se quiser forçar um tamanho menor para as repetições
+                                                    backgroundPosition: 'center',
+                                                }}
+                                            />
+
+                                            {/* 2. Imagem Principal (Frente - Única, Centralizada e Nítida) */}
                                             <img
                                                 src={primeiraImagem}
                                                 alt={prod.nome}
-                                                // Mudamos de object-cover para object-contain: a foto não é mais cortada
-                                                className="max-h-full max-w-full object-cover"
+                                                // object-contain faz a imagem caber certinho no centro, e o z-10 coloca ela por cima do fundo repetido
+                                                className="relative z-10 h-full w-full object-contain drop-shadow-2xl"
                                             />
                                         </div>
 
                                         {/* INFORMAÇÕES: Mantidas as suas cores, mas agora ele se adapta à altura travada */}
                                         <div className="flex flex-1 flex-col gap-2 pb-0 justify-center">
-                                            <p className="text-md font-semibold uppercase tracking-[0.25em] text-vermelho">Produtos</p>
+                                            {/*<p className="text-md font-semibold uppercase tracking-[0.25em] text-vermelho">Produtos</p>*/}
                                             <h2 className="text-2xl font-black md:text-3xl">{prod.nome}</h2>
                                             <p className="max-w-3xl text-md leading-7 text-preto md:text-base line-clamp-3">
                                                 {prod.descricao}

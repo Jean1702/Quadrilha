@@ -5,6 +5,7 @@ import HeaderBar from "@/components/HeaderPage";
 import FooterPage from "@/components/FooterPage";
 import { ThemeProvider } from "@/context/Theme";
 import { ProductContext, ProductProvider } from "@/context/ProductContext"
+import { CartProvider } from '@/context/CartContext';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,11 +34,13 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <ProductProvider>
-            <HeaderBar />
-            <main className="min-h-screen">
-              {children}
-            </main>
-            <FooterPage></FooterPage>
+            <CartProvider>
+              <HeaderBar />
+              <main className="min-h-screen">
+                {children}
+              </main>
+              <FooterPage></FooterPage>
+            </CartProvider>
           </ProductProvider>
         </ThemeProvider>
       </body>

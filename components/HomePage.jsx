@@ -2,18 +2,12 @@
 import Link from "next/link";
 import HeaderBar from "../components/HeaderPage";
 
-export default function HomePage() {
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
 
-    const categorias = [
-        { id: "cat-1", nome: 'Peixe', url: '/peixe.jpg' },
-        { id: "cat-2", nome: 'Hamburguer', url: '/hamburguer.jpg' },
-        { id: "cat-3", nome: 'Panquecas', url: '/panqueca.jpg' },
-        { id: "cat-4", nome: 'Pizza', url: '/pizza.jpg' },
-        { id: "cat-5", nome: 'Salada', url: '/salada.jpg' },
-        { id: "cat-6", nome: 'Bolo', url: '/bolo.jpg' },
-        { id: "cat-7", nome: 'Sorvete', url: '/sorvete.jpg' },
-        { id: "cat-8", nome: 'Espetinho', url: '/espetinho.jpg' },
-    ];
+export default function HomePage({ categorias }) {
+
+    const categoriasData = categorias?.data || []
 
     const cursos = [
         {
@@ -141,23 +135,32 @@ export default function HomePage() {
             <div className="p-4 md:p-8">
 
                 <h2 className="text-lg font-bold mb-3">Produtos</h2>
-                <div className="carousel carousel-center gap-4 w-full overflow-x-auto">
-                    {categorias.map((cat) => (
-                        <div key={cat.id} className="carousel-item">
+                <Swiper
+                    spaceBetween={16}
+                    slidesPerView={2.5}
+                    breakpoints={{
+                        640: { slidesPerView: 3.5 },
+                        768: { slidesPerView: 4.5 },
+                        1024: { slidesPerView: 6.5 },
+                    }}
+                    className="w-full pb-4"
+                >
+                    {categoriasData.map((cat) => (
+                        <SwiperSlide key={cat.idcategoria}>
                             <Link
-                                href="/product"
-                                className="card card-compact bg-base-100 shadow-xl w-32 md:w-56 hover:-translate-y-1 transition-transform duration-300"
+                                href={`/product`}
+                                className="card card-compact bg-base-100 shadow-xl h-full w-full hover:-translate-y-1 transition-transform duration-300 overflow-hidden block"
                             >
-                                <figure className="h-32 md:h-40">
-                                    <img src={cat.url} alt={cat.nome} className="w-full h-full object-cover" />
+                                <figure className="h-32 md:h-40 w-full">
+                                    <img src={cat.img_cat} alt={cat.nomecategoria} className="w-full h-full object-cover" />
                                 </figure>
-                                <div className="card-body items-center text-center p-2">
-                                    <h2 className="card-title text-xs md:text-sm">{cat.nome}</h2>
+                                <div className="card-body items-center text-center p-2 bg-[var(--surface)]">
+                                    <h2 className="card-title text-xs md:text-sm m-0">{cat.nomecategoria}</h2>
                                 </div>
                             </Link>
-                        </div>
+                        </SwiperSlide>
                     ))}
-                </div>
+                </Swiper>
 
                 <h2 className="text-lg font-bold mt-8 mb-3">Restaurantes</h2>
 

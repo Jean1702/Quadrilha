@@ -181,3 +181,30 @@ body {
   transform: translateY(-3px);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
 }
+
+/* Css do carrossel do produto*/
+.swiper-pagination-bullet {
+    background: rgba(255, 255, 255, 0.4) !important;
+    width: 8px !important;
+    height: 8px !important;
+    opacity: 1 !important;
+    margin: 0 4px !important;
+    transition: all 0.3s ease !important;
+}
+
+.swiper-pagination-bullet-active {
+    background: #ffffff !important;
+    transform: scale(1.2);
+}
+
+.swiper-pagination {
+    bottom: 15px !important;
+    background: var(--bg);
+    padding: 4px 12px;
+    border-radius: 9999px;
+    border: 1px solid rgba(81, 68, 66, 0.1);
+    display: inline-block;
+    width: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+}

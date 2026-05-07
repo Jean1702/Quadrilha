@@ -1,114 +1,91 @@
 'use client'
-import { Minus, Plus, Trash2 } from "lucide-react"
-import { useState } from 'react';
+import { Trash2 } from "lucide-react"
+import { useState, useContext } from 'react';
 import Link from "next/link";
-
-const initialProducts = [
-    { id: 1, nome: 'Clássico Burger', url: 'hamburguer.png', preco: 39.90 },
-    { id: 2, nome: 'Bacon Blast', url: 'hamburguer2.png', preco: 45.90 },
-    { id: 3, nome: 'Double Cheese Trufado', url: 'hamburguer3.png', preco: 52.00 }
-];
+import { CartContext } from "@/context/CartContext";
+import { ProductContext } from '@/context/ProductContext';
 
 export default function Cart() {
-    const [cartItems, setCartItems] = useState(initialProducts);
-    const [quantities, setQuantities] = useState({ 1: 1, 2: 1, 3: 1 });
 
-    const handleIncrease = (id) => {
-        setQuantities(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
-    };
+    const { carrinho, removerDoCarrinho } = useContext(CartContext);
+    const { imagensGlobais } = useContext(ProductContext);
 
-    const handleDecrease = (id) => {
-        setQuantities(prev => ({
-            ...prev,
-            [id]: prev[id] > 1 ? prev[id] - 1 : 1
-        }));
-    };
-
-    const handleRemove = (id) => {
-        setCartItems(prev => prev.filter(item => item.id !== id));
-        setQuantities(prev => {
-            const newQuantities = { ...prev };
-            delete newQuantities[id];
-            return newQuantities;
-        });
-    };
-
-    const totalAmount = cartItems.reduce((acc, product) => {
-        return acc + (product.preco * (quantities[product.id] || 1));
+    const totalAmount = carrinho.reduce((acc, item) => {
+        return acc + item.subtotal;
     }, 0);
+
 
     return (
         <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] pt-8 pb-32 px-4 sm:pt-12 font-sans">
             <div className="container max-w-lg mx-auto">
                 <div className="flex-center">
-                    <h1 className="text-5xl font-black uppercase tracking-tight mb-8 pl-2">
-                        Seu Carrinho
+                    <h1 className="text-4xl font-black uppercase tracking-tight mb-8 pl-2">
+                        Carrinho
                     </h1>
                 </div>
 
                 <div className="flex flex-col gap-6">
 
-                    {cartItems.map((product) => (
-                        /* Card Vertical Refinado */
-                        <div key={product.id} className="flex flex-col p-5 border-[1.5px] border-[#514442]/15 rounded-[32px] shadow-sm bg-[var(--surface)]">
-                            
-                            {/* Imagem (Altura Controlada) */}
-                            <div className="w-full h-40 sm:h-48 flex justify-center items-center mb-4">
-                                <img
-                                    src={product.url}
-                                    alt={product.nome}
-                                    className="h-full object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
-                                />
-                            </div>
+                    {carrinho.map((item) => {
+                        // Busca a foto do produto cruzando os IDs
+                        const imagemProduto = imagensGlobais.find(img => String(img.idproduto) === String(item.produto.idproduto))?.url_imagem || '/placeholder.png';
 
-                            <div className="flex justify-between items-start mb-4 gap-2">
-                                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight leading-tight ">
-                                    {product.nome}
-                                </h2>
-                                <button
-                                    onClick={() => handleRemove(product.id)}
-                                    className=" hover:text-[#D95032] transition-colors p-1 cursor-pointer shrink-0 mt-0.5"
-                                    title="Remover item"
-                                >
-                                    <Trash2 size={22} strokeWidth={2.5} />
-                                </button>
-                            </div>
+                        return (
+                            <div key={item.idItemCarrinho} className="flex flex-col p-5 border-[1.5px] border-[#514442]/15 rounded-[32px] shadow-sm bg-[var(--surface)]">
 
-                            <div className="flex items-end justify-between mt-auto">
-                                <div>
-                                    <p className="text-[11px] sm:text-xs uppercase font-bold  tracking-wider mb-1">
-                                        Subtotal
-                                    </p>
-                                    <p className="text-2xl sm:text-3xl font-black text-card leading-none">
-                                        R$ {(product.preco * (quantities[product.id] || 1)).toFixed(2)}
-                                    </p>
+                                {/* Imagem (Altura Controlada) */}
+                                <div className="w-full h-40 sm:h-48 flex justify-center items-center mb-4">
+                                    <img
+                                        src={imagemProduto}
+                                        alt={item.produto.nome}
+                                        className="h-full object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
+                                    />
                                 </div>
 
-                                {/* Novo Design de Quantidade (Estilo Pílula) */}
-                                <div className="flex items-center bg-[var(--bg)] rounded-full p-1 shadow-md">
-                                    <button
-                                        onClick={() => handleDecrease(product.id)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors cursor-pointer"
-                                    >
-                                        <Minus size={16} strokeWidth={3} />
-                                    </button>
+                                <div className="flex justify-between items-start mb-2 gap-2">
+                                    <div className="flex flex-col">
+                                        <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight leading-tight ">
+                                            {item.produto.nome}
+                                        </h2>
+                                        {/* Mostra a observação se ela existir */}
+                                        {item.observacao && (
+                                            <p className="text-sm opacity-60 italic mt-1 font-medium">
+                                                Obs: {item.observacao}
+                                            </p>
+                                        )}
+                                    </div>
 
-                                    <span className="w-8 text-center font-black text-sm">
-                                        {quantities[product.id]}
-                                    </span>
-
                                     <button
-                                        onClick={() => handleIncrease(product.id)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-full bg-[#D95032] hover:opacity-90 transition-opacity shadow-sm cursor-pointer text-[#DFD0AF]"
+                                        onClick={() => removerDoCarrinho(item.idItemCarrinho)}
+                                        className=" hover:text-[#D95032] transition-colors p-1 cursor-pointer shrink-0 mt-0.5"
+                                        title="Remover item"
                                     >
-                                        <Plus size={16} strokeWidth={3} />
+                                        <Trash2 size={22} strokeWidth={2.5} />
                                     </button>
                                 </div>
-                            </div>
-                        </div>
-                    ))}
 
-                    {cartItems.length > 0 ? (
+                                <div className="flex items-end justify-between mt-auto pt-2">
+                                    <div>
+                                        <p className="text-[11px] sm:text-xs uppercase font-bold tracking-wider mb-1">
+                                            Subtotal
+                                        </p>
+                                        <p className="text-2xl sm:text-3xl font-black text-card leading-none">
+                                            R$ {item.subtotal.toFixed(2)}
+                                        </p>
+                                    </div>
+
+                                    {/* Design de Quantidade (Estilo Pílula - Fixo) */}
+                                    <div className="flex items-center justify-center bg-[var(--bg)] rounded-full px-5 py-2 shadow-sm border border-[#514442]/10">
+                                        <span className="font-black text-sm uppercase tracking-widest opacity-80">
+                                            Qtd: {item.quantidade}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+
+                    {carrinho.length > 0 ? (
                         <div className="flex flex-col gap-6 p-6 sm:p-8 border-[1.5px] border-[#514442]/15 bg-white/20 rounded-[40px] shadow-sm mt-2">
                             <div className="flex justify-between items-end border-b border-text pb-4">
                                 <span className="text-lg sm:text-xl font-bold uppercase tracking-wide ">
@@ -118,19 +95,22 @@ export default function Cart() {
                                     R$ {totalAmount.toFixed(2)}
                                 </span>
                             </div>
-                            
-                            <Link href={'/payment'}>
-                                <button className="w-full bg-[var(--bg)] hover:bg-[#D95032]  text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
 
+                            <Link href={'/payment'}>
+                                <button className="w-full bg-[var(--bg)] hover:bg-[#D95032] text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
                                     Pagar Agora
-                            
                                 </button>
-                            </Link>    
+                            </Link>
                         </div>
                     ) : (
-                        <div className="flex-center flex-col h-full p-10 border-[1.5px] border-[#514442]/15 bg-white/20 rounded-[40px] text-center mt-2">
+                        <div className="flex-center flex-col h-full p-10 border-[1.5px] border-[#514442]/15 bg-[var(--surface)] shadow-sm rounded-[40px] text-center mt-2">
                             <p className="text-xl font-black uppercase mb-2 ">Seu carrinho está vazio</p>
-                            <p >Adicione alguns produtos para continuar.</p>
+                            <p className="opacity-70 mb-6">Explore o nosso menu e adicione os seus favoritos.</p>
+                            <Link href="/">
+                                <button className="bg-[var(--bg)] px-8 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-[#D95032] transition-colors shadow-sm">
+                                    Ver Menu
+                                </button>
+                            </Link>
                         </div>
                     )}
 

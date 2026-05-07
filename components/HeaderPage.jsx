@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Bell, ShoppingCart, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/context/Theme';
 import { usePathname, useRouter } from 'next/navigation';
 import CourseLogo from '../public/logos/LogoTipo.png';
+import { CartContext } from '@/context/CartContext';
 
 const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode }) => {
 
@@ -20,7 +21,7 @@ const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, cu
       {showBadge && count > 0 && (
         <span className={isDot
           ? "absolute top-2 right-2 flex h-2 w-2"
-          : "absolute -top-1 -right-1 flex h-2 w-2 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white shadow-sm"
+          : "absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm"
         }>
           <span className={`animate-ping absolute h-full w-full rounded-full opacity-50 ${isDot ? 'bg-red-400' : 'bg-blue-400'}`}></span>
           <span className={`relative ${isDot ? 'rounded-full h-2 w-2 bg-red-500' : ''}`}>{!isDot && count}</span>
@@ -38,6 +39,9 @@ const HeaderBar = () => {
   const { theme } = useTheme();
   const pathname = usePathname() || "";
   const router = useRouter();
+
+  const { carrinho } = useContext(CartContext);
+  const quantidadeNoCarrinho = carrinho.length;
 
   const isBackMode =  pathname.includes('/product') || pathname.includes('/cart');
 
@@ -82,7 +86,9 @@ const HeaderBar = () => {
           <NavIcon
             href="/cart"
             icon={ShoppingCart}
-            showBadge={false}
+            showBadge={true}
+            count={quantidadeNoCarrinho}
+            isDot={false}
             isBackMode={isBackMode}
           />
         )}
