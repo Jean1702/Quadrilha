@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
-import HeaderBar from "@/components/HeaderPage";
-import FooterPage from "@/components/FooterPage";
 import { ThemeProvider } from "@/context/Theme";
 
 const geistSans = Geist({
@@ -17,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "IF FOOD",
-  description: "App de comida do Instituto Federal Goiano - Campus Trindade",
+  description: "App de comida",
 };
 
 export default function RootLayout({

@@ -8,12 +8,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import CourseLogo from '../public/logos/LogoTipo.png';
 import { CartContext } from '@/context/CartContext';
 
-const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode }) => {
+const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode, theme }) => {
 
-  const colorClass = isBackMode ? 'text-white' : 'text-black';
-  const hoverClass = isBackMode ? 'hover:bg-white/20' : 'hover:bg-black/5';
+  const colorClass = isBackMode ? 'text-white' : theme === 'dark' ? 'text-black' : 'text-white';
 
-  const commonClasses = `group relative p-2 ${colorClass} ${hoverClass} rounded-full transition-all flex items-center justify-center ${customClass}`;
+  const commonClasses = `group relative p-2 ${colorClass} rounded-full transition-all flex items-center justify-center ${customClass}`;
 
   const content = (
     <>
@@ -43,7 +42,7 @@ const HeaderBar = () => {
   const { carrinho } = useContext(CartContext);
   const quantidadeNoCarrinho = carrinho.length;
 
-  const isBackMode =  pathname.includes('/product') || pathname.includes('/cart');
+  const isBackMode = pathname.includes('/product') || pathname.includes('/cart');
 
   const courseLogos = { curso1: '../public/logos/LogoTipo.png' };
   const segments = pathname.split('/').filter(Boolean);
@@ -57,8 +56,8 @@ const HeaderBar = () => {
   return (
     <header
       className={`top-0 left-0 w-full z-50 navbar px-10 md:px-5 flex justify-between items-center h-20 transition-all duration-300 ${isBackMode
-          ? "bg-transparent shadow-none fixed"
-          : "bg-(--footer) shadow-sm sticky"
+        ? "bg-transparent shadow-none fixed"
+        : "bg-(--footer) shadow-sm sticky"
         }`}
     >
       <div className="flex-1">
@@ -76,7 +75,7 @@ const HeaderBar = () => {
               alt="Logo"
               className={`${isCoursePage ? 'h-20' : 'h-40'} w-auto object-contain -ml-5`}
             />
-            {isCoursePage && <h2 className='font-black text-xl ml-1 text-black'>Informática</h2>}
+            {isCoursePage && <h2 className='font-black text-xl ml-2 text-white'>Informática</h2>}
           </Link>
         )}
       </div>
@@ -90,6 +89,7 @@ const HeaderBar = () => {
             count={quantidadeNoCarrinho}
             isDot={false}
             isBackMode={isBackMode}
+            theme={theme}
           />
         )}
 
@@ -100,6 +100,7 @@ const HeaderBar = () => {
           isDot={true}
           isBackMode={isBackMode}
           customClass={isBackMode ? "bg-black/30" : ""}
+          theme={theme}
         />
       </div>
     </header>
