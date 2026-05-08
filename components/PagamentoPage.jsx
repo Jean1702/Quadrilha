@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import QRCode from 'react-qr-code';
 
 export default function PagamentoPage() {
-
     const pagamento = {
         codigoPedido: "55958859",
         Barraca: "3° Informática",
@@ -17,79 +16,64 @@ export default function PagamentoPage() {
         tempoRestante: 5 * 60,
     };
 
-    const copiarChavePix = () => {
-        navigator.clipboard.writeText(pagamento.chavePix);
-        alert("Chave Pix copiada!");
-    };
-
     const [tempo, setTempo] = useState(pagamento.tempoRestante);
 
     useEffect(() => {
         if (tempo > 0) {
             const timer = setInterval(() => {
-                setTempo(tempo - 1);
+                setTempo(prev => prev - 1);
             }, 1000);
             return () => clearInterval(timer);
         }
     }, [tempo]);
 
+    const copiarChavePix = () => {
+        navigator.clipboard.writeText(pagamento.chavePix);
+        alert("Chave Pix copiada!");
+    };
+
     const minutos = Math.floor(tempo / 60);
     const segundos = tempo % 60;
 
     return (
-
-
-        
         <div className="flex justify-center items-center min-h-screen relative overflow-hidden ">
-
-            
             <div className="w-95 max-w-md bg-[var(--surface)] rounded-[4px] shadow-xl p-6">
                 <div className="text-center mb-6">
                     <h1 className="text-3xl font-bold ">Pagamento</h1>
                     <p className="text-lg ">Complete o pagamento para finalizar seu pedido.</p>
                 </div>
 
-                {/* QR Code com moldura */}
                 <div className="flex justify-center mb-6">
-                    <div className="relative p-4              rounded-lg">
-
-                        {/* QR */}
+                    <div className="relative p-4 rounded-lg">
                         <QRCode value={`pix:${pagamento.chavePix}`} size={150} />
-
-                        {/* Cantos */}
                         <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[#514442] rounded-tl-lg"></div>
                         <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[#514442] rounded-tr-lg"></div>
                         <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[#514442] rounded-bl-lg"></div>
                         <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[#514442] rounded-br-lg"></div>
-
                     </div>
                 </div>
 
-                {/* Pix */}
                 <div className="mb-6 text-center">
                     <p className="font-semibold ">Código Pix:</p>
-                    <p className="text-lg  break-all">{pagamento.chavePix}</p>
+                    <p className="text-lg break-all">{pagamento.chavePix}</p>
                     <button
                         onClick={copiarChavePix}
-                        className="mt-2 px-4 py-2 bg-card text-white rounded-full hover:bg-card/70 focus:outline-none"
+                        className="mt-2 px-4 py-2 bg-card text-white rounded-full hover:bg-card/70"
                     >
                         Copiar Código Pix
                     </button>
                 </div>
 
-                {/* Tempo */}
                 <div className="text-center mb-6">
-                    <p className="font-semibold ">Tempo restante para pagamento:</p>
+                    <p className="font-semibold ">Tempo restante:</p>
                     <p className="text-xl ">{`${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`}</p>
                 </div>
 
-                {/* Detalhes do pedido */}
                 <div className="bg-[var(--bg)] p-4 rounded-lg shadow-md mb-6">
                     <p className="font-semibold text-lg ">PEDIDO #{pagamento.codigoPedido}</p>
                     <p className="text-sm ">{pagamento.Barraca}</p>
                 </div>
 
-                {/* Itens do pedido */}
                 <div className="bg-[var(--bg)] p-4 rounded-lg shadow-md">
                     <h3 className="font-semibold text-lg ">Itens:</h3>
                     {pagamento.itens.map((item, index) => (
@@ -98,16 +82,11 @@ export default function PagamentoPage() {
                             <p>R$ {item.valor.toFixed(2)}</p>
                         </div>
                     ))}
-
-                    {/* Cálculo do total */}
-                    <div className="flex justify-between font-semibold text-lg  mt-4">
+                    <div className="flex justify-between font-semibold text-lg mt-4">
                         <p>Total</p>
-                        <p>
-                            R$ {pagamento.itens.reduce((acc, item) => acc + item.valor, 0).toFixed(2)}
-                        </p>
+                        <p>R$ {pagamento.itens.reduce((acc, item) => acc + item.valor, 0).toFixed(2)}</p>
                     </div>
                 </div>
-
             </div>
         </div>
     );

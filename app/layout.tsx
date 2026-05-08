@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import HeaderBar from "@/components/HeaderPage";
-import FooterPage from "@/components/FooterPage";
+import ConditionalFooter from "@/components/ConditionalFooter"; 
 import { ThemeProvider } from "@/context/Theme";
-import { ProductContext, ProductProvider } from "@/context/ProductContext"
+import { ProductProvider } from "@/context/ProductContext"
 import { CartProvider } from '@/context/CartContext';
 
 const geistSans = Geist({
@@ -28,10 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-br dark">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased  `}
-      >
+    <html lang="pt-br" className="dark">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider>
           <ProductProvider>
             <CartProvider>
@@ -39,7 +37,7 @@ export default function RootLayout({
               <main className="min-h-screen">
                 {children}
               </main>
-              <FooterPage></FooterPage>
+              <ConditionalFooter /> 
             </CartProvider>
           </ProductProvider>
         </ThemeProvider>
