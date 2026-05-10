@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AdminHeaderPage from "@/components/AdminHeaderPage";
 
 export default function AdminPage() {
   const [storeOpen, setStoreOpen] = useState(true);
@@ -57,8 +58,9 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 overflow-x-hidden">
-      <div className="bg-[var(--surface)] p-6 rounded-[20px] shadow-lg mb-6 py-10 pt-100"></div>
+    <div className="min-h-screen pb-24">
+       <AdminHeaderPage/>
+     <div className="h-32"></div>
       <div className="max-w-3xl mx-auto w-full">
 
         {/* Header Card */}
@@ -109,7 +111,7 @@ export default function AdminPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-[var(--surface)] p-6 rounded-3xl shadow-lg mb-6">
+        <div className="bg-[var(--surface)] p-6 rounded-[20px] shadow-lg mb-6">
           <h2 className="text-xl font-semibold mb-4 tracking-tight">
             Adicionar Produto
           </h2>

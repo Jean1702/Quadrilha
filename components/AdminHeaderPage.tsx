@@ -3,7 +3,7 @@
 import React from 'react';
 
 interface AdminHeaderPageProps {
-  titulo?: string; // Prop opcional - default é "ADMINISTRAÇÃO"
+  titulo?: string; 
 }
 
 const AdminHeaderPage = ({ titulo = "ADMINISTRAÇÃO" }: AdminHeaderPageProps) => {

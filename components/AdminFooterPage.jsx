@@ -30,8 +30,8 @@ const AdminFooterPage = () => {
 
 const menuItems = [
     { id: 'Ligar', icon: CirclePower, href: "/admin" },
-    { id: 'Pedidos', icon: Package, href: "/pedidos" },
-    { id: 'Presencial', icon: ClipboardList, href: "presencial" }
+    { id: 'Pedidos', icon: Package, href: "/admin/pedidos" },
+    { id: 'Presencial', icon: ClipboardList, href: "/admin/presencial" }
   ];
 
   return (

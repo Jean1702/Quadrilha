@@ -49,7 +49,7 @@ export default function PedidosPage() {
   return (
     <main className="min-h-screen pb-24">
       <AdminHeaderPage titulo="PEDIDOS" />
-      <div className="bg-[var(--surface)] p-6 rounded-[20px] shadow-lg mb-6 py-10 pt-100"></div>
+      <div className="h-32"></div>
 
       <div className="p-4 max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

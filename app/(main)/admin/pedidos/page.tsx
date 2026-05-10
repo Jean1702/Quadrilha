@@ -1,4 +1,4 @@
-import PedidosPage from "../../components/pedidosAdmin"
+import PedidosPage from "@/components/pedidosAdmin"
 
 export default function Pedido(){
     return(

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import AdminHeaderPage from "@/components/AdminHeaderPage";
-import AdminFooterPage from "@/components/AdminFooterPage";
 
 export default function PedidoFisicoPage() {
   const [form, setForm] = useState({
@@ -30,13 +29,12 @@ export default function PedidoFisicoPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 overflow-x-hidden">
-          <AdminHeaderPage titulo="controle de pedidos " />
-      <div className="bg-[var(--surface)] p-6 rounded-[20px] shadow-lg mb-6 py-10 pt-100"></div>
+    <div className="min-h-screen pb-24">
+      <AdminHeaderPage titulo="PEDIDOS FÍSICOS" />
+      <div className="h-32"></div>
 
       <div className="max-w-3xl mx-auto w-full">
 
-        {/* Formulário */}
         <div className="bg-[var(--surface)] p-6 rounded-[20px] shadow-lg mb-6">
           <h2 className="text-xl font-semibold mb-4 tracking-tight">
             Registro de Pedido Físico
@@ -86,7 +84,6 @@ export default function PedidoFisicoPage() {
           </button>
         </div>
 
-        {/* Cards de pedidos */}
         {pedidos.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold mb-4 tracking-tight">
@@ -99,7 +96,6 @@ export default function PedidoFisicoPage() {
                   key={pedido.id}
                   className="relative bg-[var(--surface)] rounded-[20px] p-4 shadow-lg hover:shadow-xl transition duration-300"
                 >
-                  {/* Botão excluir */}
                   <button
                     onClick={() => handleExcluir(pedido.id)}
                     style={{ position: "absolute", top: "12px", right: "12px" }}
@@ -108,17 +104,12 @@ export default function PedidoFisicoPage() {
                     <X className="h-4 w-4" />
                   </button>
 
-                  {/* Conteúdo */}
                   <div className="pr-7 space-y-1 text-sm">
                     <h3 className="text-base font-bold tracking-tight mb-2">
                       {pedido.produto}
                     </h3>
-                    <p>
-                      <span className="font-semibold">Hora:</span> {pedido.hora}
-                    </p>
-                    <p>
-                      <span className="font-semibold">Quantidade:</span> {pedido.quantidade}
-                    </p>
+                    <p><span className="font-semibold">Hora:</span> {pedido.hora}</p>
+                    <p><span className="font-semibold">Quantidade:</span> {pedido.quantidade}</p>
                     <p className="text-[#026A4C] font-semibold text-base mt-1">
                       R$ {parseFloat(pedido.valor).toFixed(2)}
                     </p>
@@ -136,7 +127,6 @@ export default function PedidoFisicoPage() {
         )}
 
       </div>
-       <AdminFooterPage />
     </div>
   );
 }

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/context/Theme";
 import { ProductProvider } from "@/context/ProductContext";
-import { CartProvider } from '@/context/CartContext';
-import AdminHeaderPage from "@/components/AdminHeaderPage";
+import { CartProvider } from "@/context/CartContext";
 import AdminFooterPage from "@/components/AdminFooterPage";
 
 export const metadata: Metadata = {
@@ -19,7 +18,6 @@ export default function AdminLayout({
     <ThemeProvider>
       <ProductProvider>
         <CartProvider>
-          <AdminHeaderPage />
           {children}
           <AdminFooterPage />
         </CartProvider>
