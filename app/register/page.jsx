@@ -30,7 +30,7 @@ export default  function Register(){
         const userid = userData.user.id;
 
         const {error: profileError } = await admin
-            .from("customers")
+            .from("usuarios")
             .insert({
                 user_id: userid,
                 name: formData.name,

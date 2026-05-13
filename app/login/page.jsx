@@ -12,7 +12,7 @@ export default  function login(){
         const formatado = `+55${phone}`;
 
         const {data: customer, error: customerError} = await supabase
-            .from("customers")
+            .from("usuarios")
             .select("auth_password")
             .eq("phone", formatado)
             .single();

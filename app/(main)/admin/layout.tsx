@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
 import { ThemeProvider } from "@/context/Theme";
 import { ProductProvider } from "@/context/ProductContext";
 import { CartProvider } from "@/context/CartContext";
 import AdminFooterPage from "@/components/AdminFooterPage";
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "IF FOOD - Admin",
   description: "Painel Administrativo - IF FOOD",
 };
