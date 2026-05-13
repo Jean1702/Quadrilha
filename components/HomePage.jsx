@@ -138,6 +138,8 @@ export default function HomePage({ categorias }) {
                 <Swiper
                     spaceBetween={16}
                     slidesPerView={2.5}
+                    touchEventsTarget="container"
+                    preventClicks={true}
                     breakpoints={{
                         640: { slidesPerView: 3.5 },
                         768: { slidesPerView: 4.5 },
@@ -149,10 +151,10 @@ export default function HomePage({ categorias }) {
                         <SwiperSlide key={cat.idcategoria}>
                             <Link
                                 href={`/product`}
-                                className="card card-compact bg-base-100 shadow-xl h-full w-full hover:-translate-y-1 transition-transform duration-300 overflow-hidden block"
+                                className="card card-compact bg-base-100 shadow-xl h-full w-full hover:-translate-y-1 transition-transform duration-300 overflow-hidden block transform-gpu translate-z-0 will-change-transform"
                             >
                                 <figure className="h-32 md:h-40 w-full">
-                                    <img src={cat.img_cat} alt={cat.nomecategoria} className="w-full h-full object-cover" />
+                                    <img src={cat.img_cat} alt={cat.nomecategoria} className="w-full h-full object-cover" loading="lazy" />
                                 </figure>
                                 <div className="card-body items-center text-center p-2 bg-[var(--surface)]">
                                     <h2 className="card-title text-xs md:text-sm m-0">{cat.nomecategoria}</h2>
