@@ -1,12 +1,14 @@
 import AdminPage from "@/components/AdminPage"
 import { CreateClient } from "../../../lib/supabase/server"
+import { redirect } from "next/navigation"
+
 export default async function Admin(){
     const supabase = await CreateClient();
 
     const { data: { user }, erroradm } = await supabase.auth.getUser();
 
     if (!user ) {
-    redirect('/login');
+        redirect('/loginadm');
     }
 
     const { data : adminData, error : adminError } = await supabase
@@ -17,7 +19,7 @@ export default async function Admin(){
    
     if (adminError || !adminData) {
         console.error("Acesso negado: Usuário comum tentou acessar o admin.");
-        redirect('/loja'); 
+        redirect('/loginadm'); 
     }
 
     let products = supabase
@@ -27,19 +29,18 @@ export default async function Admin(){
         imagens (*)
     `);
 
-
     if (!adminData.is_superadmin) {
         products = products.eq("idturma", adminData.idturma);
-       
+        
     } 
-
+    
     const { data: produtos, error: prodError } = await products;
+    console.log(produtos)
 
 
     if (prodError) {
         console.error("Erro ao carregar produtos:", prodError);
-    }  
-
+    } 
    
 
     return(

@@ -12,11 +12,23 @@ export async function DELETE(req) {
         const productId = searchParams.get("id");
         if (!productId) return NextResponse.json({ error: "ID do produto é obrigatório" }, { status: 400 });
 
+        const { error: deleteerr} = await supabase
+            .from("imagens")
+            .delete()
+            .eq("idproduto", productId)
+        
+        const { error: deleteerrcat} = await supabase
+            .from("categoria_produto")
+            .delete()
+            .eq("idproduto", productId)
+
         const { error: deleteError } = await supabase
             .from("produtos")
             .delete()
             .eq("idproduto", productId);    
         
+        if (deleteerrcat) throw deleteerrcat
+        if (deleteerr) throw deleteerr
         if (deleteError) throw deleteError;
         return NextResponse.json({ message: "Produto deletado com sucesso" });
     } catch (error) {

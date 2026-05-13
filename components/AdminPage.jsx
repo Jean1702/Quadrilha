@@ -8,7 +8,6 @@ import { reload } from "next/navigation";
 export default function AdminPage({ adminData, produtos }) {
   const supabase = CreateClient();
   
-  // CORREÇÃO 1: Padronizei para 'produtosatual' e 'setProdutos'
   const [produtosatual, setProdutos] = useState(produtos || []);
   const [selectedImages, setSelectedImages] = useState([]);
   const [storeOpen, setStoreOpen] = useState(true);
@@ -32,8 +31,12 @@ export default function AdminPage({ adminData, produtos }) {
           table: 'produtos',
           filter: !adminData.is_superadmin ? `idturma=eq.${adminData.idturma}` : undefined
         },
+        {
+          event: '*',
+          schema: 'public',
+          table: 'imagens',
+        },
         (payload) => {
-          // CORREÇÃO 2: Agora usando o nome correto 'setProdutos'
           if (payload.eventType === 'INSERT') {
             setProdutos((listaAntiga) => [...listaAntiga, payload.new]);
           } 
@@ -57,7 +60,6 @@ export default function AdminPage({ adminData, produtos }) {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length + selectedImages.length > 3) {
-      alert("Máximo de 3 imagens, chefe!");
       return;
     }
     const newImages = files.map(file => ({

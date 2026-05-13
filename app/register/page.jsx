@@ -26,7 +26,7 @@ export default  function Register(){
         });
 
         if (userError) throw userError;
-
+        console.log(userData)
         const userid = userData.user.id;
 
         const {error: profileError } = await admin

@@ -17,6 +17,8 @@ export default  function login(){
             .eq("phone", formatado)
             .single();
 
+        console.log(customer )
+        
         if (customerError) throw customerError;
 
 
