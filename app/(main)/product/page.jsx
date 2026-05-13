@@ -1,4 +1,4 @@
-import Produto from "@/components/ProdutoPage";
+import ProdutoPage from "@/components/ProdutoPage";
 
 export default function ProdutoScreen() {
   return (
