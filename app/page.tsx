@@ -7,9 +7,18 @@ export default async function Home() {
   const categorias = await supabase.from('categoria')
   .select('*')
 
+  const { data: turmas, error: turmaError } = await supabase
+    .from('turma')
+    .select('*')
+    .eq('is_active', true);
+  
+  if(turmaError) {
+    console.error("Erro ao buscar turmas:", turmaError);
+  }
+
   return (
     <>
-    <HomePage categorias={categorias}/>
+    <HomePage categorias={categorias} turmas={turmas}/>
     </>
   );
 }

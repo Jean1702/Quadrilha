@@ -13,7 +13,10 @@ export default async function Admin(){
 
     const { data : adminData, error : adminError } = await supabase
     .from("admin")
-    .select("*")
+    .select(`
+        *,
+        turma (*)    
+    `)
     .eq("user_id", user.id) 
     .single(); 
    
@@ -27,7 +30,9 @@ export default async function Admin(){
     .select(`
         *,
         imagens (*)
+        
     `);
+
 
     if (!adminData.is_superadmin) {
         products = products.eq("idturma", adminData.idturma);
@@ -35,7 +40,6 @@ export default async function Admin(){
     } 
     
     const { data: produtos, error: prodError } = await products;
-    console.log(produtos)
 
 
     if (prodError) {

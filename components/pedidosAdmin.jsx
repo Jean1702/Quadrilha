@@ -39,8 +39,9 @@ const statusConfig = {
   cancelado:   { label: "Cancelado",  cor: "#D95032" },
 };
 
-export default function PedidosPage() {
+export default function PedidosPage({ vendas, adminData }) {
   const [pedidos, setPedidos] = useState(pedidosIniciais);
+  const [pedidosatual, setPedidosatual] = useState(vendas);
 
   const atualizarStatus = (id, novoStatus) => {
     setPedidos(pedidos.map((p) => p.id === id ? { ...p, status: novoStatus } : p));
@@ -53,41 +54,41 @@ export default function PedidosPage() {
 
       <div className="p-4 max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pedidos.map((pedido) => {
-            const st = statusConfig[pedido.status];
+          {pedidosatual.map((pedido) => {
+            // const st = statusConfig[pedido.status];
             const cancelado = pedido.status === "cancelado";
 
             return (
               <div
-                key={pedido.id}
+                key={pedido.idvenda}
                 className="bg-[var(--surface)] rounded-[20px] p-4 shadow-lg hover:shadow-xl transition duration-300"
               >
                 {/* Cabeçalho com nome e badge de status */}
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold tracking-tight">{pedido.nomePedido}</h3>
+                  <h3 className="text-lg font-bold tracking-tight">Pedido #{pedido.idvenda}</h3>
                   <div className="flex items-center gap-1.5">
                     <span
                       className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: st.cor }}
+                      // style={{ backgroundColor: st.cor }}
                     />
                     <span
                       className="text-xs font-semibold"
-                      style={{ color: st.cor }}
+                      // style={{ color: st.cor }}
                     >
-                      {st.label}
+                      {/* {st.label} */}
                     </span>
                   </div>
                 </div>
 
                 {/* Detalhes do pedido */}
                 <div className="space-y-1 mb-4 text-sm">
-                  <p><span className="font-semibold">Cliente:</span> {pedido.cliente}</p>
-                  <p><span className="font-semibold">Quantidade:</span> {pedido.quantidade}</p>
+                  <p><span className="font-semibold">Cliente:</span> {pedido.usuarios?.name}</p>
+                  <p><span className="font-semibold">Quantidade:</span> {pedido.venda_produto[0]?.quantidade}</p>
                   <div>
                     <span className="font-semibold">Itens:</span>
                     <ul className="list-disc list-inside ml-2 opacity-60">
-                      {pedido.itens.map((item, index) => (
-                        <li key={index}>{item}</li>
+                      {pedido.produtos.map((item) => (
+                        <li key={item.idproduto}>{item.nome}</li>
                       ))}
                     </ul>
                   </div>

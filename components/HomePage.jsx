@@ -1,132 +1,176 @@
 "use client";
 import Link from "next/link";
 import HeaderBar from "../components/HeaderPage";
-
+import { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
+import { CreateClient } from "../lib/supabase/client";
 
-export default function HomePage({ categorias }) {
+export default function HomePage({ categorias, turmas }) {
 
     const categoriasData = categorias?.data || []
+    const turmasData = turmas || []
+    const supabase = CreateClient();
+    const [turmaDataNOVO, setTurmaData] = useState(turmasData);
 
-    const cursos = [
-        {
-            id: "info-1",
-            titulo: "Informática 1º ano",
-            desc: "Introdução à criatividade digital para animar a festa com tecnologia.",
-            subDesc: "Nossa barraca oferece:",
-            itens: ["Pastel", "Pipoca", "Bolo de milho", "Bebidas"],
-            img: "/conectados.jpg"
-        },
-        {
-            id: "info-2",
-            titulo: "Informática 2º ano",
-            desc: "Diversão digital e interação para envolver todos na quadrilha.",
-            subDesc: "Você encontra:",
-            itens: ["Caldo de cana", "Espetinho", "Algodão doce", "Suco natural"],
-            img: "/conectados.jpg"
-        },
-        {
-            id: "info-3",
-            titulo: "Informática 3º ano",
-            desc: "Experiências digitais completas que animam a festa junina.",
-            subDesc: "Oferecemos:",
-            itens: ["Cachorro-quente", "Pipoca doce", "Biscoitos juninos", "Bebidas geladas"],
-            img: "/conectados.jpg"
-        },
+useEffect(() => {
+  const channelTodasAsLojas = supabase
+    .channel('home_todas_turmas')
+    .on(
+      'postgres_changes',
+      { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'turma'
+      },
+      (payload) => {
+        const lojaAtualizada = payload.new;
 
-        {
-            id: "auto-1",
-            titulo: "Automação 1º ano",
-            desc: "Brincadeiras automatizadas para tornar a festa mais divertida e moderna.",
-            subDesc: "Experimente nossas delícias:",
-            itens: ["Espetinho de carne", "Pastel frito", "Suco natural", "Pipoca"],
-            img: "/automacao.jpg"
-        },
-        {
-            id: "auto-2",
-            titulo: "Automação 2º ano",
-            desc: "Tecnologia que transforma cada atração em momentos únicos e interativos.",
-            subDesc: "Servimos:",
-            itens: ["Caldo de feijão", "Pipoca salgada", "Bolo de milho", "Refrigerante"],
-            img: "/automacao.jpg"
-        },
-        {
-            id: "auto-3",
-            titulo: "Automação 3º ano",
-            desc: "Inovação em cada detalhe para entreter todos os participantes.",
-            subDesc: "Aproveite nossas opções:",
-            itens: ["Hambúrguer artesanal", "Pastel", "Espetinho de frango", "Bebidas variadas"],
-            img: "/automacao.jpg"
-        },
+        setTurmaData((turmasData) => {
+            let novaLista = []; 
 
-        {
-            id: "edif-1",
-            titulo: "Edificações 1º ano",
-            desc: "Decoração e estrutura criativa para ambientar a festa junina.",
-            subDesc: "No nosso espaço, você encontra:",
-            itens: ["Bolo de fubá", "Pipoca doce", "Biscoito amanteigado", "Suco natural"],
-            img: "/edificacoes.jpg"
-        },
-        {
-            id: "edif-2",
-            titulo: "Edificações 2º ano",
-            desc: "Ambientes temáticos que deixam a festa ainda mais bonita e acolhedora.",
-            subDesc: "Servimos:",
-            itens: ["Espetinho", "Pastel de carne", "Cachorro-quente", "Refrigerante"],
-            img: "/edificacoes.jpg"
-        },
-        {
-            id: "edif-3",
-            titulo: "Edificações 3º ano",
-            desc: "Grandes estruturas que proporcionam uma experiência completa da festa junina.",
-            subDesc: "Você vai encontrar:",
-            itens: ["Caldo verde", "Bolo de milho", "Pipoca salgada", "Bebidas geladas"],
-            img: "/edificacoes.jpg"
-        },
+            if (lojaAtualizada.is_active) {
+                const lojaJaExiste = turmasData.some(loja => loja.idturma === lojaAtualizada.idturma);
+                
+                if (lojaJaExiste) {
+                novaLista = turmasData.map(loja => loja.idturma === lojaAtualizada.idturma ? lojaAtualizada : loja);
+                } else {
+                novaLista = [...turmasData, lojaAtualizada];
+                }
+            } else {
+                novaLista = turmasData.filter(loja => loja.idturma !== lojaAtualizada.idturma);
+            }
 
-        {
-            id: "eletro-1",
-            titulo: "Eletrotécnica 1º ano",
-            desc: "Iluminação e energia para deixar a festa animada e segura.",
-            subDesc: "Nossa barraca oferece:",
-            itens: ["Pipoca doce", "Bolo de milho", "Espetinho de carne", "Suco natural"],
-            img: "/eletro.jpg"
-        },
-        {
-            id: "eletro-2",
-            titulo: "Eletrotécnica 2º ano",
-            desc: "Efeitos elétricos que destacam a festa e encantam os visitantes.",
-            subDesc: "Servimos:",
-            itens: ["Pastel de queijo", "Cachorro-quente", "Refrigerante", "Pipoca salgada"],
-            img: "/eletro.jpg"
-        },
-        {
-            id: "eletro-3",
-            titulo: "Eletrotécnica 3º ano",
-            desc: "Energia e tecnologia garantindo iluminação e efeitos especiais na festa.",
-            subDesc: "Aproveite nossas opções:",
-            itens: ["Hambúrguer artesanal", "Bolo de fubá", "Espetinho de frango", "Bebidas variadas"],
-            img: "/eletro.jpg"
-        },
+            return novaLista.sort((a, b) => a.idturma - b.idturma); 
+            
+          
+        });
+      }
+    )
+    .subscribe();
 
-        {
-            id: "seg-1",
-            titulo: "Segurança do Trabalho 1º ano",
-            desc: "Garantindo a diversão com segurança para todos os participantes.",
-            subDesc: "Oferecemos:",
-            itens: ["Pipoca", "Pastel", "Suco natural", "Bolo de milho"],
-            img: "/seguranca.jpg"
-        },
-        {
-            id: "seg-2",
-            titulo: "Segurança do Trabalho 2º ano",
-            desc: "Acompanhando a festa para que todos aproveitem com tranquilidade.",
-            subDesc: "Servimos:",
-            itens: ["Espetinho", "Cachorro-quente", "Refrigerante", "Pipoca doce"],
-            img: "/seguranca.jpg"
-        }
-    ];
+  return () => {
+    supabase.removeChannel(channelTodasAsLojas);
+  };
+}, []); // O array vazio [] significa que esse canal vai ser criado uma vez só quando a Home carregar
+    // const cursos = [
+    //     {
+    //         id: "info-1",
+    //         titulo: "Informática 1º ano",
+    //         desc: "Introdução à criatividade digital para animar a festa com tecnologia.",
+    //         subDesc: "Nossa barraca oferece:",
+    //         itens: ["Pastel", "Pipoca", "Bolo de milho", "Bebidas"],
+    //         img: "/conectados.jpg"
+    //     },
+    //     {
+    //         id: "info-2",
+    //         titulo: "Informática 2º ano",
+    //         desc: "Diversão digital e interação para envolver todos na quadrilha.",
+    //         subDesc: "Você encontra:",
+    //         itens: ["Caldo de cana", "Espetinho", "Algodão doce", "Suco natural"],
+    //         img: "/conectados.jpg"
+    //     },
+    //     {
+    //         id: "info-3",
+    //         titulo: "Informática 3º ano",
+    //         desc: "Experiências digitais completas que animam a festa junina.",
+    //         subDesc: "Oferecemos:",
+    //         itens: ["Cachorro-quente", "Pipoca doce", "Biscoitos juninos", "Bebidas geladas"],
+    //         img: "/conectados.jpg"
+    //     },
+
+    //     {
+    //         id: "auto-1",
+    //         titulo: "Automação 1º ano",
+    //         desc: "Brincadeiras automatizadas para tornar a festa mais divertida e moderna.",
+    //         subDesc: "Experimente nossas delícias:",
+    //         itens: ["Espetinho de carne", "Pastel frito", "Suco natural", "Pipoca"],
+    //         img: "/automacao.jpg"
+    //     },
+    //     {
+    //         id: "auto-2",
+    //         titulo: "Automação 2º ano",
+    //         desc: "Tecnologia que transforma cada atração em momentos únicos e interativos.",
+    //         subDesc: "Servimos:",
+    //         itens: ["Caldo de feijão", "Pipoca salgada", "Bolo de milho", "Refrigerante"],
+    //         img: "/automacao.jpg"
+    //     },
+    //     {
+    //         id: "auto-3",
+    //         titulo: "Automação 3º ano",
+    //         desc: "Inovação em cada detalhe para entreter todos os participantes.",
+    //         subDesc: "Aproveite nossas opções:",
+    //         itens: ["Hambúrguer artesanal", "Pastel", "Espetinho de frango", "Bebidas variadas"],
+    //         img: "/automacao.jpg"
+    //     },
+
+    //     {
+    //         id: "edif-1",
+    //         titulo: "Edificações 1º ano",
+    //         desc: "Decoração e estrutura criativa para ambientar a festa junina.",
+    //         subDesc: "No nosso espaço, você encontra:",
+    //         itens: ["Bolo de fubá", "Pipoca doce", "Biscoito amanteigado", "Suco natural"],
+    //         img: "/edificacoes.jpg"
+    //     },
+    //     {
+    //         id: "edif-2",
+    //         titulo: "Edificações 2º ano",
+    //         desc: "Ambientes temáticos que deixam a festa ainda mais bonita e acolhedora.",
+    //         subDesc: "Servimos:",
+    //         itens: ["Espetinho", "Pastel de carne", "Cachorro-quente", "Refrigerante"],
+    //         img: "/edificacoes.jpg"
+    //     },
+    //     {
+    //         id: "edif-3",
+    //         titulo: "Edificações 3º ano",
+    //         desc: "Grandes estruturas que proporcionam uma experiência completa da festa junina.",
+    //         subDesc: "Você vai encontrar:",
+    //         itens: ["Caldo verde", "Bolo de milho", "Pipoca salgada", "Bebidas geladas"],
+    //         img: "/edificacoes.jpg"
+    //     },
+
+    //     {
+    //         id: "eletro-1",
+    //         titulo: "Eletrotécnica 1º ano",
+    //         desc: "Iluminação e energia para deixar a festa animada e segura.",
+    //         subDesc: "Nossa barraca oferece:",
+    //         itens: ["Pipoca doce", "Bolo de milho", "Espetinho de carne", "Suco natural"],
+    //         img: "/eletro.jpg"
+    //     },
+    //     {
+    //         id: "eletro-2",
+    //         titulo: "Eletrotécnica 2º ano",
+    //         desc: "Efeitos elétricos que destacam a festa e encantam os visitantes.",
+    //         subDesc: "Servimos:",
+    //         itens: ["Pastel de queijo", "Cachorro-quente", "Refrigerante", "Pipoca salgada"],
+    //         img: "/eletro.jpg"
+    //     },
+    //     {
+    //         id: "eletro-3",
+    //         titulo: "Eletrotécnica 3º ano",
+    //         desc: "Energia e tecnologia garantindo iluminação e efeitos especiais na festa.",
+    //         subDesc: "Aproveite nossas opções:",
+    //         itens: ["Hambúrguer artesanal", "Bolo de fubá", "Espetinho de frango", "Bebidas variadas"],
+    //         img: "/eletro.jpg"
+    //     },
+
+    //     {
+    //         id: "seg-1",
+    //         titulo: "Segurança do Trabalho 1º ano",
+    //         desc: "Garantindo a diversão com segurança para todos os participantes.",
+    //         subDesc: "Oferecemos:",
+    //         itens: ["Pipoca", "Pastel", "Suco natural", "Bolo de milho"],
+    //         img: "/seguranca.jpg"
+    //     },
+    //     {
+    //         id: "seg-2",
+    //         titulo: "Segurança do Trabalho 2º ano",
+    //         desc: "Acompanhando a festa para que todos aproveitem com tranquilidade.",
+    //         subDesc: "Servimos:",
+    //         itens: ["Espetinho", "Cachorro-quente", "Refrigerante", "Pipoca doce"],
+    //         img: "/seguranca.jpg"
+    //     }
+    // ];
 
 
     return (
@@ -168,15 +212,15 @@ export default function HomePage({ categorias }) {
 
                 <div className="flex flex-col gap-6 md:carousel md:carousel-center md:flex-row md:gap-4 md:overflow-x-auto">
 
-                    {cursos.map((item) => (
-                        <div key={item.id} className="w-full md:w-80 md:carousel-item md:shrink-0">
+                    {turmaDataNOVO.map((item) => (
+                        <div key={item.idturma} className="w-full md:w-80 md:carousel-item md:shrink-0">
                             <div className="card card-compact bg-base-100 shadow-xl overflow-hidden hover:scale-105 transition-transform duration-300 outline-0">
 
                                 <figure className="relative h-48">
                                     <Link href="/course" className="block w-full h-full">
                                         <img
-                                            src={item.img}
-                                            alt={item.titulo}
+                                            src={item.imagemcurso}
+                                            alt={item.nomeres}
                                             className="w-full h-full object-cover"
                                         />
                                         <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
@@ -184,9 +228,9 @@ export default function HomePage({ categorias }) {
                                 </figure>
 
                                 <div className="card-body p-4">
-                                    <h2 className="card-title text-lg">{item.titulo}</h2>
+                                    <h2 className="card-title text-lg">{item.ano} {item.nomecurso}</h2>
 
-                                    <p className="text-sm opacity-70">{item.desc}</p>
+                                    <p className="text-sm opacity-70">{item.descricao}</p>
 
                                     {item.subDesc && (
                                         <p className="text-sm text-primary font-semibold">{item.subDesc}</p>

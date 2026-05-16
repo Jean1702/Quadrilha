@@ -10,7 +10,7 @@ export default function AdminPage({ adminData, produtos }) {
   
   const [produtosatual, setProdutos] = useState(produtos || []);
   const [selectedImages, setSelectedImages] = useState([]);
-  const [storeOpen, setStoreOpen] = useState(true);
+  const [storeOpen, setStoreOpen] = useState(adminData?.turma.is_active || false);
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -94,6 +94,25 @@ export default function AdminPage({ adminData, produtos }) {
     }));
     setSelectedImages([...selectedImages, ...newImages]);
   };
+
+  const mudarestadodaloja = async (isOpen) => {
+    try {
+      const response = await fetch(`/api/turma/update/is_active?id=${adminData.idturma}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ is_active: isOpen })
+      });
+    
+      if (response.ok) {
+        setStoreOpen(isOpen)
+        
+      }
+    }catch (err) {
+        console.error(err);
+      }
+  }
 
   const handleSubmit = async (e) => {
       e.preventDefault();
@@ -210,9 +229,10 @@ export default function AdminPage({ adminData, produtos }) {
                 {storeOpen ? "Loja Aberta" : "Loja Fechada"}
               </span>
             </div>
+            
             <div className="flex items-center">
-              <button onClick={() => setStoreOpen(true)} className={`px-6 py-2 rounded-l-md font-medium transition ${storeOpen ? "bg-[#026A4C] text-white" : "bg-[#026A4C] text-white opacity-50"}`}>Abrir</button>
-              <button onClick={() => setStoreOpen(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
+              <button onClick={() =>mudarestadodaloja(true)} className={`px-6 py-2 rounded-l-md font-medium transition ${storeOpen ? "bg-[#026A4C] text-white" : "bg-[#026A4C] text-white opacity-50"}`}>Abrir</button>
+              <button onClick={() =>mudarestadodaloja(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
             </div>
           </div>
         </div>
