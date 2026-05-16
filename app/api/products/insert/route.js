@@ -17,6 +17,7 @@ export async function POST(req) {
     const images = formData.getAll("image"); 
     const idturma = formData.get("idturma"); 
   
+
     const { data: produto, error: prodError } = await supabase
       .from("produtos")
       .insert({
@@ -48,21 +49,49 @@ export async function POST(req) {
       }
     }
 
+
     if (imageLinks.length > 0) {
-      await supabase.from("imagens").insert(imageLinks);
+      const { error: imgError } = await supabase.from("imagens").insert(imageLinks);
+      if (imgError) {
+        console.error("Erro ao inserir imagens:", imgError);
+      }
     }
 
-    if (categories.length > 0) {
-      const catData = categories.map(catId => ({
-        idproduto: productId,
-        idcategoria: catId
-      }));
-      await supabase.from("categoria_produto").insert(catData);
+   if (categories.length > 0) {
+      let parsedCategories = [];
+      
+      categories.forEach(cat => {
+        if (typeof cat === 'string' && (cat.includes(',') || cat.includes('['))) {
+          try {
+            const arr = JSON.parse(cat);
+            if (Array.isArray(arr)) parsedCategories.push(...arr);
+          } catch (e) {
+            parsedCategories.push(...cat.split(','));
+          }
+        } else {
+          parsedCategories.push(cat);
+        }
+      });
+
+      const catData = parsedCategories
+        .map(catId => parseInt(catId))
+        .filter(catId => !isNaN(catId)) 
+        .map(catId => ({
+          idproduto: productId,
+          idcategoria: catId
+        }));
+
+      if (catData.length > 0) {
+        const { error: catError } = await supabase.from("categoria_produto").insert(catData);
+        if (catError) {
+          console.error("Erro ao inserir categorias:", catError);
+        }
+      }
     }
 
-    return NextResponse.json({ message: "Sucesso!" }, { status: 201 });
+    return NextResponse.json({ message: "Sucesso!", id: productId }, { status: 201 });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Erro interno no servidor" }, { status: 500 });
+    console.error("Erro ao criar produto:", error);
+    return NextResponse.json({ error: "Erro ao criar produto" }, { status: 500 });
   }
 }

@@ -21,41 +21,67 @@ export default function AdminPage({ adminData, produtos }) {
   });
 
   useEffect(() => {
+    if (!adminData) return;
+
+    const configProdutos = {
+      event: '*',
+      schema: 'public',
+      table: 'produtos',
+    };
+
+    if (!adminData.is_superadmin && adminData.idturma) {
+      configProdutos.filter = `idturma=eq.${adminData.idturma}`;
+    }
+
     const channel = supabase
-      .channel('tempo_real')
+      .channel('tempo_real') 
+      
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'produtos',
-          filter: !adminData.is_superadmin ? `idturma=eq.${adminData.idturma}` : undefined
-        },
-        {
-          event: '*',
-          schema: 'public',
-          table: 'imagens',
-        },
+        configProdutos,
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setProdutos((listaAntiga) => [...listaAntiga, payload.new]);
+            setProdutos((listaAntiga) => [...listaAntiga, { ...payload.new, imagens: [] }]);
           } 
           else if (payload.eventType === 'DELETE') {
-            setProdutos((listaAntiga) => listaAntiga.filter((item) => item.id !== payload.old.id));
-          } 
-          else if (payload.eventType === 'PUT') {
             setProdutos((listaAntiga) => 
-              listaAntiga.map((item) => item.id === payload.new.id ? payload.new : item)
+              listaAntiga.filter((item) => item.idproduto !== payload.old.idproduto)
+            );
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            setProdutos((listaAntiga) => 
+              listaAntiga.map((item) => 
+                item.idproduto === payload.new.idproduto ? { ...item, ...payload.new } : item
+              )
             );
           }
         }
       )
+      
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'imagens' },
+        (payload) => {
+          setProdutos((listaAntiga) => 
+            listaAntiga.map((produto) => {
+              if (produto.idproduto === payload.new.idproduto) {
+                return {
+                  ...produto,
+                  imagens: produto.imagens ? [...produto.imagens, payload.new] : [payload.new]
+                };
+              }
+              return produto;
+            })
+          );
+        }
+      )
+      
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [adminData.idturma, adminData.is_superadmin, supabase]);
+  }, [adminData]);
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
@@ -70,22 +96,46 @@ export default function AdminPage({ adminData, produtos }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
+      e.preventDefault();
+      const formData = new FormData();
 
-    formData.append("idturma", adminData.idturma); 
-    formData.append("name", newProduct.name);
-    formData.append("price", newProduct.price);
-    formData.append("stock", newProduct.stock);
-    formData.append("description", newProduct.description);
-    newProduct.categories.forEach(cat => formData.append("categories", cat));
-    selectedImages.forEach(img => formData.append("image", img.file));
-    
-    await fetch("/api/products/insert", {
-      method: "POST",
-      body: formData,
-    });
-  };
+      formData.append("idturma", adminData.idturma); 
+      formData.append("name", newProduct.name);
+      formData.append("price", newProduct.price);
+      formData.append("stock", newProduct.stock);
+      formData.append("description", newProduct.description);
+      
+      newProduct.categories.forEach(cat => formData.append("categories", cat));
+      
+      selectedImages.forEach(img => formData.append("image", img.file));
+      
+      try {
+        const response = await fetch("/api/products/insert", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          console.log("Sucesso absoluto!");
+          setNewProduct({
+            name: "",
+            price: "",
+            stock: "",
+            description: "",
+            categories: [] 
+          });
+
+          setSelectedImages([]);
+
+          e.target.reset();
+          
+        } else {
+          console.error("Erro na API ao salvar");
+        }
+      } catch (error) {
+        console.error("Erro ao enviar formulário:", error);
+      }
+    };
 
   const removeProduct = async (id) => { 
     try{
@@ -219,15 +269,35 @@ export default function AdminPage({ adminData, produtos }) {
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">Categorias</label>
               <div className="bg-[var(--bg)] p-3 rounded-2xl shadow-inner flex flex-wrap gap-2">
-                {['Bebidas', 'Caldos', 'Combo', 'Doces', 'Jantinha', 'Lanche', 'Salgados'].map((cat) => {
-                  const isSelected = newProduct.categories?.includes(cat);
+                {[
+                  { id: 5, nome: 'Bebidas' },
+                  { id: 6, nome: 'Caldos' },
+                  { id: 7, nome: 'Combo' },
+                  { id: 4, nome: 'Doces' },
+                  { id: 3, nome: 'Jantinha' },
+                  { id: 2, nome: 'Lanche' },
+                  { id: 1, nome: 'Salgados' } 
+                ].map((cat) => {
+                  const isSelected = newProduct.categories?.includes(cat.id);
+                  
                   return (
-                    <label key={cat} className={`flex-grow sm:flex-grow-0 flex items-center justify-center px-4 py-2 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-[#D97016] border-[#D97016] text-white' : 'bg-[var(--surface)] border-white/5 text-gray-400'}`}>
-                      <input type="checkbox" className="hidden" checked={isSelected} onChange={(e) => {
-                        const categories = newProduct.categories || [];
-                        setNewProduct({ ...newProduct, categories: e.target.checked ? [...categories, cat] : categories.filter(c => c !== cat) });
-                      }} />
-                      <span className="text-sm font-medium">{cat}</span>
+                    <label key={cat.id} className={`flex-grow sm:flex-grow-0 flex items-center justify-center px-4 py-2 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-[#D97016] border-[#D97016] text-white' : 'bg-[var(--surface)] border-white/5 text-gray-400'}`}>
+                      <input 
+                        type="checkbox" 
+                        className="hidden" 
+                        checked={isSelected} 
+                        onChange={(e) => {
+                          const categories = newProduct.categories || [];
+                          
+                          setNewProduct({ 
+                            ...newProduct, 
+                            categories: e.target.checked 
+                              ? [...categories, cat.id] 
+                              : categories.filter(c => c !== cat.id) 
+                          });
+                        }} 
+                      />
+                      <span className="text-sm font-medium">{cat.nome}</span>
                     </label>
                   );
                 })}
