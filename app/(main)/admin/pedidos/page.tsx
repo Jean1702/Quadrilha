@@ -53,7 +53,6 @@ export default async function Pedido(){
         console.error("Erro ao buscar vendas:", vendaError);
         venda = [];
     }
-    console.log(venda)
 
     return(
         <>

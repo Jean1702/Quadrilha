@@ -62,7 +62,6 @@ export default async function Presencial() {
       console.error("Erro ao buscar vendas:", vendaError);
       venda = [];
   }
-    console.log("Vendas encontradas:", venda);
 
   return <PresencialPage vendas={venda} admindata={adminData} produtos={produto} />;
 }

@@ -99,7 +99,7 @@ export default function PedidosPage({ vendas, adminData }) {
 
                 {/* Detalhes do pedido */}
                 <div className="space-y-1 mb-4 text-sm">
-                  <p><span className="font-semibold">Cliente:</span> {pedido.usuarios?.name}</p>
+                  <p><span className="font-semibold">Cliente:</span> {pedido.usuarios?.name || 'Administrador'}</p>
                   <p><span className="font-semibold">Quantidade:</span> {pedido.venda_produto[0]?.quantidade}</p>
                   <div>
                     <span className="font-semibold">Itens:</span>

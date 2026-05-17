@@ -7,6 +7,7 @@ import AdminHeaderPage from "@/components/AdminHeaderPage";
 export default function PedidoFisicoPage({ vendas, admindata, produtos }) { 
   const [vendasatual, setVendasatual] = useState(vendas);
   const [produtosLoja, setProdutosLoja] = useState(produtos);
+  const idturma = admindata.idturma;
   useEffect(() => {
     const agora = new Date();
     
@@ -20,11 +21,8 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
   }, []);
   
   const [form, setForm] = useState({
-    produto: "",
     dataehora: "",
-    valor: "",
     metodo: "",
-    quantidade: "",
   });
   const [pedidos, setPedidos] = useState([]);
  
@@ -101,9 +99,27 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
   // Cálculo automático do valor total
   const valorTotal = itensPedido.reduce((acc, item) => acc + item.subtotal, 0);
 
-  const handleEnviard = () => {
-    // Aqui você junta 'form', 'itensPedido' e 'valorTotal' para enviar ao backend
-    console.log("Enviando...", { ...form, itens: itensPedido, valorTotal });
+  const handleEnviard = async () => {
+    const pedidoData = {
+      itensPedido,
+      dataehora: form.dataehora,
+      metodo: form.metodo,
+      valor: valorTotal,
+    };
+    const response = await fetch(`/api/pedidos/inserir?idturma=${idturma}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(pedidoData),
+    });
+    
+    if (response.ok) {
+
+      setItensPedido([]);
+    }else{
+    }
+      
   };
 
   return (
@@ -201,7 +217,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
 
             {/* Input de Valor Total (Calculado Automaticamente e Bloqueado para edição) */}
             <div className="col-span-1 sm:col-span-2 relative">
-              <span className="absolute left-4 top-3 text-gray-400 font-medium">Valor Total:</span>
+              <span className="absolute left-4 top-3 text-[var(--text)] font-medium">Valor Total:</span>
               <input
                 className="p-3 pl-24 rounded-full border bg-[var(--bg)] opacity-80 border-gray-300 cursor-not-allowed outline-none shadow-sm w-full font-bold text-[#D97016]"
                 type="text"
