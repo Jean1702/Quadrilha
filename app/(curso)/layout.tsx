@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
   
      
-        <ThemeProvider>
+        <ThemeProvider storageKey="theme-default">
           <main className="min-h-screen">
             {children}
           </main>

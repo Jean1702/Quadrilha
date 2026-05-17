@@ -28,9 +28,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-br" className="dark">
+    <html lang="pt-br" >
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ThemeProvider>
+        <ThemeProvider storageKey="theme-default">
           <ProductProvider>
             <CartProvider>
               <ConditionalHeader />

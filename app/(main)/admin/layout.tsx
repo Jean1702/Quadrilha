@@ -14,7 +14,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider>
+    <ThemeProvider storageKey="theme-default">
       <ProductProvider>
         <CartProvider>
           {children}

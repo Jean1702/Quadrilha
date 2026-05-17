@@ -220,7 +220,7 @@ export default function AdminPage({ adminData, produtos }) {
       <div className="max-w-3xl mx-auto w-full px-4">
 
         {/* Status da Loja */}
-        <div className="bg-[var(--surface)] p-6 rounded-[20px] shadow-lg mb-6">
+        <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6">
           <h1 className="text-2xl font-bold tracking-tight mb-4">Painel da Loja</h1>
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
@@ -238,13 +238,13 @@ export default function AdminPage({ adminData, produtos }) {
         </div>
 
         {/* Formulário de Cadastro */}
-        <form onSubmit={handleSubmit} className="bg-[var(--surface)] p-6 rounded-[24px] shadow-xl mb-6 border border-white/10">
+        <form onSubmit={handleSubmit} className="bg-(--surface) p-6 rounded-[24px] shadow-xl mb-6 border border-white/10">
           <h2 className="text-xl font-bold mb-6 text-center">Cadastrar Novo Produto</h2>
           <div className="flex flex-col gap-5">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider">Nome do Produto</label>
               <input
-                className="w-full px-4 py-3.5 rounded-2xl bg-[var(--bg)] outline-none focus:ring-2 focus:ring-[#D97016] shadow-inner"
+                className="w-full px-4 py-3.5 rounded-2xl bg-(--bg) outline-none focus:ring-2 focus:ring-[#D97016] shadow-inner"
                 placeholder="Ex: Pastel de Frango"
                 value={newProduct.name}
                 onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
@@ -255,7 +255,7 @@ export default function AdminPage({ adminData, produtos }) {
               <label className="text-xs font-bold uppercase tracking-wider">Descrição</label>
               <textarea
                 rows="3"
-                className="w-full p-4 rounded-2xl bg-[var(--bg)] outline-none focus:ring-2 focus:ring-[#D97016] shadow-inner resize-none"
+                className="w-full p-4 rounded-2xl bg-(--bg) outline-none focus:ring-2 focus:ring-[#D97016] shadow-inner resize-none"
                 placeholder="Detalhes..."
                 value={newProduct.description}
                 onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
@@ -267,7 +267,7 @@ export default function AdminPage({ adminData, produtos }) {
                 <label className="text-xs font-bold uppercase tracking-wider">Preço (R$)</label>
                 <input
                   type="number"
-                  className="w-full p-3.5 rounded-2xl bg-[var(--bg)] outline-none focus:ring-2 focus:ring-[#D97016] shadow-inner"
+                  className="w-full p-3.5 rounded-2xl bg-(--bg) outline-none focus:ring-2 focus:ring-[#D97016] shadow-inner"
                   placeholder="0.00"
                   value={newProduct.price}
                   onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
@@ -277,7 +277,7 @@ export default function AdminPage({ adminData, produtos }) {
                 <label className="text-xs font-bold uppercase tracking-wider">Estoque</label>
                 <input
                   type="number"
-                  className="w-full p-3.5 rounded-2xl bg-[var(--bg)] outline-none focus:ring-2 focus:ring-[#D97016] shadow-inner"
+                  className="w-full p-3.5 rounded-2xl bg-(--bg) outline-none focus:ring-2 focus:ring-[#D97016] shadow-inner"
                   placeholder="Qtd"
                   value={newProduct.stock}
                   onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
@@ -288,7 +288,7 @@ export default function AdminPage({ adminData, produtos }) {
             {/* Categorias */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">Categorias</label>
-              <div className="bg-[var(--bg)] p-3 rounded-2xl shadow-inner flex flex-wrap gap-2">
+              <div className="bg-(--bg) p-3 rounded-2xl shadow-inner flex flex-wrap gap-2">
                 {[
                   { id: 5, nome: 'Bebidas' },
                   { id: 6, nome: 'Caldos' },
@@ -301,7 +301,7 @@ export default function AdminPage({ adminData, produtos }) {
                   const isSelected = newProduct.categories?.includes(cat.id);
                   
                   return (
-                    <label key={cat.id} className={`flex-grow sm:flex-grow-0 flex items-center justify-center px-4 py-2 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-[#D97016] border-[#D97016] text-white' : 'bg-[var(--surface)] border-white/5 text-gray-400'}`}>
+                    <label key={cat.id} className={`flex-grow sm:flex-grow-0 flex items-center justify-center px-4 py-2 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-[#D97016] border-[#D97016] text-white' : 'bg-(--surface) border-white/5 text-gray-400'}`}>
                       <input 
                         type="checkbox" 
                         className="hidden" 
@@ -327,7 +327,7 @@ export default function AdminPage({ adminData, produtos }) {
             {/* Imagens */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-gray-400 text-center block">Imagens ({selectedImages.length}/3)</label>
-              <div className="bg-[var(--bg)] p-4 rounded-2xl shadow-inner border-2 border-dashed border-white/10">
+              <div className="bg-(--bg) p-4 rounded-2xl shadow-inner border-2 border-dashed border-white/10">
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   {selectedImages.map((img, index) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-white/10">
@@ -336,7 +336,7 @@ export default function AdminPage({ adminData, produtos }) {
                     </div>
                   ))}
                 </div>
-                <label className="flex flex-col items-center justify-center py-4 bg-[var(--surface)] rounded-xl cursor-pointer hover:bg-[#D97016]/10 transition-all">
+                <label className="flex flex-col items-center justify-center py-4 bg-(--surface) rounded-xl cursor-pointer hover:bg-[#D97016]/10 transition-all">
                   <span className="text-2xl"><Upload /></span>
                   <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
                 </label>
@@ -353,14 +353,14 @@ export default function AdminPage({ adminData, produtos }) {
         {produtosatual.length === 0 ? <p>Nenhum produto cadastrado</p> : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {produtosatual.map((product) => (
-              <div key={product.idproduto} className="bg-[var(--surface)] rounded-[20px] p-4 shadow-lg">
+              <div key={product.idproduto} className="bg-(--surface) rounded-[20px] p-4 shadow-lg">
                 {product.imagens?.[0] && <img src={product.imagens[0].url_imagem} className="w-full h-40 object-cover rounded-2xl mb-3" />}
                 <h3 className="text-lg font-semibold mb-1">{product.nome}</h3>
                 <p className="text-[#026A4C] font-semibold">R$ {Number(product.preco).toFixed(2)}</p>
                 <p className="text-sm opacity-60 mb-3">Estoque: {product.estoque || "0"} un</p>
                 <div className="flex flex-col gap-2 mb-3">
-                  <input type="number" placeholder="Novo preço" className="w-full p-2 rounded-full border bg-[var(--bg)] text-sm" onBlur={(e) => updatePrice(product.idproduto, e.target.value)} />
-                  <input type="number" placeholder="Estoque" className="w-full p-2 rounded-full border bg-[var(--bg)] text-sm" onBlur={(e) => updateStock(product.idproduto, e.target.value)} />
+                  <input type="number" placeholder="Novo preço" className="w-full p-2 rounded-full border bg-(--bg) text-sm" onBlur={(e) => updatePrice(product.idproduto, e.target.value)} />
+                  <input type="number" placeholder="Estoque" className="w-full p-2 rounded-full border bg-(--bg) text-sm" onBlur={(e) => updateStock(product.idproduto, e.target.value)} />
                 </div>
                 <button onClick={() => removeProduct(product.idproduto)} className="w-full bg-[#D95032] text-white py-2 rounded-full font-medium">Remover</button>
               </div>
