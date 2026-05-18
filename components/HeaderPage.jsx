@@ -44,20 +44,23 @@ const HeaderBar = () => {
   const quantidadeNoCarrinho = carrinho.length;
 
   const [turmaAtual, setTurmaAtual] = useState(null);
+  const [categoriaAtual, setCategoriaAtual] = useState(null);
   const supabase = CreateClient();
 
   const isBackMode = pathname.includes('/product') || pathname.includes('/cart');
 
   const courseLogos = { curso1: '../public/logos/LogoTipo.png' };
   const segments = pathname.split('/').filter(Boolean);
-  const courseIndex = segments.indexOf('course');
 
+  const isCoursePage = pathname.includes('/course');
+  const courseIndex = segments.indexOf('course');
   let courseKey = courseIndex !== -1 ? segments[courseIndex + 1] : null;
 
 
-  const isCoursePage = pathname.includes('/course');
+  const isCategoryPage = pathname.includes('/categoria');
+  const categoryIndex = segments.indexOf('categoria');
+  let categoryKey = categoryIndex !== -1 ? segments[categoryIndex + 1] : null;
   const defaultLogo = theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png';
-  const logoSrc = courseLogos[courseKey] || defaultLogo;
 
   useEffect(() => {
     if (isCoursePage && courseKey) {
@@ -79,12 +82,32 @@ const HeaderBar = () => {
     }
   }, [isCoursePage, courseKey]);
 
-  const tamanhoTexto = isCoursePage && turmaAtual?.nomecurso
-    ? (turmaAtual.nomecurso.length > 18 ? 'text-lg md:text-xl' :
-      turmaAtual.nomecurso.length > 12 ? 'text-xl md:text-2xl' :
+  useEffect(() => {
+    if (isCategoryPage && categoryKey) {
+      const fetchCategoria = async () => {
+        const { data } = await supabase
+          .from('categoria') // ATENÇÃO: Confirme o nome da tabela
+          .select('nomecategoria') // Confirme o nome da coluna do nome
+          .eq('idcategoria', categoryKey) // Confirme o nome da coluna do ID
+          .single();
+
+        if (data) setCategoriaAtual(data);
+      };
+      fetchCategoria();
+    } else {
+      setCategoriaAtual(null);
+    }
+  }, [isCategoryPage, categoryKey]);
+
+  let textoParaExibir = "";
+  if (isCoursePage && turmaAtual) textoParaExibir = turmaAtual.nomecurso;
+  if (isCategoryPage && categoriaAtual) textoParaExibir = categoriaAtual.nomecategoria;
+
+  const tamanhoTexto = textoParaExibir
+    ? (textoParaExibir.length > 18 ? 'text-lg md:text-xl' :
+      textoParaExibir.length > 12 ? 'text-xl md:text-2xl' :
         'text-2xl md:text-3xl')
     : 'text-xl';
-
 
   return (
     <header
@@ -104,20 +127,20 @@ const HeaderBar = () => {
         ) : (
           <Link href="/" className="relative h-20 flex items-center gap-2 w-fit">
             <img
+              // MAGIA AQUI: A imagem SÓ vai ser a logo da turma SE for a página de curso. 
+              // Em qualquer outro cenário (Home ou Categoria), ele usa a defaultLogo!
               src={isCoursePage && turmaAtual ? turmaAtual.logo : defaultLogo}
-              alt={isCoursePage && turmaAtual ? turmaAtual.nomecurso : "Logo"}
-              className={`${isCoursePage
-                // Usando h-16 (tamanho máximo sem vazar o header de h-20)
-                ? 'h-16 w-auto max-w-[120px] md:max-w-[160px]'
-                // Na home, usamos o mesmo limite lógico
-                : 'h-40 w-auto max-w-[150px]'
+              alt={textoParaExibir || "Logo"}
+              className={`${isCoursePage || isCategoryPage
+                ? 'h-40 w-auto max-w-[140px] md:max-w-[160px]'
+                : 'h-40 w-auto max-w-[200px]'
                 } object-contain object-left`}
             />
 
-            {isCoursePage && turmaAtual && (
-              // Aplicamos a variável tamanhoTexto e forçamos o texto a ficar na mesma linha (se quiser, adicione whitespace-nowrap)
+            {/* Renderiza o título se ele existir (seja da turma ou da categoria) */}
+            {textoParaExibir && (
               <h2 className={`font-black text-white leading-none tracking-tight ${tamanhoTexto}`}>
-                {turmaAtual.nomecurso}
+                {textoParaExibir}
               </h2>
             )}
           </Link>
