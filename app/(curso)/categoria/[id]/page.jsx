@@ -1,4 +1,4 @@
-import CategoriaPage from "../../../../components/CategoriasPage"
+import CategoriaPage from "@/components/CategoriasPage"
 import { CreateClient } from "@/lib/supabase/server.ts"
 
 export default async function Curso({ params }) {
