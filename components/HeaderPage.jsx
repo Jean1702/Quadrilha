@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Bell, ShoppingCart, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/context/Theme';
 import { usePathname, useRouter } from 'next/navigation';
 import CourseLogo from '../public/logos/LogoTipo.png';
 import { CartContext } from '@/context/CartContext';
+import { CreateClient } from "@/lib/supabase/client";
 
 const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode, theme }) => {
 
@@ -42,16 +43,48 @@ const HeaderBar = () => {
   const { carrinho } = useContext(CartContext);
   const quantidadeNoCarrinho = carrinho.length;
 
+  const [turmaAtual, setTurmaAtual] = useState(null);
+  const supabase = CreateClient();
+
   const isBackMode = pathname.includes('/product') || pathname.includes('/cart');
 
   const courseLogos = { curso1: '../public/logos/LogoTipo.png' };
   const segments = pathname.split('/').filter(Boolean);
   const courseIndex = segments.indexOf('course');
-  let courseKey = courseIndex !== -1 ? segments[courseIndex + 1] : segments[1];
+
+  let courseKey = courseIndex !== -1 ? segments[courseIndex + 1] : null;
+
 
   const isCoursePage = pathname.includes('/course');
   const defaultLogo = theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png';
   const logoSrc = courseLogos[courseKey] || defaultLogo;
+
+  useEffect(() => {
+    if (isCoursePage && courseKey) {
+      const fetchTurma = async () => {
+        const { data, error } = await supabase
+          .from('turma')
+          // ATENÇÃO: Ajuste os nomes "nomecurso" e "imagemcurso" se as colunas no seu banco tiverem outro nome
+          .select('nomecurso, logo')
+          .eq('idturma', courseKey)
+          .single();
+
+        if (data) {
+          setTurmaAtual(data);
+        }
+      };
+      fetchTurma();
+    } else {
+      setTurmaAtual(null);
+    }
+  }, [isCoursePage, courseKey]);
+
+  const tamanhoTexto = isCoursePage && turmaAtual?.nomecurso
+    ? (turmaAtual.nomecurso.length > 18 ? 'text-lg md:text-xl' :
+      turmaAtual.nomecurso.length > 12 ? 'text-xl md:text-2xl' :
+        'text-2xl md:text-3xl')
+    : 'text-xl';
+
 
   return (
     <header
@@ -69,13 +102,24 @@ const HeaderBar = () => {
             <ArrowLeft size={28} />
           </button>
         ) : (
-          <Link href="/" className="relative h-20 flex items-center w-fit">
+          <Link href="/" className="relative h-20 flex items-center gap-1 md:gap-2 w-fit">
             <img
-              src={isCoursePage ? (CourseLogo?.src || CourseLogo) : logoSrc}
-              alt="Logo"
-              className={`${isCoursePage ? 'h-20' : 'h-40'} w-auto object-contain -ml-5`}
+              src={isCoursePage && turmaAtual ? turmaAtual.logo : defaultLogo}
+              alt={isCoursePage && turmaAtual ? turmaAtual.nomecurso : "Logo"}
+              className={`${isCoursePage
+                // h-16 é o tamanho máximo para caber bem dentro do header h-20
+                // O object-left empurra a imagem para a esquerda, colando-a no texto!
+                ? 'h-18 w-auto max-w-[250px] md:max-w-[140px] object-left'
+                : 'h-40 w-auto max-w-[150px] object-left'
+                } object-contain`}
             />
-            {isCoursePage && <h2 className='font-black text-xl ml-2 text-white'>Informática</h2>}
+
+            {isCoursePage && turmaAtual && (
+              // Aplicamos a variável tamanhoTexto que criamos lá em cima
+              <h2 className={`font-black text-white leading-tight ${tamanhoTexto}`}>
+                {turmaAtual.nomecurso}
+              </h2>
+            )}
           </Link>
         )}
       </div>

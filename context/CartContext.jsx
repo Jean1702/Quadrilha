@@ -18,19 +18,44 @@ export function CartProvider({ children }) {
 
     // Função para adicionar um novo item
     const adicionarAoCarrinho = (produto, quantidade, observacao) => {
-        // Criamos um objeto novo contendo as infos da compra
-        const novoItem = {
-            idItemCarrinho: Date.now(), // Cria um ID único baseado na data/hora atual (importante se ele pedir o mesmo hambúrguer duas vezes, mas um sem cebola e outro normal)
-            produto: produto,
-            quantidade: quantidade,
-            observacao: observacao,
-            subtotal: produto.preco * quantidade
-        };
+        // 1. Limpamos a observação para evitar que um espaço extra crie um item novo (ex: " " vs "")
+        const obsLimpa = observacao ? observacao.trim() : "";
 
-        // Pega o carrinho antigo e adiciona o novo item no final
-        const novoCarrinho = [...carrinho, novoItem];
+        // 2. Procuramos no carrinho se já existe uma linha com o MESMO produto E a MESMA observação
+        const indexExistente = carrinho.findIndex(
+            (item) => item.produto.idproduto === produto.idproduto && item.observacao === obsLimpa
+        );
 
-        // Atualiza o estado e salva no localStorage
+        let novoCarrinho;
+
+        if (indexExistente >= 0) {
+            // CENÁRIO A: O item já existe! Vamos apenas somar a quantidade e o subtotal
+            novoCarrinho = [...carrinho];
+            const itemAtual = novoCarrinho[indexExistente];
+
+            const novaQuantidade = itemAtual.quantidade + quantidade;
+            const novoSubtotal = novaQuantidade * produto.preco;
+
+            novoCarrinho[indexExistente] = {
+                ...itemAtual,
+                quantidade: novaQuantidade,
+                subtotal: novoSubtotal
+            };
+
+        } else {
+            // CENÁRIO B: É um item novo (ou o mesmo produto, mas com observação diferente)
+            const novoItem = {
+                idItemCarrinho: Date.now(), // Gera um ID único para esta linha do carrinho
+                produto: produto,
+                quantidade: quantidade,
+                observacao: obsLimpa,
+                subtotal: produto.preco * quantidade,
+            };
+
+            novoCarrinho = [...carrinho, novoItem];
+        }
+
+        // 3. Salva no estado e na memória do navegador
         setCarrinho(novoCarrinho);
         localStorage.setItem("carrinhoApp", JSON.stringify(novoCarrinho));
     };
@@ -48,7 +73,7 @@ export function CartProvider({ children }) {
         localStorage.removeItem("carrinhoApp"); // Remove os dados salvos no navegador
     };
 
-    return ( 
+    return (
         <CartContext.Provider value={{ carrinho, adicionarAoCarrinho, removerDoCarrinho, limparCarrinho }}>
             {children}
         </CartContext.Provider>

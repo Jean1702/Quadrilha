@@ -28,9 +28,6 @@ export default function ProdutoPage() {
     const imagensDesteProduto = imagensGlobais.filter(img => String(img.idproduto) == String(id))
 
 
-    // console.log("ID da URL:", id);
-    // console.log("Produtos no Contexto:", produtosGlobais);
-
     if (!produtoSelecionado) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center">
@@ -40,17 +37,18 @@ export default function ProdutoPage() {
         );
     }
 
-    const handleIncrease = () => setItemquantity(prev => prev + 1);
+    const handleIncrease = () => {
+        setItemquantity(prev => (prev < produtoSelecionado.estoque ? prev + 1 : prev));
+    };
+
     const handleDecrease = () => setItemquantity(prev => (prev > 1 ? prev - 1 : 1));
-    const handleChangePage = (event, value) => {
-        setPage(value);
-    }
 
     const handleAddToCart = () => {
-        // 1. Envia os dados para o nosso "Cofre" do carrinho
+
+        if (produtoSelecionado.estoque === 0) return;
+
         adicionarAoCarrinho(produtoSelecionado, itemquantity, observacao);
 
-        // 2. Redireciona o utilizador para a página do carrinho
         router.push('/cart');
     };
 
@@ -104,6 +102,35 @@ export default function ProdutoPage() {
                         className='w-full bg-[var(--surface)] text-[var(--text)] border-2 border-[#514442]/20 p-4 rounded-xl focus:border-[#D95032] outline-none transition-colors placeholder:text-[var(--text)]'
                     />
                 </section>
+
+                <div className="mt-2 flex items-center">
+                    <span
+                        // AUMENTADO: w-full para ocupar tudo, px-6 py-3.5 para ficar mais alto, text-sm md:text-base para fonte maior
+                        className={`inline-flex w-full justify-center items-center gap-3 px-6 py-3.5 text-sm md:text-base font-bold uppercase tracking-widest rounded-xl border-2 transition-colors ${produtoSelecionado.estoque > 5
+                                // Estoque Alto
+                                ? "bg-[var(--surface)] border-[#514442]/20 text-[var(--text)]"
+                                : produtoSelecionado.estoque > 0
+                                    // Estoque Baixo
+                                    ? "bg-[#D95032]/10 border-[#D95032]/30 text-[#D95032]"
+                                    // Esgotado
+                                    : "bg-[var(--surface)] border-[#514442]/10 text-[#514442]/50"
+                            }`}
+                    >
+                        {/* AUMENTADO: Bolinha passou de h-2.5 para h-3.5 para acompanhar o texto maior */}
+                        {produtoSelecionado.estoque > 0 && produtoSelecionado.estoque <= 5 && (
+                            <span className="relative flex h-3.5 w-3.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D95032] opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#D95032]"></span>
+                            </span>
+                        )}
+
+                        {produtoSelecionado.estoque > 5
+                            ? `Estoque: ${produtoSelecionado.estoque} unidades`
+                            : produtoSelecionado.estoque > 0
+                                ? `Últimas ${produtoSelecionado.estoque} unidades!`
+                                : "Produto Esgotado"}
+                    </span>
+                </div>
 
                 <footer className="flex flex-col gap-6 mt-auto">
                     <div className="flex items-center justify-between bg-[var(--surface)] border border-[#514442]/10 p-4 rounded-2xl shadow-sm">

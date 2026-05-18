@@ -1,4 +1,4 @@
-import CursoPage from "../../../components/CursoPage";
+import CategoriaPage from "../../../../components/CategoriasPage"
 import { CreateClient } from "@/lib/supabase/server.ts"
 export default async function Curso() {
 
@@ -15,7 +15,7 @@ export default async function Curso() {
 
   return (
     <>
-      <CursoPage produtos={produtos} imagem={imagem} categorias={categorias} />
+      <CategoriaPage produtos={produtos} imagem={imagem} categorias={categorias} />
     </>
   );
 }
