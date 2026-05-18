@@ -131,9 +131,9 @@ const HeaderBar = () => {
               // Em qualquer outro cenário (Home ou Categoria), ele usa a defaultLogo!
               src={isCoursePage && turmaAtual ? turmaAtual.logo : defaultLogo}
               alt={textoParaExibir || "Logo"}
-              className={`${isCoursePage || isCategoryPage
-                ? 'h-40 w-auto max-w-[140px] md:max-w-[160px]'
-                : 'h-40 w-auto max-w-[200px]'
+              className={`${isCoursePage
+                ? 'h-20 w-auto max-w-[120px] md:max-w-[160px]'
+                : 'h-40 w-auto max-w-[180px]'
                 } object-contain object-left`}
             />
 
