@@ -64,6 +64,8 @@ export default function PedidosPage({ vendas, adminData }) {
     }
   };
 
+  console.log(pedidosatual)
+
   return (
     <main className="min-h-screen pb-24">
       <AdminHeaderPage titulo="PEDIDOS" />
@@ -105,7 +107,7 @@ export default function PedidosPage({ vendas, adminData }) {
                     <span className="font-semibold">Itens:</span>
                     <ul className="list-disc list-inside ml-2 opacity-60">
                       {pedido.venda_produto?.map((item) => (
-                        <li key={item.idproduto}>{item.produtos?.nome}</li>
+                        <li key={item.produtos.idproduto}>{item.produtos?.nome}</li>
                       ))}
                     </ul>
                   </div>

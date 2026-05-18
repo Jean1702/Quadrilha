@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Bell, ShoppingCart, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/context/Theme';
 import { usePathname, useRouter } from 'next/navigation';
 import CourseLogo from '../public/logos/LogoTipo.png';
 import { CartContext } from '@/context/CartContext';
+import { CreateClient } from "@/lib/supabase/client";
 
 const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode, theme }) => {
 
@@ -42,16 +43,71 @@ const HeaderBar = () => {
   const { carrinho } = useContext(CartContext);
   const quantidadeNoCarrinho = carrinho.length;
 
+  const [turmaAtual, setTurmaAtual] = useState(null);
+  const [categoriaAtual, setCategoriaAtual] = useState(null);
+  const supabase = CreateClient();
+
   const isBackMode = pathname.includes('/product') || pathname.includes('/cart');
 
   const courseLogos = { curso1: '../public/logos/LogoTipo.png' };
   const segments = pathname.split('/').filter(Boolean);
-  const courseIndex = segments.indexOf('course');
-  let courseKey = courseIndex !== -1 ? segments[courseIndex + 1] : segments[1];
 
   const isCoursePage = pathname.includes('/course');
+  const courseIndex = segments.indexOf('course');
+  let courseKey = courseIndex !== -1 ? segments[courseIndex + 1] : null;
+
+
+  const isCategoryPage = pathname.includes('/categoria');
+  const categoryIndex = segments.indexOf('categoria');
+  let categoryKey = categoryIndex !== -1 ? segments[categoryIndex + 1] : null;
   const defaultLogo = theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png';
-  const logoSrc = courseLogos[courseKey] || defaultLogo;
+
+  useEffect(() => {
+    if (isCoursePage && courseKey) {
+      const fetchTurma = async () => {
+        const { data, error } = await supabase
+          .from('turma')
+          // ATENÇÃO: Ajuste os nomes "nomecurso" e "imagemcurso" se as colunas no seu banco tiverem outro nome
+          .select('nomecurso, logo')
+          .eq('idturma', courseKey)
+          .single();
+
+        if (data) {
+          setTurmaAtual(data);
+        }
+      };
+      fetchTurma();
+    } else {
+      setTurmaAtual(null);
+    }
+  }, [isCoursePage, courseKey]);
+
+  useEffect(() => {
+    if (isCategoryPage && categoryKey) {
+      const fetchCategoria = async () => {
+        const { data } = await supabase
+          .from('categoria') // ATENÇÃO: Confirme o nome da tabela
+          .select('nomecategoria') // Confirme o nome da coluna do nome
+          .eq('idcategoria', categoryKey) // Confirme o nome da coluna do ID
+          .single();
+
+        if (data) setCategoriaAtual(data);
+      };
+      fetchCategoria();
+    } else {
+      setCategoriaAtual(null);
+    }
+  }, [isCategoryPage, categoryKey]);
+
+  let textoParaExibir = "";
+  if (isCoursePage && turmaAtual) textoParaExibir = turmaAtual.nomecurso;
+  if (isCategoryPage && categoriaAtual) textoParaExibir = categoriaAtual.nomecategoria;
+
+  const tamanhoTexto = textoParaExibir
+    ? (textoParaExibir.length > 18 ? 'text-lg md:text-xl' :
+      textoParaExibir.length > 12 ? 'text-xl md:text-2xl' :
+        'text-2xl md:text-3xl')
+    : 'text-xl';
 
   return (
     <header
@@ -69,13 +125,24 @@ const HeaderBar = () => {
             <ArrowLeft size={28} />
           </button>
         ) : (
-          <Link href="/" className="relative h-20 flex items-center w-fit">
+          <Link href="/" className="relative h-20 flex items-center gap-2 w-fit">
             <img
-              src={isCoursePage ? (CourseLogo?.src || CourseLogo) : logoSrc}
-              alt="Logo"
-              className={`${isCoursePage ? 'h-20' : 'h-40'} w-auto object-contain -ml-5`}
+              // MAGIA AQUI: A imagem SÓ vai ser a logo da turma SE for a página de curso. 
+              // Em qualquer outro cenário (Home ou Categoria), ele usa a defaultLogo!
+              src={isCoursePage && turmaAtual ? turmaAtual.logo : defaultLogo}
+              alt={textoParaExibir || "Logo"}
+              className={`${isCoursePage
+                ? 'h-20 w-auto max-w-[120px] md:max-w-[160px]'
+                : 'h-40 w-auto max-w-[180px]'
+                } object-contain object-left`}
             />
-            {isCoursePage && <h2 className='font-black text-xl ml-2 text-white'>Informática</h2>}
+
+            {/* Renderiza o título se ele existir (seja da turma ou da categoria) */}
+            {textoParaExibir && (
+              <h2 className={`font-black text-white leading-none tracking-tight ${tamanhoTexto}`}>
+                {textoParaExibir}
+              </h2>
+            )}
           </Link>
         )}
       </div>

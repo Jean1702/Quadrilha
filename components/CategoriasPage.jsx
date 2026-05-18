@@ -8,12 +8,12 @@ import 'swiper/css';
 import Pagination from '@mui/material/Pagination';
 import Stack from '@mui/material/Stack';
 
-export default function CursoPage({ produtos, imagem, categorias, turmas }) {
+export default function CategoriaPage({ produtos, imagem, categorias, turmas, categoria_produto }) {
 
     const { carregarDados } = useContext(ProductContext)
 
     const params = useParams();
-    const idDaTurmaAtual = Number(params.id);
+    const idDaCategoriaAtual = Number(params.id);
 
     const [page, setPage] = useState(1);
     const itensPorPagina = 10;
@@ -22,28 +22,35 @@ export default function CursoPage({ produtos, imagem, categorias, turmas }) {
     const imagens = imagem?.data || []
     const categoriasData = categorias?.data || []
 
-    const cursos = turmas?.data || []
+    const relacoes = categoria_produto?.data || []
 
-    const logoTurma = cursos.filter((e) => e.idturma === idDaTurmaAtual)
+    const categoriasFiltradas = categoriasData.filter(cat => cat.idcategoria !== idDaCategoriaAtual);
 
-    const produtosFiltrados = produto.filter(prod => prod.idturma === idDaTurmaAtual);
+
+    const idsProdutosDestaCategoria = relacoes
+        .filter(rel => rel.idcategoria === idDaCategoriaAtual)
+        .map(rel => rel.idproduto);
+
+    const produtosFiltrados = produto.filter(prod => idsProdutosDestaCategoria.includes(prod.idproduto));
+
 
     const startIndex = (page - 1) * itensPorPagina;
     const endIndex = startIndex + itensPorPagina;
+
     const produtosPaginados = produtosFiltrados.slice(startIndex, endIndex);
     const totalPaginas = Math.ceil(produtosFiltrados.length / itensPorPagina);
 
     const handleChangePage = (event, value) => {
         setPage(value);
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     useEffect(() => {
-        // Agora passamos apenas os produtos filtrados para o contexto
         if (produtosFiltrados && imagens) {
             carregarDados(produtosFiltrados, imagens)
         }
-    }, [idDaTurmaAtual, produto, imagens])
+    }, [idDaCategoriaAtual, produto, imagens])
 
     return (
         <>
@@ -61,7 +68,7 @@ export default function CursoPage({ produtos, imagem, categorias, turmas }) {
                     }}
                     className="w-full pb-4 pr-4"
                 >
-                    {categoriasData.map((cat) => (
+                    {categoriasFiltradas.map((cat) => (
                         <SwiperSlide key={cat.idcategoria}>
                             <Link
                                 href={`/categoria/${cat.idcategoria}`}
@@ -87,7 +94,6 @@ export default function CursoPage({ produtos, imagem, categorias, turmas }) {
                 <section className="px-4 pb-16 md:px-8 mt-10 lg:px-12">
                     <div className="mx-auto max-w-6xl b space-y-10">
 
-                        {/* Mapeamos produtosPaginados em vez de produtosFiltrados */}
                         {produtosPaginados.map((prod) => {
                             const imagensDoProduto = imagens.filter(img => img.idproduto === prod.idproduto);
                             const primeiraImagem = imagensDoProduto[0]?.url_imagem;
