@@ -198,7 +198,7 @@ useEffect(() => {
                                 className="card card-compact bg-base-100 shadow-xl h-full w-full hover:-translate-y-1 transition-transform duration-300 overflow-hidden block transform-gpu translate-z-0 will-change-transform"
                             >
                                 <figure className="h-32 md:h-40 w-full">
-                                    <img src={cat.img_cat} alt={cat.nomecategoria} className="w-full h-full object-cover" loading="lazy" />
+                                    <img src={cat.img_cat} alt={cat.nomecategoria} className="w-full h-full object-cover object-top" loading="lazy" />
                                 </figure>
                                 <div className="card-body items-center text-center p-2 bg-[var(--surface)]">
                                     <h2 className="card-title text-xs md:text-sm m-0">{cat.nomecategoria}</h2>
@@ -221,25 +221,24 @@ useEffect(() => {
                                         <img
                                             src={item.imagemcurso}
                                             alt={item.nomeres}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-cover "
                                         />
                                         <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
                                     </Link>
                                 </figure>
 
-                                <div className="card-body p-4">
-                                    <h2 className="card-title text-lg">{item.ano} {item.nomecurso}</h2>
+                                <div className="card-body grow-0 p-4">
+                                    <h2 className="card-title text-lg">{item.ano}° {item.nomecurso}</h2>
 
                                     <p className="text-sm opacity-70">{item.descricao}</p>
 
-                                    {item.subDesc && (
-                                        <p className="text-sm text-primary font-semibold">{item.subDesc}</p>
-                                    )}
+                                    <p className="text-sm h-5 text-primary font-semibold">Servimos:</p>
+                              
 
-                                    {item.itens && (
-                                        <ul className="mt-2 text-sm list-disc list-inside opacity-80 space-y-1">
-                                            {item.itens.map((it, index) => (
-                                                <li key={index}>{it}</li>
+                                    {item.resumoprodutos && (
+                                        <ul className=" text-sm flex flex-col justify-start list-disc list-inside opacity-80 space-y-1">
+                                            {item.resumoprodutos.map((e) => (
+                                                <li key={e.idresumo}>{e.nome}</li>
                                             ))}
                                         </ul>
                                     )}

@@ -1,6 +1,7 @@
 import CursoPage from "../../../components/CursoPage";
 import { CreateClient } from "@/lib/supabase/server.ts"
-export default async function Curso() {
+
+export default async function Curso({params}) {
 
   const supabase = await CreateClient()
 
