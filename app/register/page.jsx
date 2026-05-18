@@ -1,70 +1,73 @@
+import { createClient } from "@supabase/supabase-js";
 import RegisterPage from "../../components/RegisterPage"
-import {CreateAdminClient} from "../../lib/supabase/admin.ts"
-import { redirect } from "next/navigation"
+import {CreateClient} from "../../lib/supabase/server.ts"
 
-export default  function Register(){
-    
+export default function Register() {
 
-    async function registerAction(formData) {
+    // 1. AÇÃO DE ENVIAR O WHATSAPP
+    async function sendWhatsAppMessage(phoneInput) {
         "use server"
-        const admin = await CreateAdminClient();
 
-        const numbers = formData.phone.replace(/\D/g, "");
-        const formatado = `+55${numbers}`;
-        const password = crypto.randomUUID();
+        // Testa tirar o "+" (se a sua API exigir com +, é só voltar o +55)
+        // Se o usuário digitar (62) 99800-2182, o \D tira os símbolos e fica 62998002182
+        const numbers = phoneInput.replace(/\D/g, "");
 
-        const { data: userData, error: userError } = await admin.auth.admin.createUser({
-            phone: formatado,
-            phone_confirm: true,
-            password: password,
-            user_metadata:{
-                name: formData.name
-            },
-            app_metadata: { 
-                role: "user"
-            }
-        });
+        const formatado = `55${numbers}`;
+        const numeroalet = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
 
-        if (userError) throw userError;
-        console.log(userData)
-        const userid = userData.user.id;
+        const payload = {
+            to: formatado,
+            type: 'text',
+            text: `Seu código de verificação é: ${numeroalet}`
+        };
 
-        const {error: profileError } = await admin
-            .from("usuarios")
-            .insert({
-                user_id: userid,
-                name: formData.name,
-                phone: formatado,
-                auth_password: password
+        try {
+            const response = await fetch('http://164.163.33.150:8001/api/v1/sessions/3c993713-6d8e-4fab-9bea-491e9af3ed92/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': 'wap_0beb8d30af0fdfd606f9466aaf6944bac851a347e443eea7'
+                },
+                body: JSON.stringify(payload)
             });
 
-        if (profileError) throw profileError;
+            // VERIFICA SE A API DEU ERRO (Ex: 400, 401, 500)
+            if (!response.ok) {
+                const erroDaAPI = await response.text();
+                console.error(`❌ Erro da API (Status ${response.status}):`, erroDaAPI);
+                return { success: false, error: erroDaAPI };
+            }
 
-       
-        redirect("/login");
+            const result = await response.json();
+            console.log("✅ Mensagem enviada com sucesso:", result);
+
+            return { success: true, codigoGerado: numeroalet };
+
+        } catch (error) {
+            console.error("🚨 Erro catastrófico no fetch:", error.message);
+            return { success: false, error: error.message };
+        }
     }
 
-    // USO PRA MAIS TARDE, MAIS PRA FRENTE PRA CONFIRMAR O CODIGO DE VERIFICAÇÃO 
-    // async function confirmCode(formData){
-    //     "use server"
-    //     const supabase = await CreateClient();
+    // 2. AÇÃO DE CONFIRMAR O CÓDIGO E CRIAR O USUÁRIO
+    async function confirmCodeAndRegister(formData) {
+        "use server"
+        // Aqui o react-hook-form vai mandar tudo junto: { name, phone, codigo }
+        console.log("Dados finais recebidos:", formData);
+        // const supabase = await createClient();
 
-    //     const { data, error } = await supabase.auth.verifyOtp({
-    //     phone: formData.phone,
-    //     token: formData.code,
-    //     type: "sms"
-    //     });
+        // const {data: user, error: erroruser} = supabase.autj
+        // Aqui entra a sua lógica do Supabase de criar o usuário!
+        // const admin = await CreateAdminClient();
+        // ...resto do seu código de registro...
+    }
 
-    //     if (error) throw error;
-
-    //     console.log("Usuário autenticado:", data.user);
-
-    //     return data;
-    // }
-
-    return(
+    return (
         <>
-            <RegisterPage actions={registerAction} /* codigoconfirm={confirmCode} */ />
+            <RegisterPage
+                enviarWhatsapp={sendWhatsAppMessage}
+                codigoconfirm={confirmCodeAndRegister}
+            />
         </>
     )
 }

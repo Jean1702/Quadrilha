@@ -1,4 +1,4 @@
-import CursoPage from "../../../components/CursoPage";
+import CursoPage from "@/components/CursoPage";
 import { CreateClient } from "@/lib/supabase/server.ts"
 
 export default async function Curso({params}) {
