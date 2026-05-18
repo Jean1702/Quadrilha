@@ -1,6 +1,7 @@
 import CategoriaPage from "../../../../components/CategoriasPage"
 import { CreateClient } from "@/lib/supabase/server.ts"
-export default async function Curso() {
+
+export default async function Curso({ params }) {
 
   const supabase = await CreateClient()
 
@@ -13,9 +14,12 @@ export default async function Curso() {
   const categorias = await supabase.from('categoria')
     .select('*')
 
+  const categoria_produto = await supabase.from('categoria_produto')
+    .select('*')
+
   return (
     <>
-      <CategoriaPage produtos={produtos} imagem={imagem} categorias={categorias} />
+      <CategoriaPage produtos={produtos} imagem={imagem} categorias={categorias} categoria_produto={categoria_produto} />
     </>
   );
 }

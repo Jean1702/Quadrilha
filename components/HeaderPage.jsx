@@ -102,21 +102,21 @@ const HeaderBar = () => {
             <ArrowLeft size={28} />
           </button>
         ) : (
-          <Link href="/" className="relative h-20 flex items-center gap-1 md:gap-2 w-fit">
+          <Link href="/" className="relative h-20 flex items-center gap-2 w-fit">
             <img
               src={isCoursePage && turmaAtual ? turmaAtual.logo : defaultLogo}
               alt={isCoursePage && turmaAtual ? turmaAtual.nomecurso : "Logo"}
               className={`${isCoursePage
-                // h-16 é o tamanho máximo para caber bem dentro do header h-20
-                // O object-left empurra a imagem para a esquerda, colando-a no texto!
-                ? 'h-18 w-auto max-w-[250px] md:max-w-[140px] object-left'
-                : 'h-40 w-auto max-w-[150px] object-left'
-                } object-contain`}
+                // Usando h-16 (tamanho máximo sem vazar o header de h-20)
+                ? 'h-16 w-auto max-w-[120px] md:max-w-[160px]'
+                // Na home, usamos o mesmo limite lógico
+                : 'h-40 w-auto max-w-[150px]'
+                } object-contain object-left`}
             />
 
             {isCoursePage && turmaAtual && (
-              // Aplicamos a variável tamanhoTexto que criamos lá em cima
-              <h2 className={`font-black text-white leading-tight ${tamanhoTexto}`}>
+              // Aplicamos a variável tamanhoTexto e forçamos o texto a ficar na mesma linha (se quiser, adicione whitespace-nowrap)
+              <h2 className={`font-black text-white leading-none tracking-tight ${tamanhoTexto}`}>
                 {turmaAtual.nomecurso}
               </h2>
             )}

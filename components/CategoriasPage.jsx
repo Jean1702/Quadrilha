@@ -33,35 +33,24 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
 
     const produtosFiltrados = produto.filter(prod => idsProdutosDestaCategoria.includes(prod.idproduto));
 
-    console.log("1. Todas as Relações N:N:", relacoes);
-    console.log("2. ID da Categoria Atual:", idDaCategoriaAtual);
-    console.log("3. IDs dos produtos encontrados:", idsProdutosDestaCategoria);
-    console.log("4. Produtos Finais Filtrados:", produtosFiltrados);
 
     const startIndex = (page - 1) * itensPorPagina;
     const endIndex = startIndex + itensPorPagina;
-    // Esse é o array que realmente vamos mapear na tela
+
     const produtosPaginados = produtosFiltrados.slice(startIndex, endIndex);
     const totalPaginas = Math.ceil(produtosFiltrados.length / itensPorPagina);
 
-    // Função que roda ao clicar nos números da paginação
     const handleChangePage = (event, value) => {
         setPage(value);
-        // Opcional: Faz a tela subir suavemente para o topo da lista de produtos
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     useEffect(() => {
-        // Agora passamos apenas os produtos filtrados para o contexto
         if (produtosFiltrados && imagens) {
             carregarDados(produtosFiltrados, imagens)
         }
     }, [idDaCategoriaAtual, produto, imagens])
-
-    const curso = {
-        nome: "Informatíca",
-        chamada: "Venha saborear os melhores hamburgueres artesanais da região.",
-    };
 
     return (
         <>
