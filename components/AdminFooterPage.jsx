@@ -35,7 +35,7 @@ const menuItems = [
   ];
 
   return (
-    <div className={`fixed bottom-1.5 left-0 w-full px-5 transition-all duration-300 ease-in-out z-50 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+    <div className={`fixed inset-x-0 bottom-0 w-full px-5 transition-all duration-300 ease-in-out z-[9999] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
       <nav className="flex items-center justify-between rounded-full px-4 py-3 shadow-lg w-full max-w-md mx-auto footer">
         {menuItems.map(({ id, icon: Icon, href }) => {
           const isActive = pathname === href;

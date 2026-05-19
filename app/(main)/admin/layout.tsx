@@ -17,8 +17,10 @@ export default function AdminLayout({
     <ThemeProvider storageKey="theme-default">
       <ProductProvider>
         <CartProvider>
-          {children}
-          <AdminFooterPage />
+          <div className="pb-28">
+            {children}
+            <AdminFooterPage />
+          </div>
         </CartProvider>
       </ProductProvider>
     </ThemeProvider>
