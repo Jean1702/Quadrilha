@@ -95,6 +95,7 @@ export default function ProdutoPage() {
                 <section className="flex flex-col gap-2">
                     <label className="text-xs font-bold uppercase  ml-1">Observações</label>
                     <TextareaAutosize
+                        maxLength={255}
                         minRows={3}
                         value={observacao}
                         onChange={(e) => setObservacao(e.target.value)}
@@ -107,13 +108,13 @@ export default function ProdutoPage() {
                     <span
                         // AUMENTADO: w-full para ocupar tudo, px-6 py-3.5 para ficar mais alto, text-sm md:text-base para fonte maior
                         className={`inline-flex w-full justify-center items-center gap-3 px-6 py-3.5 text-sm md:text-base font-bold uppercase tracking-widest rounded-xl border-2 transition-colors ${produtoSelecionado.estoque > 5
-                                // Estoque Alto
-                                ? "bg-[var(--surface)] border-[#514442]/20 text-[var(--text)]"
-                                : produtoSelecionado.estoque > 0
-                                    // Estoque Baixo
-                                    ? "bg-[#D95032]/10 border-[#D95032]/30 text-[#D95032]"
-                                    // Esgotado
-                                    : "bg-[var(--surface)] border-[#514442]/10 text-[#514442]/50"
+                            // Estoque Alto
+                            ? "bg-[var(--surface)] border-[#514442]/20 text-[var(--text)]"
+                            : produtoSelecionado.estoque > 0
+                                // Estoque Baixo
+                                ? "bg-[#D95032]/10 border-[#D95032]/30 text-[#D95032]"
+                                // Esgotado
+                                : "bg-[var(--surface)] border-[#514442]/10 text-[#514442]/50"
                             }`}
                     >
                         {/* AUMENTADO: Bolinha passou de h-2.5 para h-3.5 para acompanhar o texto maior */}

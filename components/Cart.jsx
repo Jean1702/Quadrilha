@@ -86,22 +86,22 @@ export default function Cart() {
                     })}
 
                     {carrinho.length > 0 ? (
-                        <div className="flex flex-col gap-6 p-6 sm:p-8 border-[1.5px] border-[#514442]/15 bg-white/20 rounded-[40px] shadow-sm mt-2">
-                            <div className="flex justify-between items-end border-b border-text pb-4">
-                                <span className="text-lg sm:text-xl font-bold uppercase tracking-wide ">
-                                    Total
-                                </span>
-                                <span className="text-3xl sm:text-4xl font-black text-card">
-                                    R$ {totalAmount.toFixed(2)}
-                                </span>
-                            </div>
+                            <div className="flex flex-col gap-6 p-6 sm:p-8 border-[1.5px] border-[#514442]/15 bg-white/20 rounded-[40px] shadow-sm mt-2">
+                                <div className="flex justify-between items-end border-b border-text pb-4">
+                                    <span className="text-lg sm:text-xl font-bold uppercase tracking-wide ">
+                                        Total
+                                    </span>
+                                    <span className="text-3xl sm:text-4xl font-black text-card">
+                                        R$ {totalAmount.toFixed(2)}
+                                    </span>
+                                </div>
 
-                            <Link href={'/payment'}>
-                                <button className="w-full bg-[var(--bg)] hover:bg-[#D95032] text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
-                                    Pagar Agora
-                                </button>
-                            </Link>
-                        </div>
+                                <Link href={'/method_payment'}>
+                                    <button className="w-full bg-[var(--bg)] hover:bg-[#D95032] text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
+                                        Pagar Agora
+                                    </button>
+                                </Link>
+                            </div>
                     ) : (
                         <div className="flex-center flex-col h-full p-10 border-[1.5px] border-[#514442]/15 bg-[var(--surface)] shadow-sm rounded-[40px] text-center mt-2">
                             <p className="text-xl font-black uppercase mb-2 ">Seu carrinho está vazio</p>
