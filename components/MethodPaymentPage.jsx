@@ -3,14 +3,12 @@
 import React, { useState, useContext } from 'react';
 import { CreditCard, Banknote, ShoppingBasket, ArrowLeft, QrCode, ChevronDown, Info } from 'lucide-react';
 import { CartContext } from '@/context/CartContext';
-import { CreateClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function MethodPaymentPage() {
 
     const { carrinho, limparCarrinho } = useContext(CartContext);
     const router = useRouter();
-    const supabase = CreateClient();
 
     const [paymentMethod, setPaymentMethod] = useState('credito');
     const [isLoading, setIsLoading] = useState(false);
@@ -55,59 +53,33 @@ export default function MethodPaymentPage() {
         setIsLoading(true);
 
         try {
-            // PASSO A: Agrupar os produtos por Turma (Restaurante/Barraca)
-            const pedidosPorTurma = carrinho.reduce((acc, item) => {
-                const idTurma = item.produto.idturma;
-                // Se a turma ainda não existe no acumulador, cria um espaço pra ela
-                if (!acc[idTurma]) {
-                    acc[idTurma] = { totalDaTurma: 0, itens: [] };
-                }
-                // Adiciona o item e soma o valor no total específico DESSA turma
-                acc[idTurma].itens.push(item);
-                acc[idTurma].totalDaTurma += item.subtotal;
-                return acc;
-            }, {});
+            // 1. Fazemos a chamada para a nossa própria API
+            const response = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    carrinho: carrinho,
+                    paymentMethod: paymentMethod
+                })
+            });
 
-            for (const idTurmaString in pedidosPorTurma) {
-                const pacote = pedidosPorTurma[idTurmaString];
+            const data = await response.json();
 
-                // 1. Cria a venda (Nota Fiscal) para a Turma específica
-                const { data: novaVenda, error: erroVenda } = await supabase
-                    .from('venda')
-                    .insert([{
-                        status: 'aguardando_pagamento',
-                        valor_total: pacote.totalDaTurma,
-                        metodo_pagamento: paymentMethod, // 'credito', 'debito' ou 'pix'
-                        idturma: parseInt(idTurmaString),
-                        online: true,
-                    }])
-                    .select()
-                    .single();
-
-                if (erroVenda) throw erroVenda;
-
-                // 2. Prepara os itens para vincular com a Venda que acabou de ser criada
-                const itensParaInserir = pacote.itens.map(item => ({
-                    idvenda: novaVenda.idvenda,
-                    idproduto: item.produto.idproduto,
-                    quantidade: item.quantidade,
-                    observacao: item.observacao || null
-                }));
-
-                // 3. Insere todos os itens da turma na tabela venda_produto
-                const { error: erroItens } = await supabase
-                    .from('venda_produto')
-                    .insert(itensParaInserir);
-
-                if (erroItens) throw erroItens;
+            // 2. Verifica se a API devolveu algum erro (status 400 ou 500)
+            if (!response.ok) {
+                throw new Error(data.error || "Erro desconhecido ao finalizar");
             }
+
+            // 3. Sucesso! Limpa o carrinho e redireciona
             limparCarrinho();
-            alert("Pedido realizado com sucesso!");
-            router.push('/'); // Ou mande para uma página de "Sucesso"
+            alert(data.message);
+            router.push('/');
 
         } catch (error) {
-            console.error("Erro ao salvar pedido:", error);
-            alert("Houve um erro ao processar o seu pedido. Tente novamente.");
+            console.error("Erro no front-end ao enviar pedido:", error);
+            alert(error.message || "Houve um erro ao processar o seu pedido. Tente novamente.");
         } finally {
             setIsLoading(false);
         }

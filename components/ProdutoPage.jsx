@@ -18,7 +18,7 @@ export default function ProdutoPage() {
     const { produtosGlobais, imagensGlobais } = useContext(ProductContext)
 
     const router = useRouter();
-    const { adicionarAoCarrinho } = useContext(CartContext);
+    const { adicionarAoCarrinho, carrinho } = useContext(CartContext);
 
     const [itemquantity, setItemquantity] = useState(1);
     const [observacao, setObservacao] = useState('');
@@ -37,19 +37,30 @@ export default function ProdutoPage() {
         );
     }
 
+    const qtdJaNoCarrinho = carrinho
+        .filter((item) => item.produto.idproduto === produtoSelecionado.idproduto)
+        .reduce((total, item) => total + item.quantidade, 0);
+
+    const estoqueDisponivelParaAdd = produtoSelecionado.estoque - qtdJaNoCarrinho;
+
     const handleIncrease = () => {
-        setItemquantity(prev => (prev < produtoSelecionado.estoque ? prev + 1 : prev));
+        setItemquantity(prev => (prev < estoqueDisponivelParaAdd ? prev + 1 : prev));
     };
 
     const handleDecrease = () => setItemquantity(prev => (prev > 1 ? prev - 1 : 1));
 
     const handleAddToCart = () => {
-
         if (produtoSelecionado.estoque === 0) return;
 
-        adicionarAoCarrinho(produtoSelecionado, itemquantity, observacao);
+        if (estoqueDisponivelParaAdd <= 0) {
+            alert("Você já atingiu o limite de estoque deste produto no seu carrinho!");
+            return;
+        }
 
-        router.push('/cart');
+        const sucesso = adicionarAoCarrinho(produtoSelecionado, itemquantity, observacao);
+        if (sucesso) {
+            router.push('/cart');
+        }
     };
 
     return (
