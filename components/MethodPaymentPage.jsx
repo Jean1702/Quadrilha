@@ -55,6 +55,25 @@ export default function MethodPaymentPage() {
         setIsLoading(true);
 
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                alert("Você precisa estar logado para finalizar o pedido.");
+                return;
+            }
+
+            const { data: usuario, error: usuarioError } = await supabase
+                .from("usuarios")
+                .select("id")
+                .eq("user_id", user.id)
+                .single();
+
+            if (usuarioError && usuarioError.code !== "PGRST116") {
+                throw usuarioError;
+            }
+
+            const idUsuarioPedido = usuario?.id || user.id;
+
             // PASSO A: Agrupar os produtos por Turma (Restaurante/Barraca)
             const pedidosPorTurma = carrinho.reduce((acc, item) => {
                 const idTurma = item.produto.idturma;
@@ -75,6 +94,7 @@ export default function MethodPaymentPage() {
                 const { data: novaVenda, error: erroVenda } = await supabase
                     .from('venda')
                     .insert([{
+                        iduser: idUsuarioPedido,
                         status: 'aguardando_pagamento',
                         valor_total: pacote.totalDaTurma,
                         metodo_pagamento: paymentMethod, // 'credito', 'debito' ou 'pix'
