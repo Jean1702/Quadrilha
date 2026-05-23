@@ -11,6 +11,10 @@ const FooterBar = () => {
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
 
+    const isCheckoutFlow = pathname.includes('/cart') ||
+        pathname.includes('/product') ||
+        pathname.includes('/method_payment');
+
     useEffect(() => {
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
@@ -33,6 +37,10 @@ const FooterBar = () => {
         { id: 'Início', icon: House, href: "/" },
         { id: 'Usuário', icon: UserRound, href: "/User" }
     ];
+
+    if (isCheckoutFlow) {
+        return null; 
+    }
 
     return (
         <div className={`fixed bottom-1.5 left-0 w-full px-5 transition-all duration-300 ease-in-out z-50 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'

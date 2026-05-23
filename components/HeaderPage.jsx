@@ -161,7 +161,7 @@ const HeaderBar = () => {
         )}
 
         <NavIcon
-          href="/notifications"
+          href="/notification"
           icon={Bell}
           count={notifications}
           isDot={true}

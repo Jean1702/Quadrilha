@@ -33,22 +33,47 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
 
     const produtosFiltrados = produto.filter(prod => idsProdutosDestaCategoria.includes(prod.idproduto));
 
+    const gruposPorTurma = {};
+    produtosFiltrados.forEach(prod => {
+        if (!gruposPorTurma[prod.idturma]) {
+            gruposPorTurma[prod.idturma] = [];
+        }
+        gruposPorTurma[prod.idturma].push(prod);
+    });
 
-    const startIndex = (page - 1) * itensPorPagina;
+    const produtosOrdenadosJustos = [];
+    const idsDasTurmas = Object.keys(gruposPorTurma);
+    let indiceAtual = 0;
+    let aindaTemProduto = true;
+
+    while (aindaTemProduto) {
+        aindaTemProduto = false; // Começamos assumindo que acabou
+
+        idsDasTurmas.forEach(turmaId => {
+            // Se essa turma ainda tiver um produto no indiceAtual, nós adicionamos
+            if (gruposPorTurma[turmaId][indiceAtual]) {
+                produtosOrdenadosJustos.push(gruposPorTurma[turmaId][indiceAtual]);
+                aindaTemProduto = true; // Se achamos pelo menos um, o loop continua pra próxima rodada
+            }
+        });
+
+        indiceAtual++;
+    }
+
+   const startIndex = (page - 1) * itensPorPagina;
     const endIndex = startIndex + itensPorPagina;
 
-    const produtosPaginados = produtosFiltrados.slice(startIndex, endIndex);
-    const totalPaginas = Math.ceil(produtosFiltrados.length / itensPorPagina);
+   const produtosPaginados = produtosOrdenadosJustos.slice(startIndex, endIndex);
+    const totalPaginas = Math.ceil(produtosOrdenadosJustos.length / itensPorPagina);
 
     const handleChangePage = (event, value) => {
         setPage(value);
-
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     useEffect(() => {
-        if (produtosFiltrados && imagens) {
-            carregarDados(produtosFiltrados, imagens)
+        if (produtosOrdenadosJustos.length > 0 && imagens) {
+            carregarDados(produtosOrdenadosJustos, imagens)
         }
     }, [idDaCategoriaAtual, produto, imagens])
 
