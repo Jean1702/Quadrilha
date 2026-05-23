@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react';
-import { Phone, User, X } from 'lucide-react';
+import { useState, useEffect} from 'react';
+import { Phone, User, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, set} from 'react-hook-form';
 import { isValidPhoneNumber } from "libphonenumber-js"
 
 // 1. Colocamos as funções AQUI EM CIMA, fora do componente.
@@ -33,25 +33,61 @@ function validatePhone(phone) {
 }
 
 
-// 2. Seu componente principal
 export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
   const { control, watch, handleSubmit, getValues } = useForm();
   const [openpopup, setOpenpopup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [phone2, setphone2] = useState("")
+  const [nome2, setnome2] = useState("")
   const phoneValue = watch("phone");
-  const phoneIsValid = validatePhone(phoneValue); // Agora ele acha a função lá em cima!
+  const phoneIsValid = validatePhone(phoneValue); 
+  const [canResend, setCanResend] = useState(true);
+  const [countdown, setCountdown] = useState(0);
+
+  async function handleReenviar() {
+    if (!canResend) return;
+    try {
+      setCanResend(false);
+      setCountdown(60);
+
+      const result = await enviarWhatsapp(phone2);
+
+      if (!result.success) {
+        alert("Erro ao reenviar o código: " + result.error);
+        setCanResend(true);
+        setCountdown(0);
+      }
+    } catch (error) {
+      console.error("Erro ao reenviar:", error);
+      setCanResend(true);
+      setCountdown(0);
+    }
+  }
+
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (countdown === 0 && !canResend) {
+      setCanResend(true); 
+    }
+
+    return () => clearInterval(timer); 
+  }, [countdown, canResend]);
 
   const handleEntrarClick = async () => {
     if (!phoneIsValid) return; 
     
     setIsLoading(true);
     const phone = getValues("phone"); 
-    
+    const nome = getValues("name")
+    setnome2(nome)
+    setphone2(phone)
     const response = await enviarWhatsapp(phone);
     
     if (response?.success) {
-      console.log("Código para testar:", response.codigoGerado);
       setOpenpopup(true); 
     } else {
       alert("Erro ao enviar o código pelo WhatsApp.");
@@ -59,6 +95,20 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
     
     setIsLoading(false);
   };
+
+  async function handleConfirmarCodigo(formData) {
+    setIsLoading(true); // Liga o loading
+    
+    try {
+      // 4. Aqui você chama a PROP que veio do componente pai!
+      await codigoconfirm(formData);
+    } catch (error) {
+      console.error("Erro ao confirmar:", error);
+    } finally {
+      // Desliga o loading independente do resultado
+      setIsLoading(false); 
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
@@ -140,15 +190,15 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
               disabled={!phoneIsValid || isLoading}
               className="w-full py-3 rounded-xl font-semibold bg-[var(--bg)] active:scale-95 transition-all duration-300 shadow-lg hover:shadow-card disabled:opacity-50"
             >
-              {isLoading ? "Enviando..." : "Entrar"}
+              {isLoading ? "Enviando..." : "Cadastrar"}
             </button>
           </form>
 
           {openpopup && (
-            <div className="fixed inset-0 bg-azul/70 rounded-2xl backdrop-blur-md flex items-center justify-center z-50">
-              <div className="relative w-full max-w-md mx-4 backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl p-8">
+            <div className="fixed inset-0 bg-(--surface)  rounded-[30px]  flex items-center justify-center z-50">
+              <div className="relative w-full max-w-md mx-4 backdrop-blur-xl border border-white/20 shadow-2xl  rounded-[40px] p-8">
                 
-                <form onSubmit={handleSubmit(codigoconfirm)}>
+                <form action={handleConfirmarCodigo}>
                   <button
                     type="button"
                     onClick={() => setOpenpopup(false)}
@@ -157,42 +207,76 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
                     <X size={22} />
                   </button>
 
+                  <input type="hidden" name='phonesalvo' value={phone2} />
+                  <input type='hidden' name='nomesalvo' value={nome2} />
                   <div className="text-center mb-6">
-                    <h2 className="text-2xl font-semibold text-white tracking-wide">
+                    <h2 className="text-2xl font-semibold text-(--text) tracking-wide">
                       Verificação de telefone
                     </h2>
-                    <p className="text-white/70 text-sm mt-2">
+                    <p className="text-(--text) text-sm mt-2">
                       Enviamos um código para confirmar seu número
                     </p>
                   </div>
 
+                  
                   <Controller
                     name="codigo"
                     control={control}
                     defaultValue=""
-                    render={({ field }) => (
+                    render={({ field: { onChange, value, ...fieldConfig } }) => (
                       <input
-                        {...field}
-                        type="text"
-                        maxLength={5}
-                        placeholder="Digite o código"
-                        className="w-full text-center tracking-widest text-lg px-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/60 outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+                        {...fieldConfig} 
+                        value={value}
+                        onChange={(e) => {
+                          const apenasNumeros = e.target.value.replace(/\D/g, "");
+                          
+                          e.target.value = apenasNumeros; 
+                          
+                          onChange(apenasNumeros);
+                        }}
+                        type="text" 
+                        inputMode="numeric" 
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        placeholder="000000"
+                        className="w-full text-center tracking-[0.5em] text-2xl font-bold px-4 py-4 rounded-xl bg-(--bg) text-(--text) placeholder-(--text) outline-none border border-white/20 focus:border-amarelo focus:ring-2 focus:ring-amarelo/50 focus:bg-(--bg)/70 transition-all duration-300"
                       />
                     )}
                   />
 
                   <button
                     type="submit"
-                    className="w-full mt-6 py-3 rounded-xl font-semibold text-preto bg-amarelo hover:bg-amarelo-700 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-amarelo/40"
+                    disabled={isLoading}
+                    className={`w-full py-3.5 mt-3 rounded-xl font-bold text-black flex items-center justify-center transition-all duration-300 shadow-lg ${
+                      isLoading 
+                        ? "bg-amarelo/70 cursor-not-allowed shadow-none" 
+                        : "bg-amarelo/90 hover:bg-yellow-600 active:scale-95 shadow-amarelo/20"
+                    }`}
                   >
-                    Confirmar código
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2" size={20} />
+                        Verificando...
+                      </>
+                    ) : (
+                      "Confirmar Código"
+                    )}
                   </button>
 
-                  <p className="text-center text-xs text-white/60 mt-4">
+                  <p className="text-center text-sm text-(--text) mt-6">
                     Não recebeu o código?{" "}
-                    <span className="text-amarelo font-medium cursor-pointer hover:underline">
-                      Reenviar
-                    </span>
+                    <button
+                      type="button"
+                      disabled={!canResend} // Bloqueia o clique nativamente no HTML
+                      onClick={handleReenviar}
+                      className={`font-semibold transition-colors ${
+                        canResend
+                          ? "text-amarelo cursor-pointer hover:text-yellow-400 hover:underline"
+                          : "text-(--text)/80 cursor-not-allowed" // Estilo visual de desativado
+                      }`}
+                    >
+                      {canResend ? "Reenviar" : `Reenviar em ${countdown}s`}
+                    </button>
                   </p>
                 </form>
               </div>

@@ -14,7 +14,10 @@ export default async function Pedido(){
 
     const { data : adminData, error : adminError } = await supabase
     .from("admin")
-    .select('*')
+    .select(`
+        *,
+        turmas (*)
+    `)
     .eq("user_id", user.id) 
     .single(); 
     

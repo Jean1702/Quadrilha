@@ -12,7 +12,10 @@ export default async function Presencial() {
 
   const { data : adminData, error : adminError } = await supabase
   .from("admin")
-  .select('*')
+  .select(`
+    *,
+    turmas (*)
+  `)
   .eq("user_id", user.id) 
   .single(); 
   

@@ -1,72 +1,98 @@
 import { createClient } from "@supabase/supabase-js";
 import RegisterPage from "../../components/RegisterPage"
 import {CreateClient} from "../../lib/supabase/server.ts"
+import { redirect } from "next/navigation";
 
 export default function Register() {
 
-    // 1. AÇÃO DE ENVIAR O WHATSAPP
+
     async function sendWhatsAppMessage(phoneInput) {
         "use server"
 
-        // Testa tirar o "+" (se a sua API exigir com +, é só voltar o +55)
-        // Se o usuário digitar (62) 99800-2182, o \D tira os símbolos e fica 62998002182
         const numbers = phoneInput.replace(/\D/g, "");
-
-        const formatado = `55${numbers}`;
-        const numeroalet = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
-
-        const payload = {
-            to: formatado,
-            type: 'text',
-            text: `Seu código de verificação é: ${numeroalet}`
-        };
+        // ⚠️ ATENÇÃO: O Supabase Auth exige o sinal de "+" antes do código do país para autenticação por telefone!
+        const formatado = `+55${numbers}`; 
 
         try {
-            const response = await fetch('http://164.163.33.150:8001/api/v1/sessions/3c993713-6d8e-4fab-9bea-491e9af3ed92/messages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': 'wap_0beb8d30af0fdfd606f9466aaf6944bac851a347e443eea7'
-                },
-                body: JSON.stringify(payload)
+            const supabase = await CreateClient();
+
+            // O Supabase gera o OTP internamente e vai disparar o Hook que vamos configurar
+            const { error } = await supabase.auth.signInWithOtp({
+                phone: formatado,
             });
 
-            // VERIFICA SE A API DEU ERRO (Ex: 400, 401, 500)
-            if (!response.ok) {
-                const erroDaAPI = await response.text();
-                console.error(`❌ Erro da API (Status ${response.status}):`, erroDaAPI);
-                return { success: false, error: erroDaAPI };
+            if (error) {
+                console.error("❌ Erro ao solicitar OTP:", error.message);
+                return { success: false, error: error.message };
             }
 
-            const result = await response.json();
-            console.log("✅ Mensagem enviada com sucesso:", result);
-
-            return { success: true, codigoGerado: numeroalet };
-
+            return { success: true };
         } catch (error) {
-            console.error("🚨 Erro catastrófico no fetch:", error.message);
             return { success: false, error: error.message };
         }
     }
 
-    // 2. AÇÃO DE CONFIRMAR O CÓDIGO E CRIAR O USUÁRIO
     async function confirmCodeAndRegister(formData) {
         "use server"
-        // Aqui o react-hook-form vai mandar tudo junto: { name, phone, codigo }
-        console.log("Dados finais recebidos:", formData);
-        // const supabase = await createClient();
+        
+        const phone = formData.get ? formData.get('phonesalvo') : formData.phonesalvo;
+        const codigo = formData.get ? formData.get('codigo') : formData.codigo;
+        const nome =  formData.get ? formData.get('nomesalvo') : formData.nomesalvo;
 
-        // const {data: user, error: erroruser} = supabase.autj
-        // Aqui entra a sua lógica do Supabase de criar o usuário!
-        // const admin = await CreateAdminClient();
-        // ...resto do seu código de registro...
+        const numbers = phone.replace(/\D/g, "");
+        const formatado = `+55${numbers}`;
+        
+        let redirectTarget = null;
+
+        try {
+            const supabase = await CreateClient();
+
+            // 1. Valida o código OTP primeiro
+            const { data, error } = await supabase.auth.verifyOtp({
+             
+                phone: formatado,
+                token: codigo,
+                type: 'sms' 
+            });
+
+            await supabase.auth.updateUser({
+                data: { display_name: nome }
+            });
+            // Se o Supabase retornar erro ou não achar o user, para aqui
+            if (error || !data?.user) {
+                console.log("❌ Erro na validação do OTP:", error);
+                return { success: false, error: "Código incorreto ou expirado." };
+            }
+
+            // 2. Agora que temos certeza de que o user existe, fazemos o insert
+            const { data: userData, error: userError } = await supabase
+                .from('usuarios')
+                .insert({ user_id: data.user.id, phone: formatado, name: nome })
+                .select()
+                .single();
+
+            if (userError) {
+                console.error("❌ Erro ao salvar na tabela usuarios:", userError.message);
+                return { success: false, error: "Erro ao criar registro no banco." };
+            }
+
+            redirectTarget = "/user";
+
+        } catch (error) {
+            console.error("🚨 Erro inesperado na confirmação:", error.message);
+            return { success: false, error: "Erro interno ao verificar código." };
+        }
+
+        if (redirectTarget) {
+            redirect(redirectTarget);
+        }
     }
 
     return (
         <>
             <RegisterPage
-                enviarWhatsapp={sendWhatsAppMessage}
                 codigoconfirm={confirmCodeAndRegister}
+                enviarWhatsapp={sendWhatsAppMessage}
             />
         </>
     )

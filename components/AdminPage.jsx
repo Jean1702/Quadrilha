@@ -212,10 +212,9 @@ export default function AdminPage({ adminData, produtos }) {
       alert("Erro de conexão.");
     }
   };
-
   return (
     <div className="min-h-screen pb-24">
-      <AdminHeaderPage />
+      <AdminHeaderPage nometurma={adminData.turma.nomecurso} anoturma={adminData.turma.ano} logo={adminData.turma.logo} />
       <div className="h-32"></div>
       <div className="max-w-3xl mx-auto w-full px-4">
 
