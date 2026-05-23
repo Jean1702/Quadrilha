@@ -26,6 +26,8 @@ export default async function User() {
         .replace(/(\d{5})(\d)/, "$1-$2");
 
 
+        
+
     return (
         <>
             <UserPage name={userName} phone={numbers} />
