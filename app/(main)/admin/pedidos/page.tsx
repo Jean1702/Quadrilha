@@ -16,7 +16,7 @@ export default async function Pedido(){
     .from("admin")
     .select(`
         *,
-        turmas (*)
+        turma (*)
     `)
     .eq("user_id", user.id) 
     .single(); 

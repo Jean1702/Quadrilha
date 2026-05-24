@@ -5,7 +5,6 @@ export default async function Presencial() {
   const supabase = await CreateClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-
   if (!user ) {
       redirect('/loginadm');
   }
@@ -14,7 +13,7 @@ export default async function Presencial() {
   .from("admin")
   .select(`
     *,
-    turmas (*)
+    turma (*)
   `)
   .eq("user_id", user.id) 
   .single(); 

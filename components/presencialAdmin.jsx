@@ -124,7 +124,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
 
   return (
     <div className="min-h-screen pb-24">
-     <AdminHeaderPage titulo="PEDIDOS FÍSICOS" nometurma={adminData.turma.nomecurso} anoturma={adminData.turma.ano} logo={adminData.turma.logo}  />
+     <AdminHeaderPage titulo="PEDIDOS FÍSICOS" nometurma={admindata.turma.nomecurso} anoturma={admindata.turma.ano} logo={admindata.turma.logo}  />
       <div className="h-32"></div>
 
       <div className="max-w-3xl mx-auto w-full">

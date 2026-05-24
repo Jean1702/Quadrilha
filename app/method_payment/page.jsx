@@ -10,7 +10,7 @@ export default async function Pagamento() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        redirect('/login');
+        redirect('/register');
     }
 
     return (

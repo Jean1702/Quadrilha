@@ -6,6 +6,7 @@ export default function LoginAdminScreen() {
     async function loginadm(formData) {
         "use server"
         const supabase = await CreateClient();
+        await supabase.auth.signOut;
         const name = formData.name+"@adm.ifogoiano";
         const {error } = await supabase.auth.signInWithPassword({
             email: name,
