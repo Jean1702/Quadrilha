@@ -1,7 +1,7 @@
 "use server"
 import { redirect } from "next/navigation";
-import UserPage from "../../components/UserPage";
-import { CreateClient } from "../../lib/supabase/server";
+import UserPage from "../../../components/UserPage";
+import { CreateClient } from "../../../lib/supabase/server";
 
 export default async function User() {
     const supabase = await CreateClient();
@@ -9,7 +9,7 @@ export default async function User() {
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (!user) {
-    redirect('/register');
+        redirect('/register');
     }
 
     const userName = user?.user_metadata?.name || "Usuário Teste"; //const userName = user.user_metadata?.name || user.identities?.[0]?.identity_data?.name || "Usuário";
@@ -25,8 +25,6 @@ export default async function User() {
         .replace(/^(\d{2})(\d)/, "($1) $2")
         .replace(/(\d{5})(\d)/, "$1-$2");
 
-
-        
 
     return (
         <>

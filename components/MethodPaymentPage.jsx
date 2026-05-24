@@ -3,15 +3,17 @@
 import React, { useState, useContext } from 'react';
 import { CreditCard, Banknote, ShoppingBasket, ArrowLeft, QrCode, ChevronDown, Info } from 'lucide-react';
 import { CartContext } from '@/context/CartContext';
-import { useRouter } from 'next/navigation';
+import { redirect} from 'next/navigation';
 
 export default function MethodPaymentPage() {
 
     const { carrinho, limparCarrinho } = useContext(CartContext);
-    const router = useRouter();
 
     const [paymentMethod, setPaymentMethod] = useState('credito');
     const [isLoading, setIsLoading] = useState(false);
+
+    if(carrinho.length === 0)
+        redirect('/')
 
     const [cardData, setCardData] = useState({
         number: '',
@@ -75,7 +77,7 @@ export default function MethodPaymentPage() {
             // 3. Sucesso! Limpa o carrinho e redireciona
             limparCarrinho();
             alert(data.message);
-            router.push('/');
+            redirect('/');
 
         } catch (error) {
             console.error("Erro no front-end ao enviar pedido:", error);
