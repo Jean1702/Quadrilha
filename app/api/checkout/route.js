@@ -19,8 +19,23 @@ export async function POST(request) {
             return NextResponse.json({ error: "Sessão expirada ou usuário não autenticado." }, { status: 401 });
         }
 
-        // === TRAVA DE SEGURANÇA 2: VALIDAR SE HÁ ESTOQUE NO BANCO DE DADOS ANTES DE PROSSEGUIR ===
-        // Pegamos todos os IDs de produtos do carrinho para fazer uma única busca no banco
+        // =========================================================================
+        // === PASSO 2: BUSCAR O ID INTERNO DA TABELA 'usuarios' ===
+        // =========================================================================
+        const { data: usuarioPerfil, error: erroPerfil } = await supabase
+            .from('usuarios')
+            .select('id') // Queremos pegar a coluna 'id' (PK)
+            .eq('user_id', user.id) // Onde a coluna 'user_id' seja igual ao auth do Supabase
+            .single();
+
+        // Se der erro ou não achar o usuário, barramos a venda pois falta o perfil
+        if (erroPerfil || !usuarioPerfil) {
+            console.error("Erro ao buscar o ID interno do usuário:", erroPerfil);
+            return NextResponse.json({ error: "Perfil de usuário não encontrado. Por favor, complete seu cadastro." }, { status: 400 });
+        }
+        // =========================================================================
+
+        // === TRAVA DE SEGURANÇA 3: VALIDAR ESTOQUE ===
         const idsProdutos = carrinho.map(item => item.produto.idproduto);
 
         const { data: produtosNoBanco, error: errEstoque } = await supabase
@@ -32,13 +47,11 @@ export async function POST(request) {
             return NextResponse.json({ error: "Erro ao validar o estoque dos produtos." }, { status: 500 });
         }
 
-        // Agrupamos os produtos do carrinho por idproduto para somar as quantidades (caso o mesmo item tenha obs diferentes)
         const quantidadesPedidas = carrinho.reduce((acc, item) => {
             acc[item.produto.idproduto] = (acc[item.produto.idproduto] || 0) + item.quantidade;
             return acc;
         }, {});
 
-        // Comparamos o pedido do cliente com o estoque real do banco de dados naquele exato milissegundo
         for (const prodBanco of produtosNoBanco) {
             const qtdPedida = quantidadesPedidas[prodBanco.idproduto];
             if (qtdPedida > prodBanco.estoque) {
@@ -48,7 +61,7 @@ export async function POST(request) {
             }
         }
 
-        // === PASSO 3: REALIZAR O SPLIT DE PEDIDOS POR TURMA ===
+        // === PASSO 4: REALIZAR O SPLIT DE PEDIDOS POR TURMA ===
         const pedidosPorTurma = carrinho.reduce((acc, item) => {
             const idTurma = item.produto.idturma;
             if (!acc[idTurma]) {
@@ -59,11 +72,11 @@ export async function POST(request) {
             return acc;
         }, {});
 
-        // === PASSO 4: SALVAR NO BANCO (SEM SUBTRAIR ESTOQUE) ===
+        // === PASSO 5: SALVAR NO BANCO (SEM SUBTRAIR ESTOQUE POR ENQUANTO) ===
         for (const idTurmaString in pedidosPorTurma) {
             const pacote = pedidosPorTurma[idTurmaString];
 
-            // A: Cria a venda ASSOCIADA ao iduser do usuário logado!
+            // A: Cria a venda injetando o ID correto!
             const { data: novaVenda, error: erroVenda } = await supabase
                 .from('venda')
                 .insert([{
@@ -72,7 +85,7 @@ export async function POST(request) {
                     metodo_pagamento: paymentMethod,
                     idturma: parseInt(idTurmaString),
                     online: true,
-                    iduser: user.id // <--- INJETANDO O ID DO USUÁRIO AUTENTICADO AQUI
+                    iduser: usuarioPerfil.id // <--- MÁGICA AQUI: Injetando o ID interno da tabela 'usuarios'
                 }])
                 .select()
                 .single();
@@ -92,8 +105,6 @@ export async function POST(request) {
                 .insert(itensParaInserir);
 
             if (erroItens) throw erroItens;
-
-            // C: Removido temporariamente para testes
         }
 
         return NextResponse.json({ success: true, message: "Pedido gerado com sucesso!" }, { status: 200 });

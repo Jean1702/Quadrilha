@@ -1,7 +1,7 @@
 'use client'
 import TextareaAutosize from '@mui/material/TextareaAutosize';
 import { useState, useContext } from 'react';
-import { useParams } from 'next/navigation';
+import { redirect, useParams } from 'next/navigation';
 import { Minus, Plus } from "lucide-react"
 import Link from 'next/link';
 import { ProductContext } from "@/context/ProductContext"
@@ -9,7 +9,6 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
-import { useRouter } from 'next/navigation';
 import { CartContext } from '@/context/CartContext';
 
 export default function ProdutoPage() {
@@ -17,7 +16,6 @@ export default function ProdutoPage() {
     const { id } = useParams()
     const { produtosGlobais, imagensGlobais } = useContext(ProductContext)
 
-    const router = useRouter();
     const { adicionarAoCarrinho, carrinho } = useContext(CartContext);
 
     const [itemquantity, setItemquantity] = useState(1);
@@ -59,7 +57,7 @@ export default function ProdutoPage() {
 
         const sucesso = adicionarAoCarrinho(produtoSelecionado, itemquantity, observacao);
         if (sucesso) {
-            router.push('/cart');
+            redirect('/cart');
         }
     };
 

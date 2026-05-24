@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CartContext } from "@/context/CartContext";
 import { ProductContext } from '@/context/ProductContext';
 import { CreateClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation";
+import { redirect} from "next/navigation";
 
 export default function Cart() {
 
@@ -49,24 +49,22 @@ export default function Cart() {
     const temProblemaNoEstoque = carrinho.some(item => item.produto.estoque === 0 || item.quantidade > item.produto.estoque);
 
     const supabase = CreateClient();
-    const router = useRouter();
 
     const handleIrParaPagamento = async (e) => {
         e.preventDefault();
 
         if (temProblemaNoEstoque) {
-            alert("Por favor, remova os itens esgotados ou reduza a quantidade para prosseguir com a compra.");
+            alert("Por favor, remova os itens esgotados para prosseguir com a compra.");
             return;
         }
 
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session) {
-            router.push('/login');
-            return;
+            redirect('/login');
         }
 
-        router.push('/method_payment');
+        redirect('/method_payment');
     };
 
 
