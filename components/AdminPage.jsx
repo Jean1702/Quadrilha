@@ -124,28 +124,28 @@ export default function AdminPage({ adminData, produtos }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setModalState({ 
-      isOpen: true, 
-      type: 'add', 
-      isLoading: false 
+    setModalState({
+      isOpen: true,
+      type: 'add',
+      isLoading: false
     });
   };
 
   const confirmAddProduct = async () => {
     setModalState(prev => ({ ...prev, isLoading: true }));
-    
+
     const formData = new FormData();
 
-    formData.append("idturma", adminData.idturma); 
+    formData.append("idturma", adminData.idturma);
     formData.append("name", newProduct.name);
     formData.append("price", newProduct.price);
     formData.append("stock", newProduct.stock);
     formData.append("description", newProduct.description);
-    
+
     newProduct.categories.forEach(cat => formData.append("categories", cat));
-    
+
     selectedImages.forEach(img => formData.append("image", img.file));
-    
+
     try {
       const response = await fetch("/api/products/insert", {
         method: "POST",
@@ -158,12 +158,12 @@ export default function AdminPage({ adminData, produtos }) {
           price: "",
           stock: "",
           description: "",
-          categories: [] 
+          categories: []
         });
 
         setSelectedImages([]);
         setModalState({ isOpen: false, type: null, isLoading: false });
-        
+
       } else {
         console.error("Erro na API ao salvar");
         alert("Erro ao salvar produto");
@@ -176,18 +176,18 @@ export default function AdminPage({ adminData, produtos }) {
     }
   };
 
-  const removeProduct = async (id) => { 
-    setModalState({ 
-      isOpen: true, 
-      type: 'delete', 
+  const removeProduct = async (id) => {
+    setModalState({
+      isOpen: true,
+      type: 'delete',
       productId: id,
-      isLoading: false 
+      isLoading: false
     });
   };
 
   const confirmRemoveProduct = async () => {
     setModalState(prev => ({ ...prev, isLoading: true }));
-    
+
     try {
       const response = await fetch(`/api/products/delete?id=${modalState.productId}`, {
         method: "DELETE",
@@ -206,8 +206,8 @@ export default function AdminPage({ adminData, produtos }) {
       setModalState(prev => ({ ...prev, isLoading: false }));
     }
   };
-  
-  const updatePrice = async (id, newPrice) => {  
+
+  const updatePrice = async (id, newPrice) => {
     try {
       const response = await fetch(`/api/products/update/preco?id=${id}`, {
         method: "PUT",
@@ -217,7 +217,7 @@ export default function AdminPage({ adminData, produtos }) {
         body: JSON.stringify({ preco: parseFloat(newPrice) })
       });
       if (response.ok) {
-        setProdutos((listaAntiga) => 
+        setProdutos((listaAntiga) =>
           listaAntiga.map((p) => (p.idproduto === id ? { ...p, preco: parseFloat(newPrice) } : p))
         );
       }
@@ -237,7 +237,7 @@ export default function AdminPage({ adminData, produtos }) {
         body: JSON.stringify({ estoque: parseInt(newStock) })
       });
       if (response.ok) {
-        setProdutos((listaAntiga) => 
+        setProdutos((listaAntiga) =>
           listaAntiga.map((p) => (p.idproduto === id ? { ...p, estoque: parseInt(newStock) } : p))
         );
       }
@@ -264,13 +264,14 @@ export default function AdminPage({ adminData, produtos }) {
                 {storeOpen ? "Loja Aberta" : "Loja Fechada"}
               </span>
             </div>
-            
+
             <div className="flex items-center">
               <button onClick={() => mudarestadodaloja(true)} className={`px-6 py-2 rounded-l-md font-medium transition ${storeOpen ? "bg-[#026A4C] text-white" : "bg-[#026A4C] text-white opacity-50"}`}>Abrir</button>
               <button onClick={() => mudarestadodaloja(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
             </div>
           </div>
-        }
+        </div>
+
 
 
         {/* Formulário de Cadastro */}
@@ -344,11 +345,11 @@ export default function AdminPage({ adminData, produtos }) {
                         checked={isSelected}
                         onChange={(e) => {
                           const categories = newProduct.categories || [];
-                          setNewProduct({ 
-                            ...newProduct, 
-                            categories: e.target.checked 
-                              ? [...categories, cat.id] 
-                              : categories.filter(c => c !== cat.id) 
+                          setNewProduct({
+                            ...newProduct,
+                            categories: e.target.checked
+                              ? [...categories, cat.id]
+                              : categories.filter(c => c !== cat.id)
                           });
                         }}
                       />
@@ -408,7 +409,7 @@ export default function AdminPage({ adminData, produtos }) {
         isOpen={modalState.isOpen}
         title={modalState.type === 'add' ? 'Adicionar Novo Produto' : 'Remover Produto'}
         message={
-          modalState.type === 'add' 
+          modalState.type === 'add'
             ? `Tem certeza que deseja adicionar o produto "${newProduct.name}"?`
             : 'Tem certeza que deseja remover este produto? Esta ação não pode ser desfeita.'
         }
