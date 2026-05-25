@@ -53,7 +53,7 @@ const FooterBar = () => {
                         <Link key={id} href={href} className="relative flex-1 flex flex-col items-center justify-center py-2 z-10">
                             {isActive && (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-24 h-16 rounded-full bg-[var(--color-amarelo)] shadow-sm" />
+                                    <div className="w-24 h-16 rounded-full bg-amarelo shadow-sm" />
                                 </div>
                             )}
                             <Icon

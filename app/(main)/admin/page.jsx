@@ -7,7 +7,6 @@ export default async function Admin(){
 
     const { data: { user }, erroradm } = await supabase.auth.getUser();
 
-    console.log(user)
     if (!user ) {
         redirect('/loginadm');
     }
@@ -31,8 +30,8 @@ export default async function Admin(){
     .select(`
         *,
         imagens (*)
-        
-    `);
+    `)
+    .eq("isActivy", true);
 
 
     if (!adminData.is_superadmin) {

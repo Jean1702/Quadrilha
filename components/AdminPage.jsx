@@ -7,10 +7,11 @@ import { Upload } from 'lucide-react';
 import { reload } from "next/navigation";
 export default function AdminPage({ adminData, produtos }) {
   const supabase = CreateClient();
-  
+
   const [produtosatual, setProdutos] = useState(produtos || []);
   const [selectedImages, setSelectedImages] = useState([]);
-  const [storeOpen, setStoreOpen] = useState(adminData?.turma.is_active || false);
+  const [storeOpen, setStoreOpen] = useState(adminData.turma?.is_active || false);
+  const [superadm, setSuperadm] = useState(adminData.is_superadmin)
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -34,35 +35,35 @@ export default function AdminPage({ adminData, produtos }) {
     }
 
     const channel = supabase
-      .channel('tempo_real') 
-      
+      .channel('tempo_real')
+
       .on(
         'postgres_changes',
         configProdutos,
         (payload) => {
           if (payload.eventType === 'INSERT') {
             setProdutos((listaAntiga) => [...listaAntiga, { ...payload.new, imagens: [] }]);
-          } 
+          }
           else if (payload.eventType === 'DELETE') {
-            setProdutos((listaAntiga) => 
+            setProdutos((listaAntiga) =>
               listaAntiga.filter((item) => item.idproduto !== payload.old.idproduto)
             );
-          } 
+          }
           else if (payload.eventType === 'UPDATE') {
-            setProdutos((listaAntiga) => 
-              listaAntiga.map((item) => 
+            setProdutos((listaAntiga) =>
+              listaAntiga.map((item) =>
                 item.idproduto === payload.new.idproduto ? { ...item, ...payload.new } : item
               )
             );
           }
         }
       )
-      
+
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'imagens' },
         (payload) => {
-          setProdutos((listaAntiga) => 
+          setProdutos((listaAntiga) =>
             listaAntiga.map((produto) => {
               if (produto.idproduto === payload.new.idproduto) {
                 return {
@@ -75,7 +76,7 @@ export default function AdminPage({ adminData, produtos }) {
           );
         }
       )
-      
+
       .subscribe();
 
     return () => {
@@ -104,67 +105,67 @@ export default function AdminPage({ adminData, produtos }) {
         },
         body: JSON.stringify({ is_active: isOpen })
       });
-    
+
       if (response.ok) {
         setStoreOpen(isOpen)
-        
+
       }
-    }catch (err) {
-        console.error(err);
-      }
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   const handleSubmit = async (e) => {
-      e.preventDefault();
-      const formData = new FormData();
+    e.preventDefault();
+    const formData = new FormData();
 
-      formData.append("idturma", adminData.idturma); 
-      formData.append("name", newProduct.name);
-      formData.append("price", newProduct.price);
-      formData.append("stock", newProduct.stock);
-      formData.append("description", newProduct.description);
-      
-      newProduct.categories.forEach(cat => formData.append("categories", cat));
-      
-      selectedImages.forEach(img => formData.append("image", img.file));
-      
-      try {
-        const response = await fetch("/api/products/insert", {
-          method: "POST",
-          body: formData,
+    formData.append("idturma", adminData.idturma);
+    formData.append("name", newProduct.name);
+    formData.append("price", newProduct.price);
+    formData.append("stock", newProduct.stock);
+    formData.append("description", newProduct.description);
+
+    newProduct.categories.forEach(cat => formData.append("categories", cat));
+
+    selectedImages.forEach(img => formData.append("image", img.file));
+
+    try {
+      const response = await fetch("/api/products/insert", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        console.log("Sucesso absoluto!");
+        setNewProduct({
+          name: "",
+          price: "",
+          stock: "",
+          description: "",
+          categories: []
         });
 
-        if (response.ok) {
-          console.log("Sucesso absoluto!");
-          setNewProduct({
-            name: "",
-            price: "",
-            stock: "",
-            description: "",
-            categories: [] 
-          });
+        setSelectedImages([]);
 
-          setSelectedImages([]);
+        e.target.reset();
 
-          e.target.reset();
-          
-        } else {
-          console.error("Erro na API ao salvar");
-        }
-      } catch (error) {
-        console.error("Erro ao enviar formulário:", error);
+      } else {
+        console.error("Erro na API ao salvar");
       }
-    };
+    } catch (error) {
+      console.error("Erro ao enviar formulário:", error);
+    }
+  };
 
-  const removeProduct = async (id) => { 
-    try{
-    const response =  await fetch(`/api/products/delete?id=${id}`, {
-      method: "DELETE",
-    });
-    if (response.ok) {
+  const removeProduct = async (id) => {
+    try {
+      const response = await fetch(`/api/products/delete?id=${id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
         setProdutos((prev) => prev.filter((p) => p.idproduto !== id));
       } else {
-        const error =  response.json();
+        const error = response.json();
         alert(`Erro ao deletar: ${error.message}`);
       }
     } catch (err) {
@@ -172,9 +173,9 @@ export default function AdminPage({ adminData, produtos }) {
       alert("Erro de conexão.");
     }
   };
-  
-  const updatePrice = async (id, newPrice) => {  
-    try{
+
+  const updatePrice = async (id, newPrice) => {
+    try {
       const response = await fetch(`/api/products/update/preco?id=${id}`, {
         method: "PUT",
         headers: {
@@ -183,9 +184,9 @@ export default function AdminPage({ adminData, produtos }) {
         body: JSON.stringify({ preco: parseFloat(newPrice) })
       });
       if (response.ok) {
-          setProdutos((listaAntiga) => 
-            listaAntiga.map((p) => (p.idproduto === id ? { ...p, preco: parseFloat(newPrice) } : p))
-          );
+        setProdutos((listaAntiga) =>
+          listaAntiga.map((p) => (p.idproduto === id ? { ...p, preco: parseFloat(newPrice) } : p))
+        );
       }
     } catch (err) {
       console.error(err);
@@ -194,7 +195,7 @@ export default function AdminPage({ adminData, produtos }) {
   };
 
   const updateStock = async (id, newStock) => {
-    try{
+    try {
       const response = await fetch(`/api/products/update/estoque?id=${id}`, {
         method: "PUT",
         headers: {
@@ -203,38 +204,55 @@ export default function AdminPage({ adminData, produtos }) {
         body: JSON.stringify({ estoque: parseInt(newStock) })
       });
       if (!response.ok) {
-        setProdutos((listaAntiga) => 
-            listaAntiga.map((p) => (p.idproduto === id ? { ...p, estoque: parseInt(newStock) } : p))
+        setProdutos((listaAntiga) =>
+          listaAntiga.map((p) => (p.idproduto === id ? { ...p, estoque: parseInt(newStock) } : p))
         );
       }
-    }catch (err){
+    } catch (err) {
       console.error(err);
       alert("Erro de conexão.");
     }
   };
   return (
     <div className="min-h-screen pb-24">
-      <AdminHeaderPage nometurma={adminData.turma.nomecurso} anoturma={adminData.turma.ano} logo={adminData.turma.logo} />
+      <AdminHeaderPage nometurma={adminData.turma?.nomecurso || 'ADM'} anoturma={adminData.turma?.ano || ''} logo={adminData.turma?.logo || ''} />
       <div className="h-32"></div>
       <div className="max-w-3xl mx-auto w-full px-4">
 
+
         {/* Status da Loja */}
-        <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6">
-          <h1 className="text-2xl font-bold tracking-tight mb-4">Painel da Loja</h1>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${storeOpen ? "bg-[#026A4C]" : "bg-[#D95032]"}`} />
-              <span className={`text-sm font-medium ${storeOpen ? "text-[#026A4C]" : "text-[#D95032]"}`}>
-                {storeOpen ? "Loja Aberta" : "Loja Fechada"}
-              </span>
-            </div>
-            
-            <div className="flex items-center">
-              <button onClick={() =>mudarestadodaloja(true)} className={`px-6 py-2 rounded-l-md font-medium transition ${storeOpen ? "bg-[#026A4C] text-white" : "bg-[#026A4C] text-white opacity-50"}`}>Abrir</button>
-              <button onClick={() =>mudarestadodaloja(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
+        {superadm ?
+          <div className="p-6 rounded-[20px] bg-(--surface) mb-5">
+            <h2 className="mb-2"><span className="text-red-600">Zona de Perigo</span> (Super Admin)</h2>
+            <p className="text-sm mb-4">
+              Isto bloqueará o acesso de todos os clientes ao site instantaneamente.
+            </p>
+
+            <button
+              className={`px-6 py-3 rounded-lg font-bold text-white transition bg-(--bg)`}
+            >
+              🚨 ATIVAR MODO MANUTENÇÃO
+            </button>
+          </div>
+          :
+          <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6">
+            <h1 className="text-2xl font-bold tracking-tight mb-4">Painel da Loja</h1>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${storeOpen ? "bg-[#026A4C]" : "bg-[#D95032]"}`} />
+                <span className={`text-sm font-medium ${storeOpen ? "text-[#026A4C]" : "text-[#D95032]"}`}>
+                  {storeOpen ? "Loja Aberta" : "Loja Fechada"}
+                </span>
+              </div>
+
+              <div className="flex items-center">
+                <button onClick={() => mudarestadodaloja(true)} className={`px-6 py-2 rounded-l-md font-medium transition ${storeOpen ? "bg-[#026A4C] text-white" : "bg-[#026A4C] text-white opacity-50"}`}>Abrir</button>
+                <button onClick={() => mudarestadodaloja(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
+              </div>
             </div>
           </div>
-        </div>
+        }
+
 
         {/* Formulário de Cadastro */}
         <form onSubmit={handleSubmit} className="bg-(--surface) p-6 rounded-[24px] shadow-xl mb-6 border border-white/10">
@@ -295,26 +313,26 @@ export default function AdminPage({ adminData, produtos }) {
                   { id: 4, nome: 'Doces' },
                   { id: 3, nome: 'Jantinha' },
                   { id: 2, nome: 'Lanche' },
-                  { id: 1, nome: 'Salgados' } 
+                  { id: 1, nome: 'Salgados' }
                 ].map((cat) => {
                   const isSelected = newProduct.categories?.includes(cat.id);
-                  
+
                   return (
-                    <label key={cat.id} className={`flex-grow sm:flex-grow-0 flex items-center justify-center px-4 py-2 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-[#D97016] border-[#D97016] text-white' : 'bg-(--surface) border-white/5 text-gray-400'}`}>
-                      <input 
-                        type="checkbox" 
-                        className="hidden" 
-                        checked={isSelected} 
+                    <label key={cat.id} className={`grow sm:grow-0 flex items-center justify-center px-4 py-2 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-[#D97016] border-[#D97016] text-white' : 'bg-(--surface) border-white/5 text-gray-400'}`}>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={isSelected}
                         onChange={(e) => {
                           const categories = newProduct.categories || [];
-                          
-                          setNewProduct({ 
-                            ...newProduct, 
-                            categories: e.target.checked 
-                              ? [...categories, cat.id] 
-                              : categories.filter(c => c !== cat.id) 
+
+                          setNewProduct({
+                            ...newProduct,
+                            categories: e.target.checked
+                              ? [...categories, cat.id]
+                              : categories.filter(c => c !== cat.id)
                           });
-                        }} 
+                        }}
                       />
                       <span className="text-sm font-medium">{cat.nome}</span>
                     </label>

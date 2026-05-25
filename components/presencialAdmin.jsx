@@ -8,6 +8,8 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
   const [vendasatual, setVendasatual] = useState(vendas);
   const [produtosLoja, setProdutosLoja] = useState(produtos);
   const idturma = admindata.idturma;
+
+  
   useEffect(() => {
     const agora = new Date();
     
@@ -124,11 +126,11 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
 
   return (
     <div className="min-h-screen pb-24">
-     <AdminHeaderPage titulo="PEDIDOS FÍSICOS" nometurma={admindata.turma.nomecurso} anoturma={admindata.turma.ano} logo={admindata.turma.logo}  />
+     <AdminHeaderPage titulo="PEDIDOS FÍSICOS" nometurma={admindata.turma?.nomecurso || 'ADM'} anoturma={admindata.turma?.ano || ''} logo={admindata.turma?.logo || ''}  />
       <div className="h-32"></div>
 
       <div className="max-w-3xl mx-auto w-full">
-        <div className="bg-[var(--surface)] p-6 rounded-[20px] shadow-lg mb-6">
+        <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6">
           <h2 className="text-xl font-semibold mb-6 tracking-tight">
             Registro de Pedido Físico
           </h2>
@@ -142,7 +144,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
               <select
                 value={produtoAtual}
                 onChange={(e) => setProdutoAtual(e.target.value)}
-                className="p-3 rounded-full border bg-[var(--bg)] border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm col-span-1 sm:col-span-3"
+                className="p-3 rounded-full border bg-(--bg) border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm col-span-1 sm:col-span-3"
               >
                 <option value="" disabled>Selecione um produto...</option>
                 {produtosLoja.map(produto => (
@@ -154,7 +156,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
 
               {/* Input de Quantidade */}
               <input
-                className="p-3 rounded-full border bg-[var(--bg)] border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm col-span-1"
+                className="p-3 rounded-full border bg-(--bg) border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm col-span-1"
                 type="number"
                 placeholder="Qtd"
                 min="1"
@@ -179,7 +181,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
               <h3 className="text-sm font-medium mb-2 opacity-80">Itens do Pedido:</h3>
               <ul className="space-y-2">
                 {itensPedido.map((item, index) => (
-                  <li key={index} className="flex justify-between items-center bg-[var(--bg)] p-3 rounded-lg border border-gray-300/20 text-sm">
+                  <li key={index} className="flex justify-between items-center bg-(--bg) p-3 rounded-lg border border-gray-300/20 text-sm">
                     <span><span className="font-bold">{item.quantidade}x</span> {item.nome}</span>
                     <div className="flex items-center gap-4">
                       <span>R$ {item.subtotal.toFixed(2)}</span>
@@ -196,7 +198,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
           {/* SESSÃO 3: DADOS DO PAGAMENTO E FINALIZAÇÃO */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-6 border-t border-gray-300/20">
             <input
-              className="p-3 rounded-full border bg-[var(--bg)] border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
+              className="p-3 rounded-full border bg-(--bg) border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
               type="datetime-local"
               value={form.dataehora}
               onChange={(e) => setForm({ ...form, dataehora: e.target.value })}
@@ -206,7 +208,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
               id="pagamento"
               value={form.metodo}
               onChange={(e) => setForm({ ...form, metodo: e.target.value })}
-              className="p-3 rounded-full border bg-[var(--bg)] border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
+              className="p-3 rounded-full border bg-(--bg) border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
             >
               <option value="" disabled>Forma de Pagamento</option>
               <option value="pix">Pix</option>
@@ -217,9 +219,9 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
 
             {/* Input de Valor Total (Calculado Automaticamente e Bloqueado para edição) */}
             <div className="col-span-1 sm:col-span-2 relative">
-              <span className="absolute left-4 top-3 text-[var(--text)] font-medium">Valor Total:</span>
+              <span className="absolute left-4 top-3 text-(--text) font-medium">Valor Total:</span>
               <input
-                className="p-3 pl-24 rounded-full border bg-[var(--bg)] opacity-80 border-gray-300 cursor-not-allowed outline-none shadow-sm w-full font-bold text-[#D97016]"
+                className="p-3 pl-24 rounded-full border bg-(--bg) opacity-80 border-gray-300 cursor-not-allowed outline-none shadow-sm w-full font-bold text-[#D97016]"
                 type="text"
                 readOnly
                 value={`R$ ${valorTotal.toFixed(2)}`}
@@ -247,7 +249,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
                 return (
                 <div
                   key={pedido.idvenda}
-                  className="relative bg-[var(--surface)] rounded-[20px] p-4 shadow-lg hover:shadow-xl transition duration-300"
+                  className="relative bg-(--surface) rounded-[20px] p-4 shadow-lg hover:shadow-xl transition duration-300"
                 >
                   <button
                     onClick={() => handleExcluir(pedido.id)}

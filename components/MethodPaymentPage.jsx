@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { CreditCard, Banknote, ShoppingBasket, ArrowLeft, QrCode, ChevronDown, Info } from 'lucide-react';
 import { CartContext } from '@/context/CartContext';
-import { redirect} from 'next/navigation';
+import { redirect } from 'next/navigation';
 
 export default function MethodPaymentPage() {
 
@@ -11,9 +11,8 @@ export default function MethodPaymentPage() {
 
     const [paymentMethod, setPaymentMethod] = useState('credito');
     const [isLoading, setIsLoading] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
-    if(carrinho.length === 0)
-        redirect('/')
 
     const [cardData, setCardData] = useState({
         number: '',
@@ -22,6 +21,22 @@ export default function MethodPaymentPage() {
         security_code: '',
         CPF: ''
     });
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+
+        if (isMounted && carrinho.length === 0) {
+            redirect('/');
+        }
+    }, [isMounted, carrinho]);
+
+    if (!isMounted || carrinho.length === 0) {
+        return null;
+    }
+
 
     const total = carrinho.reduce((acc, item) => acc + item.subtotal, 0);
 
@@ -94,7 +109,7 @@ export default function MethodPaymentPage() {
             <div className="lg:col-span-3 space-y-4">
                 <section className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                     <div className="flex items-center gap-3 mb-8">
-                        <div className="bg-[var(--color-laranja)] p-2 rounded-lg">
+                        <div className="bg-laranja p-2 rounded-lg">
                             <ShoppingBasket className="text-white" size={20} />
                         </div>
                         <h2 className="font-bold text-gray-900 text-xl tracking-tight">Itens do carrinho</h2>
@@ -142,7 +157,7 @@ export default function MethodPaymentPage() {
                                                 ${isSelected ? 'border-gray-600' : 'border-gray-50 hover:border-gray-200 bg-gray-50/30'}
                                             `}
                                     >
-                                        <div className={`mr-4 p-2 rounded-xl ${isSelected ? 'bg-[var(--color-laranja)] text-white' : 'bg-white text-gray-400 border border-gray-100'}`}>
+                                        <div className={`mr-4 p-2 rounded-xl ${isSelected ? 'bg-laranja text-white' : 'bg-white text-gray-400 border border-gray-100'}`}>
                                             {option.icon}
                                         </div>
                                         <div className="flex-1">
@@ -163,7 +178,7 @@ export default function MethodPaymentPage() {
                                         </div>
                                     </button>
 
-                                    <div className={`transition-all duration-300 ease-in-out ${isSelected && isCard ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                                    <div className={`transition-all duration-300 ease-in-out ${isSelected && isCard ? 'max-h-125 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
                                         <div className="p-4 bg-gray-50 rounded-2xl space-y-3 border border-gray-100">
                                             <div>
                                                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Número do Cartão</label>
@@ -243,7 +258,7 @@ export default function MethodPaymentPage() {
                         <button
                             onClick={handleFinalizarCompra}
                             disabled={isLoading || carrinho.length === 0}
-                            className="w-full bg-[var(--color-laranja)] hover:brightness-95 text-black font-bold py-4 rounded-[40px] transition-all active:scale-95 shadow-lg shadow-yellow-900/10 flex items-center justify-center gap-2"
+                            className="w-full bg-laranja hover:brightness-95 text-black font-bold py-4 rounded-[40px] transition-all active:scale-95 shadow-lg shadow-yellow-900/10 flex items-center justify-center gap-2"
                         >
                             {isLoading ? 'PROCESSANDO...' : 'PAGAR AGORA'}
                         </button>

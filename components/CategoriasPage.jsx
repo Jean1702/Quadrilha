@@ -97,7 +97,7 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
                         <SwiperSlide key={cat.idcategoria}>
                             <Link
                                 href={`/categoria/${cat.idcategoria}`}
-                                className="card card-compact bg-base-100 shadow-xl h-full w-full max-w-[140px] md:max-w-none hover:-translate-y-1 transition-transform duration-300 overflow-hidden block transform-gpu translate-z-0 will-change-transform"
+                                className="card card-compact bg-base-100 shadow-xl h-full w-full max-w-35 md:max-w-none hover:-translate-y-1 transition-transform duration-300 overflow-hidden block transform-gpu translate-z-0 will-change-transform"
                             >
                                 <figure className="h-32 md:h-40 w-full">
                                     <img
@@ -107,7 +107,7 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
                                         loading="lazy"
                                     />
                                 </figure>
-                                <div className="card-body items-center text-center p-2 bg-[var(--surface)]">
+                                <div className="card-body items-center text-center p-2 bg-(--surface)">
                                     <h2 className="card-title text-xs md:text-sm m-0">{cat.nomecategoria}</h2>
                                 </div>
                             </Link>
@@ -128,9 +128,9 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
                                     <Link
                                         key={prod.idproduto}
                                         href={`/product/${prod.idproduto}`}
-                                        className="flex flex-col md:flex-row gap-6 rounded-[2rem] bg-[var(--surface)] p-5 md:p-8 hover:-translate-y-1 transition-transform duration-300 md:h-72"
+                                        className="flex flex-col md:flex-row gap-6 rounded-[2rem] bg-(--surface) p-5 md:p-8 hover:-translate-y-1 transition-transform duration-300 md:h-72"
                                     >
-                                        <div className="relative w-full h-56 md:h-full md:w-1/3 shrink-0 rounded-[1.5rem] overflow-hidden border border-[#514442]/10 flex items-center justify-center bg-[var(--surface)]">
+                                        <div className="relative w-full h-56 md:h-full md:w-1/3 shrink-0 rounded-[1.5rem] overflow-hidden border border-[#514442]/10 flex items-center justify-center bg-(--surface)">
                                             <div
                                                 className="absolute inset-0 w-full h-full opacity-60 blur-[5px] scale-110"
                                                 style={{

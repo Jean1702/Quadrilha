@@ -20,6 +20,7 @@ const AdminHeaderPage = ({ titulo = "ADMINISTRAÇÃO", nometurma, anoturma, logo
           <span className="font-bold text-sm sm:text-lg md:text-2xl uppercase tracking-wide whitespace-nowrap">
             {anoturma}° - {nometurma}
           </span>
+
           <img 
             src={logo }
             alt="Logo Conectados" 

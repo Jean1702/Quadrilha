@@ -6,6 +6,7 @@ export default async function Curso() {
 
   const produtos = await supabase.from('produtos')
     .select('*')
+    .eq("isActivy", true);
 
   const imagem = await supabase.from('imagens')
     .select('*')
