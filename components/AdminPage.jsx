@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AdminHeaderPage from "@/components/AdminHeaderPage";
+import ConfirmationModal from "@/components/ConfirmationModal";
 import { CreateClient } from "@/lib/supabase/client";
 import { Upload } from 'lucide-react';
 import { reload } from "next/navigation";
@@ -19,6 +20,13 @@ export default function AdminPage({ adminData, produtos }) {
     stock: "",
     description: "",
     categories: [],
+  });
+
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: null,
+    productId: null,
+    isLoading: false
   });
 
   useEffect(() => {
@@ -107,28 +115,37 @@ export default function AdminPage({ adminData, produtos }) {
       });
 
       if (response.ok) {
-        setStoreOpen(isOpen)
-
+        setStoreOpen(isOpen);
       }
     } catch (err) {
       console.error(err);
     }
-  }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setModalState({ 
+      isOpen: true, 
+      type: 'add', 
+      isLoading: false 
+    });
+  };
+
+  const confirmAddProduct = async () => {
+    setModalState(prev => ({ ...prev, isLoading: true }));
+    
     const formData = new FormData();
 
-    formData.append("idturma", adminData.idturma);
+    formData.append("idturma", adminData.idturma); 
     formData.append("name", newProduct.name);
     formData.append("price", newProduct.price);
     formData.append("stock", newProduct.stock);
     formData.append("description", newProduct.description);
-
+    
     newProduct.categories.forEach(cat => formData.append("categories", cat));
-
+    
     selectedImages.forEach(img => formData.append("image", img.file));
-
+    
     try {
       const response = await fetch("/api/products/insert", {
         method: "POST",
@@ -136,45 +153,61 @@ export default function AdminPage({ adminData, produtos }) {
       });
 
       if (response.ok) {
-        console.log("Sucesso absoluto!");
         setNewProduct({
           name: "",
           price: "",
           stock: "",
           description: "",
-          categories: []
+          categories: [] 
         });
 
         setSelectedImages([]);
-
-        e.target.reset();
-
+        setModalState({ isOpen: false, type: null, isLoading: false });
+        
       } else {
         console.error("Erro na API ao salvar");
+        alert("Erro ao salvar produto");
+        setModalState(prev => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
+      alert("Erro ao enviar formulário");
+      setModalState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
-  const removeProduct = async (id) => {
+  const removeProduct = async (id) => { 
+    setModalState({ 
+      isOpen: true, 
+      type: 'delete', 
+      productId: id,
+      isLoading: false 
+    });
+  };
+
+  const confirmRemoveProduct = async () => {
+    setModalState(prev => ({ ...prev, isLoading: true }));
+    
     try {
-      const response = await fetch(`/api/products/delete?id=${id}`, {
+      const response = await fetch(`/api/products/delete?id=${modalState.productId}`, {
         method: "DELETE",
       });
       if (response.ok) {
-        setProdutos((prev) => prev.filter((p) => p.idproduto !== id));
+        setProdutos((prev) => prev.filter((p) => p.idproduto !== modalState.productId));
+        setModalState({ isOpen: false, type: null, productId: null, isLoading: false });
       } else {
-        const error = response.json();
+        const error = await response.json();
         alert(`Erro ao deletar: ${error.message}`);
+        setModalState(prev => ({ ...prev, isLoading: false }));
       }
     } catch (err) {
       console.error(err);
       alert("Erro de conexão.");
+      setModalState(prev => ({ ...prev, isLoading: false }));
     }
   };
-
-  const updatePrice = async (id, newPrice) => {
+  
+  const updatePrice = async (id, newPrice) => {  
     try {
       const response = await fetch(`/api/products/update/preco?id=${id}`, {
         method: "PUT",
@@ -184,7 +217,7 @@ export default function AdminPage({ adminData, produtos }) {
         body: JSON.stringify({ preco: parseFloat(newPrice) })
       });
       if (response.ok) {
-        setProdutos((listaAntiga) =>
+        setProdutos((listaAntiga) => 
           listaAntiga.map((p) => (p.idproduto === id ? { ...p, preco: parseFloat(newPrice) } : p))
         );
       }
@@ -203,8 +236,8 @@ export default function AdminPage({ adminData, produtos }) {
         },
         body: JSON.stringify({ estoque: parseInt(newStock) })
       });
-      if (!response.ok) {
-        setProdutos((listaAntiga) =>
+      if (response.ok) {
+        setProdutos((listaAntiga) => 
           listaAntiga.map((p) => (p.idproduto === id ? { ...p, estoque: parseInt(newStock) } : p))
         );
       }
@@ -213,42 +246,28 @@ export default function AdminPage({ adminData, produtos }) {
       alert("Erro de conexão.");
     }
   };
+
   return (
-    <div className="min-h-screen pb-24">
-      <AdminHeaderPage nometurma={adminData.turma?.nomecurso || 'ADM'} anoturma={adminData.turma?.ano || ''} logo={adminData.turma?.logo || ''} />
-      <div className="h-32"></div>
+    <div className="min-h-screen pb-28">
+      <AdminHeaderPage nometurma={adminData.turma.nomecurso} anoturma={adminData.turma.ano} logo={adminData.turma.logo} />
+      <div className="h-40"></div>
       <div className="max-w-3xl mx-auto w-full px-4">
 
 
         {/* Status da Loja */}
-        {superadm ?
-          <div className="p-6 rounded-[20px] bg-(--surface) mb-5">
-            <h2 className="mb-2"><span className="text-red-600">Zona de Perigo</span> (Super Admin)</h2>
-            <p className="text-sm mb-4">
-              Isto bloqueará o acesso de todos os clientes ao site instantaneamente.
-            </p>
-
-            <button
-              className={`px-6 py-3 rounded-lg font-bold text-white transition bg-(--bg)`}
-            >
-              🚨 ATIVAR MODO MANUTENÇÃO
-            </button>
-          </div>
-          :
-          <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6">
-            <h1 className="text-2xl font-bold tracking-tight mb-4">Painel da Loja</h1>
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${storeOpen ? "bg-[#026A4C]" : "bg-[#D95032]"}`} />
-                <span className={`text-sm font-medium ${storeOpen ? "text-[#026A4C]" : "text-[#D95032]"}`}>
-                  {storeOpen ? "Loja Aberta" : "Loja Fechada"}
-                </span>
-              </div>
-
-              <div className="flex items-center">
-                <button onClick={() => mudarestadodaloja(true)} className={`px-6 py-2 rounded-l-md font-medium transition ${storeOpen ? "bg-[#026A4C] text-white" : "bg-[#026A4C] text-white opacity-50"}`}>Abrir</button>
-                <button onClick={() => mudarestadodaloja(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
-              </div>
+        <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6">
+          <h1 className="text-2xl font-bold tracking-tight mb-4">Painel da Loja</h1>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${storeOpen ? "bg-[#026A4C]" : "bg-[#D95032]"}`} />
+              <span className={`text-sm font-medium ${storeOpen ? "text-[#026A4C]" : "text-[#D95032]"}`}>
+                {storeOpen ? "Loja Aberta" : "Loja Fechada"}
+              </span>
+            </div>
+            
+            <div className="flex items-center">
+              <button onClick={() => mudarestadodaloja(true)} className={`px-6 py-2 rounded-l-md font-medium transition ${storeOpen ? "bg-[#026A4C] text-white" : "bg-[#026A4C] text-white opacity-50"}`}>Abrir</button>
+              <button onClick={() => mudarestadodaloja(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
             </div>
           </div>
         }
@@ -325,12 +344,11 @@ export default function AdminPage({ adminData, produtos }) {
                         checked={isSelected}
                         onChange={(e) => {
                           const categories = newProduct.categories || [];
-
-                          setNewProduct({
-                            ...newProduct,
-                            categories: e.target.checked
-                              ? [...categories, cat.id]
-                              : categories.filter(c => c !== cat.id)
+                          setNewProduct({ 
+                            ...newProduct, 
+                            categories: e.target.checked 
+                              ? [...categories, cat.id] 
+                              : categories.filter(c => c !== cat.id) 
                           });
                         }}
                       />
@@ -385,6 +403,20 @@ export default function AdminPage({ adminData, produtos }) {
           </div>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        title={modalState.type === 'add' ? 'Adicionar Novo Produto' : 'Remover Produto'}
+        message={
+          modalState.type === 'add' 
+            ? `Tem certeza que deseja adicionar o produto "${newProduct.name}"?`
+            : 'Tem certeza que deseja remover este produto? Esta ação não pode ser desfeita.'
+        }
+        actionType={modalState.type}
+        onConfirm={modalState.type === 'add' ? confirmAddProduct : confirmRemoveProduct}
+        onCancel={() => setModalState({ isOpen: false, type: null, productId: null, isLoading: false })}
+        isLoading={modalState.isLoading}
+      />
     </div>
   );
 }
