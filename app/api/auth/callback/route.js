@@ -16,14 +16,15 @@ export async function GET(request) {
     const response = await fetch('https://api.mercadopago.com/oauth/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         client_id: process.env.MP_CLIENT_ID,         // Seu Client ID (do .env)
         client_secret: process.env.MP_CLIENT_SECRET, // Seu Client Secret (do .env)
         grant_type: 'authorization_code',
         code: code,
-        redirect_uri: 'http://localhost:3000/api/auth/callback', // Mesma URL cadastrada
+        redirect_uri: 'https://iffood.shop/api/auth/callback', // Mesma URL cadastrada
       }),
     });
 
