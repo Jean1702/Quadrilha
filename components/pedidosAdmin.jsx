@@ -17,7 +17,6 @@ const statusConfig = {
 export default function PedidosPage({ vendas, adminData }) {
   const [pedidosatual, setPedidosatual] = useState(vendas);
   const supabase = CreateClient();
-  
   useEffect(() => {
     if(!adminData) return
     
@@ -51,9 +50,13 @@ export default function PedidosPage({ vendas, adminData }) {
     }
   }, [vendas]);
 
-  const atualizarStatus = async (id, novoStatus) => {
+  const atualizarStatus = async (id, novoStatus, user) => {
     const response = await fetch(`/api/pedidos/atualizacao_status?id=${id}&status=${novoStatus}`, {
       method: "PUT",
+      headers: {
+          "Content-Type": "application/json"
+      },
+      body: JSON.stringify({phone: user.phone, name: user.name })
     });
     if (!response.ok) {
       console.error("Erro ao atualizar status do pedido:", response.statusText);
@@ -106,8 +109,9 @@ export default function PedidosPage({ vendas, adminData }) {
                     <span className="font-semibold">Itens:</span>
                     <ul className="list-disc list-inside ml-2 opacity-60">
                       {pedido.venda_produto?.map((item) => (
-                        <li key={item.produtos.idproduto}>{item.produtos?.nome}</li>
+                        <li key={item.produtos.idproduto}>{item.produtos?.nome} {item.observacao ? `(${item.observacao})`: ""}</li>
                       ))}
+                      
                     </ul>
                   </div>
                 </div>
@@ -117,7 +121,7 @@ export default function PedidosPage({ vendas, adminData }) {
                   <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => atualizarStatus(pedido.idvenda, "preparando")}
+                        onClick={() => atualizarStatus(pedido.idvenda, "preparando", pedido.usuarios)}
                         disabled={pedido.status === "sendo_feito" || pedido.status === "pronto" || pedido.status === "entregue"}
                         className="flex-1 flex items-center justify-center gap-1 bg-[#026A4C] hover:bg-[#037a58] active:scale-95 text-white py-2 px-3 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
                       >
@@ -125,7 +129,7 @@ export default function PedidosPage({ vendas, adminData }) {
                         Preparar
                       </button>
                       <button
-                        onClick={() => atualizarStatus(pedido.idvenda, "pronto")}
+                        onClick={() => atualizarStatus(pedido.idvenda, "pronto", pedido.usuarios)}
                         disabled={pedido.status === "pago" || pedido.status === "pronto" || pedido.status === "entregue"}
                         className="flex-1 flex items-center justify-center gap-1 bg-[#026A4C] hover:bg-[#037a58] active:scale-95 text-white py-2 px-3 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
                       >
@@ -134,14 +138,14 @@ export default function PedidosPage({ vendas, adminData }) {
                       </button>
                     </div>
                     <button 
-                      onClick={() => atualizarStatus(pedido.idvenda, "entregue")}
+                      onClick={() => atualizarStatus(pedido.idvenda, "entregue", pedido.usuarios)}
                       disabled={pedido.status !== "pronto"}
                       className="flex-1 flex items-center justify-center gap-1 bg-[#026A4C] hover:bg-[#037a58] active:scale-95 text-white py-2 px-3 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
                       <PackageCheck />
                       Entregue
                     </button>
                     <button
-                      onClick={() => atualizarStatus(pedido.idvenda, "cancelado")}
+                      onClick={() => atualizarStatus(pedido.idvenda, "cancelado", pedido.usuarios)}
                       disabled={pedido.status === "entregue"}
                       className="w-full flex items-center justify-center gap-1 bg-[#D95032] hover:bg-[#E05A3F] active:scale-95 text-white py-2 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
                     >

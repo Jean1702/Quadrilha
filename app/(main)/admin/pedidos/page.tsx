@@ -18,7 +18,7 @@ export default async function Pedido(){
         *,
         turma (*)
     `)
-    .eq("user_id", user.id) 
+    .eq("user_id", user.id)
     .single(); 
     
     if (adminError || !adminData) {
@@ -41,9 +41,7 @@ export default async function Pedido(){
     
     `)
     .order('criada_em', { ascending: false })
-    .neq("status", "aguardando_pagamento")
-    .neq("status", "cancelada")
-    .neq("status", "entregue");
+    .in("status", [ "sendo_feito", "pago", "pronto"]);
 
     if (!adminData.is_superadmin) {
         vendas = vendas.eq("idturma", adminData.idturma);
@@ -56,6 +54,7 @@ export default async function Pedido(){
         console.error("Erro ao buscar vendas:", vendaError);
         venda = [];
     }
+
 
     return(
         <>

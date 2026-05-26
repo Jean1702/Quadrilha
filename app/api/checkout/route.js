@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server';
 import { CreateClient } from '@/lib/supabase/server';
+import Stripe from 'stripe';
+
+// Inicializa a Stripe com a sua chave secreta (USE A CHAVE DE TESTE POR ENQUANTO)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
 
 export async function POST(request) {
     try {
         const body = await request.json();
         const { carrinho, paymentMethod } = body;
-
-        if (!carrinho || carrinho.length === 0) {
-            return NextResponse.json({ error: "Carrinho vazio" }, { status: 400 });
-        }
-
         const supabase = await CreateClient();
 
-        // === TRAVA DE SEGURANÇA 1: VERIFICA SE O USUÁRIO ESTÁ REALMENTE LOGADO NO SERVIDOR ===
+         // === TRAVA DE SEGURANÇA 1: VERIFICA SE O USUÁRIO ESTÁ REALMENTE LOGADO NO SERVIDOR ===
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
@@ -72,25 +71,28 @@ export async function POST(request) {
             return acc;
         }, {});
 
-        // === PASSO 5: SALVAR NO BANCO (SEM SUBTRAIR ESTOQUE POR ENQUANTO) ===
+        const vendasGeradasIds = [];
+
+        // === PASSO 5: SALVAR NO BANCO (COMO PENDENTE) ===
         for (const idTurmaString in pedidosPorTurma) {
             const pacote = pedidosPorTurma[idTurmaString];
 
-            // A: Cria a venda injetando o ID correto!
+            // A: Cria a venda injetando o ID correto! STATUS DEVE SER PENDENTE!
             const { data: novaVenda, error: erroVenda } = await supabase
                 .from('venda')
                 .insert([{
-                    status: 'aguardando_pagamento',
+                    status: 'aguardando_pagamento', // <--- Mudamos de pago para pendente
                     valor_total: pacote.totalDaTurma,
-                    metodo_pagamento: paymentMethod,
+                    metodo_pagamento: paymentMethod, // Guardando a intenção de pagamento
                     idturma: parseInt(idTurmaString),
                     online: true,
-                    iduser: usuarioPerfil.id // <--- MÁGICA AQUI: Injetando o ID interno da tabela 'usuarios'
+                    iduser: usuarioPerfil.id 
                 }])
                 .select()
                 .single();
 
             if (erroVenda) throw erroVenda;
+            vendasGeradasIds.push(novaVenda.idvenda);
 
             // B: Prepara os produtos para a tabela venda_produto
             const itensParaInserir = pacote.itens.map(item => ({
@@ -107,10 +109,27 @@ export async function POST(request) {
             if (erroItens) throw erroItens;
         }
 
-        return NextResponse.json({ success: true, message: "Pedido gerado com sucesso!" }, { status: 200 });
+        let totalGeralEmCentavos = 0; // Você precisa calcular o total de todo o carrinho e multiplicar por 100
+
+        // Cria a Intenção de Pagamento na Stripe
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: totalGeralEmCentavos, // Ex: R$ 50,00 = 5000
+            currency: 'brl',
+            // Define o tipo de pagamento baseado na escolha do usuário
+            payment_method_types: paymentMethod === 'pix' ? ['pix'] : ['card'],
+            metadata: {
+                vendas_ids: vendasGeradasIds.join(','),
+            },
+        });
+
+        // Devolvemos o client_secret pro frontend conseguir cobrar o cartão ou gerar o Pix
+        return NextResponse.json({ 
+            success: true, 
+            clientSecret: paymentIntent.client_secret 
+        }, { status: 200 });
 
     } catch (error) {
-        console.error("Erro interno na API de checkout:", error);
-        return NextResponse.json({ error: "Ocorreu um erro ao processar o pedido." }, { status: 500 });
+        console.error("Erro no checkout:", error);
+        return NextResponse.json({ error: "Erro interno" }, { status: 500 });
     }
 }

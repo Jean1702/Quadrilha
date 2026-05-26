@@ -7,7 +7,6 @@ export default async function Admin(){
 
     const { data: { user }, erroradm } = await supabase.auth.getUser();
 
-    console.log(user)
     if (!user ) {
         redirect('/loginadm');
     }
@@ -42,7 +41,7 @@ export default async function Admin(){
     
     const { data: produtos, error: prodError } = await products;
 
-
+    
     if (prodError) {
         console.error("Erro ao carregar produtos:", prodError);
     } 

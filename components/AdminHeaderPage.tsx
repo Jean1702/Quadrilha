@@ -9,6 +9,7 @@ interface AdminHeaderPageProps {
   logo?: string;
 }
 
+
 const AdminHeaderPage = ({ titulo = "ADMINISTRAÇÃO", nometurma, anoturma, logo }: AdminHeaderPageProps) => {
   return (
     <header className="w-full text-white shadow-lg overflow-hidden fixed" style={{ backgroundColor: '#0f172a' }}>

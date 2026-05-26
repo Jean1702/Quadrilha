@@ -64,7 +64,7 @@ export default function Cart() {
             redirect('/login');
         }
 
-        redirect('/method_payment');
+        redirect('/');
     };
 
 
