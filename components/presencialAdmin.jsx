@@ -4,13 +4,24 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import AdminHeaderPage from "@/components/AdminHeaderPage";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import Pagination from '@mui/material/Pagination';
+import Stack from '@mui/material/Stack';
 
-export default function PedidoFisicoPage({ vendas, admindata, produtos }) { 
+export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
   const [vendasatual, setVendasatual] = useState(vendas);
   const [produtosLoja, setProdutosLoja] = useState(produtos);
+  const [filtroTexto, setFiltroTexto] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState("todos");
+  const [filtroMetodo, setFiltroMetodo] = useState("todos");
   const idturma = admindata.idturma;
 
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtroTexto, filtroTipo, filtroMetodo]);
+
   useEffect(() => {
     const agora = new Date();
     const timezoneOffset = agora.getTimezoneOffset() * 60000;
@@ -18,7 +29,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
     const formatoExigido = dataLocal.toISOString().slice(0, 16);
     setForm(prev => ({ ...prev, dataehora: formatoExigido }));
   }, []);
-  
+
   const [form, setForm] = useState({
     dataehora: "",
     metodo: "",
@@ -72,6 +83,29 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
   };
 
   const valorTotal = itensPedido.reduce((acc, item) => acc + item.subtotal, 0);
+
+  const pedidosFiltrados = vendasatual.filter((pedido) => {
+    const nomesProdutos = pedido.venda_produto.map(p => p.produtos?.nome || "").join(" ").toLowerCase();
+    const matchTexto =
+      nomesProdutos.includes(filtroTexto.toLowerCase()) ||
+      pedido.idvenda.toString().includes(filtroTexto);
+
+    const matchTipo =
+      filtroTipo === "todos" ||
+      (filtroTipo === "online" && pedido.online) ||
+      (filtroTipo === "presencial" && !pedido.online);
+
+    const matchMetodo =
+      filtroMetodo === "todos" ||
+      pedido.metodo_pagamento === filtroMetodo;
+
+    return matchTexto && matchTipo && matchMetodo;
+  });
+
+  const totalPages = Math.ceil(pedidosFiltrados.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const pedidosPaginados = pedidosFiltrados.slice(indexOfFirstItem, indexOfLastItem);
 
   // Abre modal de confirmação de registro
   const handleRegistrarClick = () => {
@@ -133,7 +167,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
 
   return (
     <div className="min-h-screen pb-28">
-     <AdminHeaderPage titulo="PEDIDOS FÍSICOS" nometurma={admindata.turma?.nomecurso || 'ADM'} anoturma={admindata.turma?.ano || ''} logo={admindata.turma?.logo || ''}  />
+      <AdminHeaderPage titulo="PEDIDOS FÍSICOS" nometurma={admindata.turma?.nomecurso || 'SUPER ADM'} anoturma={admindata.turma?.ano || 'mod'} logo={admindata.turma?.logo || '/hackerman.png'} />
       <div className="h-40"></div>
 
       <div className="max-w-3xl mx-auto w-full">
@@ -142,10 +176,10 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
             Registro de Pedido Físico
           </h2>
 
-          
+
           <div className="mb-6 p-4 border border-gray-300/30 rounded-2xl bg-black/10">
             <h3 className="text-sm font-medium mb-3 opacity-80">Adicionar Itens ao Pedido</h3>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <select
                 value={produtoAtual}
@@ -179,7 +213,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
             </button>
           </div>
 
-         
+
           {itensPedido.length > 0 && (
             <div className="mb-6">
               <h3 className="text-sm font-medium mb-2 opacity-80">Itens do Pedido:</h3>
@@ -199,7 +233,7 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
             </div>
           )}
 
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-6 border-t border-gray-300/20">
             <input
               className="p-3 rounded-full border bg-(--bg) border-gray-300 focus:border-[#D97016] focus:ring-2 focus:ring-[#D97016]/30 outline-none transition duration-300 shadow-sm"
@@ -241,42 +275,112 @@ export default function PedidoFisicoPage({ vendas, admindata, produtos }) {
         </div>
 
         {vendasatual.length > 0 && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4 tracking-tight">
-              Pedidos Registrados
-            </h2>
+          <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6 border border-black/5">
+            <h2 className="text-xl font-bold tracking-tight mb-4">Pedidos Registrados</h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {vendasatual.map((pedido) => {
-                const dataformatada = formatarData(pedido.criada_em);
-                return (
-                <div
-                  key={pedido.idvenda}
-                  className="relative bg-(--surface) rounded-[20px] p-4 shadow-lg hover:shadow-xl transition duration-300"
-                >
-                  <button
-                    onClick={() => handleExcluir(pedido.id)}
-                    className=" absolute top-3 right-3 text-black dark:text-white hover:opacity-60 active:scale-95 transition duration-300"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+            {/* --- BARRA DE FILTROS --- */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 bg-(--bg) p-4 rounded-2xl shadow-inner border border-gray-300/20">
+              <input
+                type="text"
+                placeholder="Buscar por produto ou ID..."
+                className="p-3 rounded-xl border border-gray-300 bg-(--surface) focus:border-[#D97016] focus:ring-1 focus:ring-[#D97016] outline-none text-sm"
+                value={filtroTexto}
+                onChange={(e) => setFiltroTexto(e.target.value)}
+              />
 
-                    <div className="pr-7 space-y-1 text-sm">
-                      <h3 className="text-base font-bold tracking-tight mb-2">
-                        {pedido.venda_produto.map((p) => p.produtos.nome).join(', ')}
-                      </h3>
-                      <p><span className="font-semibold">Hora:</span> {dataformatada}</p>
-                      <p><span className="font-semibold">Quantidade:</span> {pedido.venda_produto[0]?.quantidade || 0}</p>
-                      <p><span className="font-semibold">Tipo de venda:</span> {pedido.online ? "Online" : "Presencial"}</p>
-                      <p><span className="font-semibold">Método de pagamento:</span> {pedido.metodo_pagamento || "Não informado"}</p>
-                      <p className="text-[#026A4C] font-semibold text-base mt-1">
-                        R$ {parseFloat(pedido.valor_total).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+              <select
+                value={filtroTipo}
+                onChange={(e) => setFiltroTipo(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 bg-(--surface) focus:border-[#D97016] focus:ring-1 focus:ring-[#D97016] outline-none text-sm"
+              >
+                <option value="todos">Todos os Tipos</option>
+                <option value="presencial">Presencial</option>
+                <option value="online">Online</option>
+              </select>
+
+              <select
+                value={filtroMetodo}
+                onChange={(e) => setFiltroMetodo(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 bg-(--surface) focus:border-[#D97016] focus:ring-1 focus:ring-[#D97016] outline-none text-sm"
+              >
+                <option value="todos">Todos os Pagamentos</option>
+                <option value="pix">Pix</option>
+                <option value="credito">Crédito</option>
+                <option value="debito">Débito</option>
+                <option value="dinheiro">Dinheiro</option>
+              </select>
             </div>
+
+            {pedidosFiltrados.length === 0 ? (
+              <p className="text-center opacity-50 py-4 text-sm font-medium">Nenhum pedido encontrado com esses filtros.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {pedidosPaginados.map((pedido) => {
+                  const dataformatada = formatarData(pedido.criada_em);
+                  const isOnline = pedido.online;
+
+                  return (
+                    <div
+                      key={pedido.idvenda}
+                      className="flex flex-col md:flex-row justify-between md:items-center p-4 bg-(--bg) border border-gray-300/30 rounded-2xl transition-all duration-200"
+                    >
+
+                      <div className="flex-1 pr-8 mb-3 md:mb-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-black opacity-40">#{pedido.idvenda}</span>
+                          <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${isOnline ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                            {isOnline ? "Online" : "Presencial"}
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-bold tracking-tight mb-1 text-(--text)">
+                          {pedido.venda_produto.map((p) => p.produtos?.nome).join(', ')}
+                        </h3>
+                        <p className="text-xs opacity-60 font-medium">{dataformatada}</p>
+                      </div>
+
+                      <div className="flex items-center justify-between md:justify-end gap-6">
+                        <div className="text-left md:text-right">
+                          <p className="text-[11px] uppercase tracking-wider opacity-50 font-bold mb-0.5">Pagamento</p>
+                          <p className="text-sm font-semibold capitalize">{pedido.metodo_pagamento || "N/A"}</p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-[11px] uppercase tracking-wider opacity-50 font-bold mb-0.5">Total</p>
+                          <p className="text-base font-black text-[#026A4C]">R$ {parseFloat(pedido.valor_total).toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center mt-6 pt-6 border-t border-gray-300/20">
+                <Stack spacing={2}>
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(event, value) => setCurrentPage(value)}
+                    size="large"
+                    sx={{
+                      '& .MuiPaginationItem-root': {
+                        color: 'var(--text)',
+                        fontWeight: 'bold',
+                      },
+                      '& .Mui-selected': {
+                        backgroundColor: '#026A4C !important',
+                        color: '#ffffff',
+                        boxShadow: '0 4px 6px -1px rgba(2, 106, 76, 0.4)',
+                      },
+                      '& .MuiPaginationItem-root:hover': {
+                        backgroundColor: 'rgba(2, 106, 76, 0.1)',
+                      }
+                    }}
+                  />
+                </Stack>
+              </div>
+            )}
           </div>
         )}
 

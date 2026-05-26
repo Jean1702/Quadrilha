@@ -83,7 +83,7 @@ export default function PedidosPage({ vendas, adminData }) {
 
   return (
     <main className="min-h-screen pb-28">
-      <AdminHeaderPage titulo="PEDIDOS" nometurma={adminData.turma?.nomecurso || 'ADM'} anoturma={adminData.turma?.ano || ""} logo={adminData.turma?.logo || ""} />
+      <AdminHeaderPage titulo="PEDIDOS"  nometurma={adminData.turma?.nomecurso || `SUPER ADM`} anoturma={adminData.turma?.ano || 'mod'} logo={adminData.turma?.logo || '/hackerman.png'}  />
       <div className="h-40"></div>
 
       <div className="p-4 max-w-5xl mx-auto">

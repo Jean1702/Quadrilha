@@ -58,10 +58,6 @@ export default function SkeletonPedidos() {
 
                 </div>
             </div>
-
-            {/* === FOOTER === */}
-            <div className="fixed bottom-0 left-0 h-16 w-full bg-slate-500 dark:bg-slate-700 animate-pulse"></div>
-
         </main>
     );
 }
