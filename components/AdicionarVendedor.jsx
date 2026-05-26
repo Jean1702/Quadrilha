@@ -1,6 +1,6 @@
 export default function ConfigurarPagamento({idAdmin}) {
   const clientId = "2598096309853119"; // Substitua pelo seu Client ID real
-  const redirectUri = encodeURIComponent("https://siesta-strainer-styling.ngrok-free.dev/api/auth/callback");
+  const redirectUri = encodeURIComponent("https://iffood.shop/api/auth/callback");
   const idBarraca = idAdmin; // ID que você deu para a barraca no seu banco
   
   const linkMercadoPago = `https://auth.mercadopago.com/authorization?client_id=${clientId}&response_type=code&platform_id=mp&state=${idBarraca}&redirect_uri=${redirectUri}`;
