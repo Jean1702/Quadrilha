@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AdminHeaderPage from "@/components/AdminHeaderPage";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import ConfigurarPagamento from "@/components/AdicionarVendedor";
 import { CreateClient } from "@/lib/supabase/client";
 import { Upload, AlertTriangle, CheckCircle, AlertOctagon } from 'lucide-react';
 import { reload } from "next/navigation";
@@ -348,7 +349,10 @@ export default function AdminPage({ adminData, produtos }) {
                 <button onClick={() => mudarestadodaloja(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
               </div>
             </div>
+
+            <ConfigurarPagamento idAdmin={adminData.idturma}/>
           </div>
+
 
         )}
 
