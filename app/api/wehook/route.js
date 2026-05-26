@@ -6,10 +6,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: '2023-10-16',
 });
 
-// Essa rota recebe dados puros, precisamos desativar o body parser padrão do Next.js
-export const config = {
-    api: { bodyParser: false },
-};
 
 export async function POST(request) {
     const signature = request.headers.get('stripe-signature');
