@@ -2,15 +2,18 @@
 
 import { useState, useEffect } from "react";
 import AdminHeaderPage from "@/components/AdminHeaderPage";
+import ConfirmationModal from "@/components/ConfirmationModal";
 import { CreateClient } from "@/lib/supabase/client";
-import { Upload } from 'lucide-react';
+import { Upload, AlertTriangle, CheckCircle, AlertOctagon } from 'lucide-react';
 import { reload } from "next/navigation";
 export default function AdminPage({ adminData, produtos }) {
   const supabase = CreateClient();
-  
+
   const [produtosatual, setProdutos] = useState(produtos || []);
   const [selectedImages, setSelectedImages] = useState([]);
-  const [storeOpen, setStoreOpen] = useState(adminData?.turma.is_active || false);
+  const [storeOpen, setStoreOpen] = useState(adminData.turma?.is_active || false);
+  const [superadm, setSuperadm] = useState(adminData.is_superadmin)
+  const [isMaintenance, setIsMaintenance] = useState(false);
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -18,6 +21,13 @@ export default function AdminPage({ adminData, produtos }) {
     stock: "",
     description: "",
     categories: [],
+  });
+
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: null,
+    productId: null,
+    isLoading: false
   });
 
   useEffect(() => {
@@ -34,35 +44,35 @@ export default function AdminPage({ adminData, produtos }) {
     }
 
     const channel = supabase
-      .channel('tempo_real') 
-      
+      .channel('tempo_real')
+
       .on(
         'postgres_changes',
         configProdutos,
         (payload) => {
           if (payload.eventType === 'INSERT') {
             setProdutos((listaAntiga) => [...listaAntiga, { ...payload.new, imagens: [] }]);
-          } 
+          }
           else if (payload.eventType === 'DELETE') {
-            setProdutos((listaAntiga) => 
+            setProdutos((listaAntiga) =>
               listaAntiga.filter((item) => item.idproduto !== payload.old.idproduto)
             );
-          } 
+          }
           else if (payload.eventType === 'UPDATE') {
-            setProdutos((listaAntiga) => 
-              listaAntiga.map((item) => 
+            setProdutos((listaAntiga) =>
+              listaAntiga.map((item) =>
                 item.idproduto === payload.new.idproduto ? { ...item, ...payload.new } : item
               )
             );
           }
         }
       )
-      
+
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'imagens' },
         (payload) => {
-          setProdutos((listaAntiga) => 
+          setProdutos((listaAntiga) =>
             listaAntiga.map((produto) => {
               if (produto.idproduto === payload.new.idproduto) {
                 return {
@@ -75,13 +85,32 @@ export default function AdminPage({ adminData, produtos }) {
           );
         }
       )
-      
+
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [adminData]);
+
+  useEffect(() => {
+    async function buscarStatusManutencao() {
+      try {
+        const { data, error } = await supabase
+          .from('configuracoes')
+          .select('em_manutencao')
+          .eq('id', 1)
+          .single();
+
+        if (data && !error) {
+          setIsMaintenance(data.em_manutencao);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar status da manutenção:", err);
+      }
+    }
+    buscarStatusManutencao();
+  }, []);
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
@@ -104,77 +133,126 @@ export default function AdminPage({ adminData, produtos }) {
         },
         body: JSON.stringify({ is_active: isOpen })
       });
-    
+
       if (response.ok) {
-        setStoreOpen(isOpen)
-        
+        setStoreOpen(isOpen);
       }
-    }catch (err) {
-        console.error(err);
-      }
-  }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleSubmit = async (e) => {
-      e.preventDefault();
-      const formData = new FormData();
+    e.preventDefault();
+    setModalState({
+      isOpen: true,
+      type: 'add',
+      isLoading: false
+    });
+  };
 
-      formData.append("idturma", adminData.idturma); 
-      formData.append("name", newProduct.name);
-      formData.append("price", newProduct.price);
-      formData.append("stock", newProduct.stock);
-      formData.append("description", newProduct.description);
-      
-      newProduct.categories.forEach(cat => formData.append("categories", cat));
-      
-      selectedImages.forEach(img => formData.append("image", img.file));
-      
-      try {
-        const response = await fetch("/api/products/insert", {
-          method: "POST",
-          body: formData,
+  const confirmAddProduct = async () => {
+    setModalState(prev => ({ ...prev, isLoading: true }));
+
+    const formData = new FormData();
+
+    formData.append("idturma", adminData.idturma);
+    formData.append("name", newProduct.name);
+    formData.append("price", newProduct.price);
+    formData.append("stock", newProduct.stock);
+    formData.append("description", newProduct.description);
+
+    newProduct.categories.forEach(cat => formData.append("categories", cat));
+
+    selectedImages.forEach(img => formData.append("image", img.file));
+
+    try {
+      const response = await fetch("/api/products/insert", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        setNewProduct({
+          name: "",
+          price: "",
+          stock: "",
+          description: "",
+          categories: []
         });
 
-        if (response.ok) {
-          console.log("Sucesso absoluto!");
-          setNewProduct({
-            name: "",
-            price: "",
-            stock: "",
-            description: "",
-            categories: [] 
-          });
+        setSelectedImages([]);
+        setModalState({ isOpen: false, type: null, isLoading: false });
 
-          setSelectedImages([]);
-
-          e.target.reset();
-          
-        } else {
-          console.error("Erro na API ao salvar");
-        }
-      } catch (error) {
-        console.error("Erro ao enviar formulário:", error);
-      }
-    };
-
-  const removeProduct = async (id) => { 
-    try{
-    const response =  await fetch(`/api/products/delete?id=${id}`, {
-      method: "DELETE",
-    });
-    if (response.ok) {
-        setProdutos((prev) => prev.filter((p) => p.idproduto !== id));
       } else {
-        const error =  response.json();
+        console.error("Erro na API ao salvar");
+        alert("Erro ao salvar produto");
+        setModalState(prev => ({ ...prev, isLoading: false }));
+      }
+    } catch (error) {
+      console.error("Erro ao enviar formulário:", error);
+      alert("Erro ao enviar formulário");
+      setModalState(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const removeProduct = async (id) => {
+    setModalState({
+      isOpen: true,
+      type: 'delete',
+      productId: id,
+      isLoading: false
+    });
+  };
+
+  const toggleMaintenance = async () => {
+    const confirmar = window.confirm(
+      isMaintenance
+        ? "Tem certeza que deseja LIBERAR o site para os clientes?"
+        : "⚠️ ATENÇÃO: Isso vai derrubar o site inteiro instantaneamente. Confirmar?"
+    );
+
+    if (!confirmar) return;
+
+    const novoStatus = !isMaintenance;
+
+    const { error } = await supabase
+      .from('configuracoes')
+      .update({ em_manutencao: novoStatus })
+      .eq('id', 1);
+
+    if (!error) {
+      setIsMaintenance(novoStatus);
+      alert(novoStatus ? "🚨 SITE BLOQUEADO COM SUCESSO!" : "✅ SITE LIBERADO!");
+    } else {
+      alert("Erro ao alterar o status da manutenção.");
+    }
+  };
+
+  const confirmRemoveProduct = async () => {
+    setModalState(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      const response = await fetch(`/api/products/delete?id=${modalState.productId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setProdutos((prev) => prev.filter((p) => p.idproduto !== modalState.productId));
+        setModalState({ isOpen: false, type: null, productId: null, isLoading: false });
+      } else {
+        const error = await response.json();
         alert(`Erro ao deletar: ${error.message}`);
+        setModalState(prev => ({ ...prev, isLoading: false }));
       }
     } catch (err) {
       console.error(err);
       alert("Erro de conexão.");
+      setModalState(prev => ({ ...prev, isLoading: false }));
     }
   };
-  
-  const updatePrice = async (id, newPrice) => {  
-    try{
+
+  const updatePrice = async (id, newPrice) => {
+    try {
       const response = await fetch(`/api/products/update/preco?id=${id}`, {
         method: "PUT",
         headers: {
@@ -183,9 +261,9 @@ export default function AdminPage({ adminData, produtos }) {
         body: JSON.stringify({ preco: parseFloat(newPrice) })
       });
       if (response.ok) {
-          setProdutos((listaAntiga) => 
-            listaAntiga.map((p) => (p.idproduto === id ? { ...p, preco: parseFloat(newPrice) } : p))
-          );
+        setProdutos((listaAntiga) =>
+          listaAntiga.map((p) => (p.idproduto === id ? { ...p, preco: parseFloat(newPrice) } : p))
+        );
       }
     } catch (err) {
       console.error(err);
@@ -194,7 +272,7 @@ export default function AdminPage({ adminData, produtos }) {
   };
 
   const updateStock = async (id, newStock) => {
-    try{
+    try {
       const response = await fetch(`/api/products/update/estoque?id=${id}`, {
         method: "PUT",
         headers: {
@@ -202,39 +280,79 @@ export default function AdminPage({ adminData, produtos }) {
         },
         body: JSON.stringify({ estoque: parseInt(newStock) })
       });
-      if (!response.ok) {
-        setProdutos((listaAntiga) => 
-            listaAntiga.map((p) => (p.idproduto === id ? { ...p, estoque: parseInt(newStock) } : p))
+      if (response.ok) {
+        setProdutos((listaAntiga) =>
+          listaAntiga.map((p) => (p.idproduto === id ? { ...p, estoque: parseInt(newStock) } : p))
         );
       }
-    }catch (err){
+    } catch (err) {
       console.error(err);
       alert("Erro de conexão.");
     }
   };
+
   return (
-    <div className="min-h-screen pb-24">
-      <AdminHeaderPage nometurma={adminData.turma.nomecurso} anoturma={adminData.turma.ano} logo={adminData.turma.logo} />
-      <div className="h-32"></div>
+    <div className="min-h-screen pb-28">
+      <AdminHeaderPage nometurma={adminData.turma?.nomecurso || `SUPER ADM`} anoturma={adminData.turma?.ano || 'mod'} logo={adminData.turma?.logo || '/hackerman.png'} />
+      <div className="h-40"></div>
       <div className="max-w-3xl mx-auto w-full px-4">
 
         {/* Status da Loja */}
-        <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6">
-          <h1 className="text-2xl font-bold tracking-tight mb-4">Painel da Loja</h1>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${storeOpen ? "bg-[#026A4C]" : "bg-[#D95032]"}`} />
-              <span className={`text-sm font-medium ${storeOpen ? "text-[#026A4C]" : "text-[#D95032]"}`}>
-                {storeOpen ? "Loja Aberta" : "Loja Fechada"}
-              </span>
+
+        {superadm ? (
+
+          <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6 border border-[#D95032]/30">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="text-[#D95032]" size={24} />
+              <h1 className="text-xl text-[#D95032] tracking-tight">Zona de Emergência</h1>
             </div>
-            
-            <div className="flex items-center">
-              <button onClick={() =>mudarestadodaloja(true)} className={`px-6 py-2 rounded-l-md font-medium transition ${storeOpen ? "bg-[#026A4C] text-white" : "bg-[#026A4C] text-white opacity-50"}`}>Abrir</button>
-              <button onClick={() =>mudarestadodaloja(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
+
+            <p className="text-sm opacity-70 mb-5 font-medium">
+              Isto bloqueará o acesso de todos os clientes ao site instantaneamente. Use apenas em casos críticos.
+            </p>
+
+            <button
+              onClick={toggleMaintenance}
+              className={`w-full py-4 rounded-xl text-white transition-all shadow-md active:scale-95 flex justify-center items-center gap-2 cursor-pointer ${isMaintenance ? "bg-[#026A4C] hover:bg-[#037a58]" : "bg-[#D95032] hover:bg-[#E05A3F]"
+                }`}
+            >
+              {isMaintenance ? (
+                <>
+                  <CheckCircle size={20} />
+                  LIBERAR ACESSO AO SITE
+                </>
+              ) : (
+                <>
+                  <AlertOctagon size={20} />
+                  ATIVAR MODO MANUTENÇÃO GERAL
+                </>
+              )}
+            </button>
+          </div>
+
+        ) : (
+
+          <div className="bg-(--surface) p-6 rounded-[20px] shadow-lg mb-6 border border-black/5">
+            <h1 className="text-2xl font-bold tracking-tight mb-4">Painel da Loja</h1>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${storeOpen ? "bg-[#026A4C]" : "bg-[#D95032]"}`} />
+                <span className={`text-sm font-medium ${storeOpen ? "text-[#026A4C]" : "text-[#D95032]"}`}>
+                  {storeOpen ? "Loja Aberta" : "Loja Fechada"}
+                </span>
+              </div>
+
+              <div className="flex items-center">
+                <button onClick={() => mudarestadodaloja(true)} className={`px-6 py-2 rounded-l-md font-medium transition ${storeOpen ? "bg-[#026A4C] text-white" : "bg-[#026A4C] text-white opacity-50"}`}>Abrir</button>
+                <button onClick={() => mudarestadodaloja(false)} className={`px-6 py-2 rounded-r-md font-medium transition ${!storeOpen ? "bg-[#D95032] text-white" : "bg-[#D95032] text-white opacity-50"}`}>Fechar</button>
+              </div>
             </div>
           </div>
-        </div>
+
+        )}
+
+
 
         {/* Formulário de Cadastro */}
         <form onSubmit={handleSubmit} className="bg-(--surface) p-6 rounded-[24px] shadow-xl mb-6 border border-white/10">
@@ -295,26 +413,25 @@ export default function AdminPage({ adminData, produtos }) {
                   { id: 4, nome: 'Doces' },
                   { id: 3, nome: 'Jantinha' },
                   { id: 2, nome: 'Lanche' },
-                  { id: 1, nome: 'Salgados' } 
+                  { id: 1, nome: 'Salgados' }
                 ].map((cat) => {
                   const isSelected = newProduct.categories?.includes(cat.id);
-                  
+
                   return (
-                    <label key={cat.id} className={`flex-grow sm:flex-grow-0 flex items-center justify-center px-4 py-2 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-[#D97016] border-[#D97016] text-white' : 'bg-(--surface) border-white/5 text-gray-400'}`}>
-                      <input 
-                        type="checkbox" 
-                        className="hidden" 
-                        checked={isSelected} 
+                    <label key={cat.id} className={`grow sm:grow-0 flex items-center justify-center px-4 py-2 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-[#D97016] border-[#D97016] text-white' : 'bg-(--surface) border-white/5 text-gray-400'}`}>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={isSelected}
                         onChange={(e) => {
                           const categories = newProduct.categories || [];
-                          
-                          setNewProduct({ 
-                            ...newProduct, 
-                            categories: e.target.checked 
-                              ? [...categories, cat.id] 
-                              : categories.filter(c => c !== cat.id) 
+                          setNewProduct({
+                            ...newProduct,
+                            categories: e.target.checked
+                              ? [...categories, cat.id]
+                              : categories.filter(c => c !== cat.id)
                           });
-                        }} 
+                        }}
                       />
                       <span className="text-sm font-medium">{cat.nome}</span>
                     </label>
@@ -349,24 +466,40 @@ export default function AdminPage({ adminData, produtos }) {
 
         {/* Listagem de Produtos */}
         <h2 className="text-xl font-semibold mb-4">Produtos</h2>
-        {produtosatual.length === 0 ? <p>Nenhum produto cadastrado</p> : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {produtosatual.map((product) => (
-              <div key={product.idproduto} className="bg-(--surface) rounded-[20px] p-4 shadow-lg">
-                {product.imagens?.[0] && <img src={product.imagens[0].url_imagem} className="w-full h-40 object-cover rounded-2xl mb-3" />}
-                <h3 className="text-lg font-semibold mb-1">{product.nome}</h3>
-                <p className="text-[#026A4C] font-semibold">R$ {Number(product.preco).toFixed(2)}</p>
-                <p className="text-sm opacity-60 mb-3">Estoque: {product.estoque || "0"} un</p>
-                <div className="flex flex-col gap-2 mb-3">
-                  <input type="number" placeholder="Novo preço" className="w-full p-2 rounded-full border bg-(--bg) text-sm" onBlur={(e) => updatePrice(product.idproduto, e.target.value)} />
-                  <input type="number" placeholder="Estoque" className="w-full p-2 rounded-full border bg-(--bg) text-sm" onBlur={(e) => updateStock(product.idproduto, e.target.value)} />
+        {
+          produtosatual.length === 0 ? <p>Nenhum produto cadastrado</p> : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {produtosatual.map((product) => (
+                <div key={product.idproduto} className="bg-(--surface) rounded-[20px] p-4 shadow-lg">
+                  {product.imagens?.[0] && <img src={product.imagens[0].url_imagem} className="w-full h-40 object-cover rounded-2xl mb-3" />}
+                  <h3 className="text-lg font-semibold mb-1">{product.nome}</h3>
+                  <p className="text-[#026A4C] font-semibold">R$ {Number(product.preco).toFixed(2)}</p>
+                  <p className="text-sm opacity-60 mb-3">Estoque: {product.estoque || "0"} un</p>
+                  <div className="flex flex-col gap-2 mb-3">
+                    <input type="number" placeholder="Novo preço" className="w-full p-2 rounded-full border bg-(--bg) text-sm" onBlur={(e) => updatePrice(product.idproduto, e.target.value)} />
+                    <input type="number" placeholder="Estoque" className="w-full p-2 rounded-full border bg-(--bg) text-sm" onBlur={(e) => updateStock(product.idproduto, e.target.value)} />
+                  </div>
+                  <button onClick={() => removeProduct(product.idproduto)} className="w-full bg-[#D95032] text-white py-2 rounded-full font-medium">Remover</button>
                 </div>
-                <button onClick={() => removeProduct(product.idproduto)} className="w-full bg-[#D95032] text-white py-2 rounded-full font-medium">Remover</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+              ))}
+            </div>
+          )
+        }
+      </div >
+
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        title={modalState.type === 'add' ? 'Adicionar Novo Produto' : 'Remover Produto'}
+        message={
+          modalState.type === 'add'
+            ? `Tem certeza que deseja adicionar o produto "${newProduct.name}"?`
+            : 'Tem certeza que deseja remover este produto? Esta ação não pode ser desfeita.'
+        }
+        actionType={modalState.type}
+        onConfirm={modalState.type === 'add' ? confirmAddProduct : confirmRemoveProduct}
+        onCancel={() => setModalState({ isOpen: false, type: null, productId: null, isLoading: false })}
+        isLoading={modalState.isLoading}
+      />
+    </div >
   );
 }

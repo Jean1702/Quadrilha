@@ -69,7 +69,7 @@ export default function Cart() {
 
 
     return (
-        <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] pt-8 pb-32 px-4 sm:pt-12 font-sans">
+        <div className="min-h-screen bg-(--bg) text-(--text) pt-8 pb-32 px-4 sm:pt-12 font-sans">
             <div className="container max-w-lg mx-auto">
                 <div className="flex-center">
                     <h1 className="text-4xl font-black uppercase tracking-tight mb-8 pl-2">
@@ -92,7 +92,7 @@ export default function Cart() {
                                 key={item.idItemCarrinho} 
                                 // O Tailwind altera o estilo do card se houver problema no estoque
                                 className={`flex flex-col p-5 border-[1.5px] rounded-[32px] shadow-sm transition-all duration-300 
-                                ${isProblematico ? 'border-red-500 bg-red-50 dark:bg-red-950/20 grayscale-[40%]' : 'border-[#514442]/15 bg-[var(--surface)]'}`}
+                                ${isProblematico ? 'border-red-500 bg-red-50 dark:bg-red-950/20 grayscale-40' : 'border-[#514442]/15 bg-(--surface)'}`}
                             >
                                 <div className={`w-full h-40 sm:h-48 flex justify-center items-center mb-4 ${isProblematico ? 'opacity-60' : ''}`}>
                                     <img
@@ -142,7 +142,7 @@ export default function Cart() {
                                     </div>
 
                                     <div className={`flex items-center justify-center rounded-full px-5 py-2 shadow-sm border border-[#514442]/10 
-                                        ${isProblematico ? 'bg-red-100 text-red-600' : 'bg-[var(--bg)]'}`}>
+                                        ${isProblematico ? 'bg-red-100 text-red-600' : 'bg-(--bg)'}`}>
                                         <span className="font-black text-sm uppercase tracking-widest opacity-80">
                                             Qtd: {item.quantidade}
                                         </span>
@@ -163,16 +163,16 @@ export default function Cart() {
                                 </span>
                             </div>
 
-                            <button onClick={handleIrParaPagamento} className="w-full bg-[var(--bg)] hover:bg-[#D95032] text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
+                            <button onClick={handleIrParaPagamento} className="w-full bg-(--bg) hover:bg-[#D95032] text-lg sm:text-xl font-black uppercase py-5 rounded-full active:scale-95 transition-all shadow-md cursor-pointer">
                                 Pagar Agora
                             </button>
                         </div>
                     ) : (
-                        <div className="flex-center flex-col h-full p-10 border-[1.5px] border-[#514442]/15 bg-[var(--surface)] shadow-sm rounded-[40px] text-center mt-2">
+                        <div className="flex-center flex-col h-full p-10 border-[1.5px] border-[#514442]/15 bg-(--surface) shadow-sm rounded-[40px] text-center mt-2">
                             <p className="text-xl font-black uppercase mb-2 ">Seu carrinho está vazio</p>
                             <p className="opacity-70 mb-6">Explore o nosso menu e adicione os seus favoritos.</p>
                             <Link href="/">
-                                <button className="bg-[var(--bg)] px-8 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-[#D95032] transition-colors shadow-sm">
+                                <button className="bg-(--bg) px-8 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-[#D95032] transition-colors shadow-sm">
                                     Ver Menu
                                 </button>
                             </Link>

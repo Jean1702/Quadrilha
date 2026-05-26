@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { Bell, ShoppingCart, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/context/Theme';
@@ -8,6 +8,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import CourseLogo from '../public/logos/LogoTipo.png';
 import { CartContext } from '@/context/CartContext';
 import { CreateClient } from "@/lib/supabase/client";
+import { getCorTurma } from '@/lib/turmaColors';
 
 const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode, theme }) => {
 
@@ -45,6 +46,7 @@ const HeaderBar = () => {
 
   const [turmaAtual, setTurmaAtual] = useState(null);
   const [categoriaAtual, setCategoriaAtual] = useState(null);
+  const [corTurma, setCorTurma] = useState({ bg: 'var(--footer)', text: '#ffffff' });
   const supabase = CreateClient();
 
   const isBackMode = pathname.includes('/product') || pathname.includes('/cart');
@@ -67,18 +69,19 @@ const HeaderBar = () => {
       const fetchTurma = async () => {
         const { data, error } = await supabase
           .from('turma')
-          // ATENÇÃO: Ajuste os nomes "nomecurso" e "imagemcurso" se as colunas no seu banco tiverem outro nome
           .select('nomecurso, logo')
           .eq('idturma', courseKey)
           .single();
 
         if (data) {
           setTurmaAtual(data);
+          setCorTurma(getCorTurma(data.nomecurso));
         }
       };
       fetchTurma();
     } else {
       setTurmaAtual(null);
+      setCorTurma({ bg: 'var(--footer)', text: '#ffffff' });
     }
   }, [isCoursePage, courseKey]);
 
@@ -109,14 +112,57 @@ const HeaderBar = () => {
         'text-2xl md:text-3xl')
     : 'text-xl';
 
+  const shouldWrap = textoParaExibir && textoParaExibir.includes(' ');
+  const normalize = (s) =>
+    String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z0-9 ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  let displayText = textoParaExibir || '';
+  const norm = normalize(displayText);
+  if (norm && (norm.includes('seguranca') || norm === '1seg' || norm === '1seh' || norm === '2seg')) {
+    displayText = 'Segurança';
+  }
+
+  const titleRef = useRef(null);
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    // reset
+    el.style.fontSize = '';
+    el.style.whiteSpace = 'nowrap';
+    const minSize = 10;
+    const computed = parseFloat(getComputedStyle(el).fontSize) || 16;
+    let size = computed;
+    const fit = () => {
+      // ensure one-line and shrink until fits
+      while (el.scrollWidth > el.clientWidth && size > minSize) {
+        size -= 1;
+        el.style.fontSize = `${size}px`;
+      }
+    };
+    fit();
+    const onResize = () => { size = computed; el.style.fontSize = `${computed}px`; fit(); };
+    window.addEventListener('resize', onResize);
+    return () => { window.removeEventListener('resize', onResize); el.style.fontSize = ''; el.style.whiteSpace = ''; };
+  }, [displayText, tamanhoTexto]);
+
   return (
     <header
-      className={`top-0 left-0 w-full z-50 navbar px-10 md:px-5 flex justify-between items-center h-20 transition-all duration-300 ${isBackMode
+      className={`top-0 left-0 w-full z-50 navbar px-4 md:px-5 flex justify-between items-center h-20 transition-all duration-300 ${isBackMode
         ? "bg-transparent shadow-none fixed"
-        : "bg-(--footer) shadow-sm sticky"
+        : "shadow-sm sticky"
         }`}
+      style={{
+        backgroundColor: isBackMode ? 'transparent' : corTurma.bg,
+        color: corTurma.text
+      }}
     >
-      <div className="flex-1">
+      <div className="flex-1 min-w-0 flex items-center">
         {isBackMode ? (
           <button
             onClick={() => router.back()}
@@ -125,22 +171,19 @@ const HeaderBar = () => {
             <ArrowLeft size={28} />
           </button>
         ) : (
-          <Link href="/" className="relative h-20 flex items-center gap-2 w-fit">
+          <Link href="/" className="relative flex items-center gap-2 min-w-0">
             <img
-              // MAGIA AQUI: A imagem SÓ vai ser a logo da turma SE for a página de curso. 
-              // Em qualquer outro cenário (Home ou Categoria), ele usa a defaultLogo!
               src={isCoursePage && turmaAtual ? turmaAtual.logo : defaultLogo}
               alt={textoParaExibir || "Logo"}
-              className={`${isCoursePage
-                ? 'h-20 w-auto max-w-[120px] md:max-w-[160px]'
-                : 'h-40 w-auto max-w-[180px]'
-                } object-contain object-left`}
+              className={`${isCoursePage && turmaAtual
+                ? 'h-20 w-auto max-w-[160px] md:max-w-[180px]'
+                : 'h-24 w-auto max-w-[220px]'
+                } object-contain object-left flex-shrink-0`}
             />
 
-            {/* Renderiza o título se ele existir (seja da turma ou da categoria) */}
-            {textoParaExibir && (
-              <h2 className={`font-black text-white leading-none tracking-tight ${tamanhoTexto}`}>
-                {textoParaExibir}
+            {displayText && (
+              <h2 ref={titleRef} className={`font-black text-white leading-tight tracking-tight ${tamanhoTexto} min-w-0 whitespace-nowrap`}> 
+                {displayText}
               </h2>
             )}
           </Link>

@@ -1,10 +1,8 @@
-
-import MethodPaymentPage from "../../components/MethodPaymentPage";
+import MethodPaymentPage from "@/components/MethodPaymentPage";
 import { CreateClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-
 
 export default async function Pagamento() {
+
 
     const supabase = await CreateClient();
 

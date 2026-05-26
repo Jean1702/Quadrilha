@@ -77,10 +77,10 @@ export default function User({ name, phone }) {
     <div className="full-h-screen flex flex-col items-center justify-center p-4">
 
       {/* CARD PRINCIPAL */}
-      <div className="w-full max-w-sm bg-[var(--surface)] rounded-[12px] p-6 shadow-lg border border-[#000]/5">
+      <div className="w-full max-w-sm bg-(--surface) rounded-[12px] p-6 shadow-lg border border-black/5">
 
         {/* TÍTULO */}
-        <h1 className="text-2xl font-bold text-center mb-6 text-[var(--text)]">
+        <h1 className="text-2xl font-bold text-center mb-6 text-(--text)">
           Meu Perfil
         </h1>
 
@@ -113,7 +113,7 @@ export default function User({ name, phone }) {
                   <label htmlFor="profileImageInput" className="cursor-pointer group">
 
                     {/* CÍRCULO DA FOTO */}
-                    <div className="w-21 h-21 rounded-full border-2 border-card overflow-hidden flex items-center justify-center bg-[var(--bg)] shadow-inner relative">
+                    <div className="w-21 h-21 rounded-full border-2 border-card overflow-hidden flex items-center justify-center bg-(--bg) shadow-inner relative">
 
                       {/* SE EXISTIR IMAGEM */}
                       {image ? (
@@ -128,7 +128,7 @@ export default function User({ name, phone }) {
                       ) : (
 
                         // SE NÃO EXISTIR FOTO
-                        <span className="text-xs text-[var(--text)] opacity-70 font-medium">
+                        <span className="text-xs text-(--text) opacity-70 font-medium">
                           Sem Foto
                         </span>
                       )}
@@ -166,7 +166,7 @@ export default function User({ name, phone }) {
                   {/* CAMPO NOME */}
                   <div className="flex flex-col gap-1">
 
-                    <label className="text-[10px] uppercase ml-1 font-bold text-[var(--text)] opacity-50">
+                    <label className="text-[10px] uppercase ml-1 font-bold text-(--text) opacity-50">
                       Nome
                     </label>
 
@@ -174,7 +174,7 @@ export default function User({ name, phone }) {
                     <input
                       value={name}
                       readOnly
-                      className="w-full rounded-full px-3 py-3 bg-[var(--bg)] text-[var(--text)] outline-none border border-transparent focus:border-card transition"
+                      className="w-full rounded-full px-3 py-3 bg-(--bg) text-(--text) outline-none border border-transparent focus:border-card transition"
                     />
                   </div>
 
@@ -183,7 +183,7 @@ export default function User({ name, phone }) {
                   {/* CAMPO TELEFONE */}
                   <div className="flex flex-col gap-1">
 
-                    <label className="text-[10px] uppercase ml-1 font-bold text-[var(--text)] opacity-50">
+                    <label className="text-[10px] uppercase ml-1 font-bold text-(--text) opacity-50">
                       Telefone
                     </label>
 
@@ -191,7 +191,7 @@ export default function User({ name, phone }) {
                     <input
                       value={phone}
                       readOnly
-                      className="w-full rounded-full px-3 py-3 bg-[var(--bg)] text-[var(--text)] outline-none border border-transparent focus:border-card transition"
+                      className="w-full rounded-full px-3 py-3 bg-(--bg) text-(--text) outline-none border border-transparent focus:border-card transition"
                     />
                   </div>
                 </div>
@@ -223,7 +223,7 @@ export default function User({ name, phone }) {
         {/* MOSTRA PEDIDO SOMENTE SE EXISTIR E ESTIVER ABERTO */}
         {hasOrder && showOrder && (
 
-          <div className="mt-2 bg-[var(--bg)] rounded-md p-4 shadow-sm border border-black/5 animate-in fade-in slide-in-from-top-2">
+          <div className="mt-2 bg-(--bg) rounded-md p-4 shadow-sm border border-black/5 animate-in fade-in slide-in-from-top-2">
 
             {/* TÍTULO */}
             <h2 className="font-bold mb-2 text-primary border-b border-black/5 pb-1">

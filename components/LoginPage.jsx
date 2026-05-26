@@ -115,7 +115,7 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
       
       <div className="absolute size-100 sm:size-150 bg-amarelo rounded-full blur-3xl opacity-30 -top-40 -left-40 animate-pulse"></div>
 
-      <div className="relative w-full bg-[var(--surface)] rounded-[30px] max-w-sm mx-4">
+      <div className="relative w-full bg-(--surface) rounded-[30px] max-w-sm mx-4">
         <div className="backdrop-blur-xl border border-white/20 rounded-[30px] shadow-2xl p-8 transition-all duration-500 hover:scale-[1.02]">
           
           <div className="text-center mb-8">
@@ -130,7 +130,7 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
           <form className="space-y-4">
             
             <div className="relative group">
-              <User className="absolute text-card left-4 top-1/2 -translate-y-1/2 text-card group-focus-within:text-white transition-colors" size={20} />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-card group-focus-within:text-white transition-colors" size={20} />
               <Controller
                 name='name'
                 control={control}
@@ -140,14 +140,14 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
                     placeholder="Nome"
                     type="text"
                     {...field}
-                    className="w-full pl-12 pr-4 py-3 rounded-[6px] h-full placeholder:text-[var(--text)]) outline-none border border-text focus:border-[var(--card)] focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+                    className="w-full pl-12 pr-4 py-3 rounded-[6px] h-full placeholder:text-[var(--text)]) outline-none border border-text focus:border-card focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
                   />
                 )}
               />
             </div>
 
             <div className="relative group">
-              <Phone className="absolute text-card left-4 top-1/2 -translate-y-1/2 text-amarelo group-focus-within:text-white transition-colors" size={20} />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-amarelo group-focus-within:text-white transition-colors" size={20} />
               <Controller
                 name='phone'
                 control={control}
@@ -159,7 +159,7 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
                     onChange={(e) => field.onChange(formatPhone(e.target.value))}
                     maxLength={15}
                     placeholder="(99) 99999-9999"
-                    className="w-full pl-12 pr-4 py-3 rounded-[6px] h-full placeholder:text-[var(--text)]) outline-none border border-text focus:border-[var(--card)] focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
+                    className="w-full pl-12 pr-4 py-3 rounded-[6px] h-full placeholder:text-[var(--text)]) outline-none border border-text focus:border-card focus:ring-2 focus:ring-amarelo/50 transition-all duration-300"
                   />
                 )}
               />
@@ -188,7 +188,7 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
               type="button"
               onClick={handleEntrarClick}
               disabled={!phoneIsValid || isLoading}
-              className="w-full py-3 rounded-xl font-semibold bg-[var(--bg)]  active:scale-95 transition-all duration-300 shadow-lg hover:shadow-card disabled:opacity-70"
+              className="w-full py-3 rounded-xl font-semibold bg-(--bg)  active:scale-95 transition-all duration-300 shadow-lg hover:shadow-card disabled:opacity-70"
             >
               {isLoading ? "Enviando..." : "Entrar"}
             </button>

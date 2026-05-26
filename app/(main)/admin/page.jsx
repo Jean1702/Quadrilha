@@ -30,8 +30,8 @@ export default async function Admin(){
     .select(`
         *,
         imagens (*)
-        
-    `);
+    `)
+    .eq("isActivy", true);
 
 
     if (!adminData.is_superadmin) {
