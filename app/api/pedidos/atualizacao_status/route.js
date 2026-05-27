@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { CreateClient } from "@/lib/supabase/server";
-import { upgradeToPendingSegment } from "next/dist/client/components/segment-cache/cache";
 
 export async function PUT(req){
     const supabase = await CreateClient();
@@ -14,11 +13,9 @@ export async function PUT(req){
         const novoStatus = searchParams.get("status");
         const body = await req.json();
 
-        const phone = body.phone
-        const formatado = phone.replace("+", "");
-
-        const nome = body.name
-
+        const phone = body.phone || "";
+        const formatado = phone.replace(/\D/g, "");
+        const nome = body.name || "";
 
         const mensagensStatus = {
             'preparando': `*IFFOOD Informa!* \n\nO seu pedido *#${pedidoId}* já está sendo preparado. Enviaremos uma nova mensagem assim que estiver pronto para retirada.`,
@@ -71,19 +68,23 @@ export async function PUT(req){
             return NextResponse.json({ error: "Status inválido" }, { status: 400 });
         }
 
-        const response = await fetch('http://164.163.33.150:8001/api/v1/sessions/3c993713-6d8e-4fab-9bea-491e9af3ed92/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': process.env.WHATSAPP_API_KEY
-            },
-            body: JSON.stringify(playload),
-        });
+        if (formatado) {
+            const response = await fetch('http://164.163.33.150:8001/api/v1/sessions/3c993713-6d8e-4fab-9bea-491e9af3ed92/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': process.env.WHATSAPP_API_KEY
+                },
+                body: JSON.stringify(playload),
+            });
 
-        if (!response.ok) {
-            const erroAPI = await response.text();
-            console.error("Erro na API de WhatsApp do Hook:", erroAPI);
-            return new NextResponse("Erro ao enviar mensagem", { status: 500 });
+            if (!response.ok) {
+                const erroAPI = await response.text();
+                console.error("Erro na API de WhatsApp do Hook:", erroAPI);
+                return new NextResponse("Erro ao enviar mensagem", { status: 500 });
+            }
+        } else {
+            console.warn("Telefone do cliente não informado. Status atualizado sem envio de WhatsApp.");
         }
 
         return NextResponse.json({ message: "Status atualizado com sucesso!" }, { status: 200 });

@@ -23,19 +23,19 @@ const statusConfig = {
     label: "Em andamento",
     description: "O pedido já está sendo preparado.",
     icon: ChefHat,
-    color: "#026A4C",
+    color: "#D95032",
   },
   pronto: {
     label: "Pronto para retirada",
     description: "Seu pedido já pode ser retirado.",
     icon: PackageCheck,
-    color: "#026A4C",
+    color: "#059b70",
   },
   entregue: {
     label: "Entregue",
     description: "Esse pedido já foi finalizado.",
     icon: PackageCheck,
-    color: "#D95032",
+    color: "#026A4C",
   },
   cancelado: {
     label: "Cancelado",

@@ -16,14 +16,26 @@ export default async function User() {
         .from('usuarios')
         .select('name, phone')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
     if (usuarioError) {
         console.error('Erro ao buscar perfil do usuário na tabela usuarios:', usuarioError);
     }
 
-    const userName = usuario?.name || user.user_metadata?.display_name || user.user_metadata?.name || user.identities?.[0]?.identity_data?.name || "Usuário";
-    const userPhone = usuario?.phone || user.user_metadata?.phone || user.phone || "Telefone não informado";
+    const userName = usuario?.name
+        || user.user_metadata?.display_name
+        || user.user_metadata?.name
+        || user.raw_user_meta_data?.display_name
+        || user.raw_user_meta_data?.name
+        || user.identities?.[0]?.identity_data?.name
+        || user.email
+        || "Usuário";
+
+    const userPhone = usuario?.phone
+        || user.user_metadata?.phone
+        || user.identities?.[0]?.identity_data?.phone
+        || user.phone
+        || "Telefone não informado";
 
     let numbers = userPhone.replace(/\D/g, "");
 

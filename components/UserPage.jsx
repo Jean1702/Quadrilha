@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { FiLogOut, FiChevronDown } from "react-icons/fi"; 
 
 const statusConfig = {
-  pago: { label: "Esperando Pagamento", color: "#FCD34D" },
-  em_analise: { label: "Em Análise", color: "#FDBA74" },
-  sendo_feito: { label: "Sendo Preparado", color: "#BBDC67" },
-  pronto: { label: "Pronto", color: "#4ADE80" },
-  entregue: { label: "Entregue", color: "#047857" }, 
-  cancelado: { label: "Cancelado", color: "#EF4444" },
+  aguardando_pagamento: { label: "Aguardando pagamento", color: "#D97016" },
+  pago: { label: "Recebido", color: "#D97016" },
+  sendo_feito: { label: "Em andamento", color: "#D95032" },
+  pronto: { label: "Pronto", color: "#059b70" },
+  entregue: { label: "Entregue", color: "#026A4C" }, 
+  cancelado: { label: "Cancelado", color: "#D95032" },
 };
 
 export default function User({ name, phone, userId }) {

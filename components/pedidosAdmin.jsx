@@ -64,7 +64,7 @@ export default function PedidosPage({ vendas, adminData }) {
       headers: {
           "Content-Type": "application/json"
       },
-      body: JSON.stringify({phone: user.phone, name: user.name })
+      body: JSON.stringify({ phone: user?.phone || "", name: user?.name || "" })
     });
     if (!response.ok) {
       console.error("Erro ao atualizar status do pedido:", response.statusText);
