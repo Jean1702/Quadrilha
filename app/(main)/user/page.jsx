@@ -12,8 +12,18 @@ export default async function User() {
         redirect('/register');
     }
 
-    const userName = user?.user_metadata?.name || "Usuário Teste"; //const userName = user.user_metadata?.name || user.identities?.[0]?.identity_data?.name || "Usuário";
-    const userPhone = user?.user_metadata?.phone || user?.phone || "11999999999"; //const userPhone = user.user_metadata?.phone || user.phone || "Telefone não informado";
+    const { data: usuario, error: usuarioError } = await supabase
+        .from('usuarios')
+        .select('name, phone')
+        .eq('user_id', user.id)
+        .single();
+
+    if (usuarioError) {
+        console.error('Erro ao buscar perfil do usuário na tabela usuarios:', usuarioError);
+    }
+
+    const userName = usuario?.name || user.user_metadata?.display_name || user.user_metadata?.name || user.identities?.[0]?.identity_data?.name || "Usuário";
+    const userPhone = usuario?.phone || user.user_metadata?.phone || user.phone || "Telefone não informado";
 
     let numbers = userPhone.replace(/\D/g, "");
 
