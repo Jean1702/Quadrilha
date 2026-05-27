@@ -10,9 +10,9 @@ import { CartContext } from '@/context/CartContext';
 import { CreateClient } from "@/lib/supabase/client";
 import { getCorTurma } from '@/lib/turmaColors';
 
-const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode, theme }) => {
+const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode, theme, forceWhiteIcons }) => {
 
-  const colorClass = isBackMode ? 'text-white' : theme === 'dark' ? 'text-black' : 'text-white';
+  const colorClass = isBackMode || forceWhiteIcons ? 'text-white' : theme === 'dark' ? 'text-black' : 'text-white';
 
   const commonClasses = `group relative p-2 ${colorClass} rounded-full transition-all flex items-center justify-center ${customClass}`;
 
@@ -36,7 +36,7 @@ const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, cu
 };
 
 const HeaderBar = () => {
-  const [notifications] = useState(1);
+  const [notifications, setNotifications] = useState(0);
   const { theme } = useTheme();
   const pathname = usePathname() || "";
   const router = useRouter();
@@ -63,6 +63,49 @@ const HeaderBar = () => {
   const categoryIndex = segments.indexOf('categoria');
   let categoryKey = categoryIndex !== -1 ? segments[categoryIndex + 1] : null;
   const defaultLogo = theme === 'dark' ? '/logo_claro.png' : '/logo_escuro.png';
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const carregarNotificacoesAtivas = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !isMounted) return;
+
+      const { data: usuario } = await supabase
+        .from("usuarios")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      const idUsuarioPedido = usuario?.id || user.id;
+
+      // Busca pedidos do usuário que estão em status "ativos"
+      const { data: pedidosAtivos } = await supabase
+        .from("venda")
+        .select("idvenda")
+        .in("status", ["sendo_feito", "pronto", "pago", "aguardando_pagamento"])
+        .or(`iduser.eq.${idUsuarioPedido},iduser.eq.${user.id}`);
+
+      if (isMounted && pedidosAtivos) {
+        setNotifications(pedidosAtivos.length);
+      }
+    };
+
+    carregarNotificacoesAtivas();
+
+    const channel = supabase
+      .channel("header_notifications")
+      .on("postgres_changes", { event: "*", schema: "public", table: "venda" }, () => {
+        carregarNotificacoesAtivas();
+      })
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
 
   useEffect(() => {
     if (isCoursePage && courseKey) {
@@ -128,6 +171,8 @@ const HeaderBar = () => {
     displayText = 'Segurança';
   }
 
+  const forceWhiteIcons = norm.includes('informatica');
+
   const titleRef = useRef(null);
   useEffect(() => {
     const el = titleRef.current;
@@ -182,7 +227,7 @@ const HeaderBar = () => {
             />
 
             {displayText && (
-              <h2 ref={titleRef} className={`font-black text-white leading-tight tracking-tight ${tamanhoTexto} min-w-0 whitespace-nowrap`}> 
+              <h2 ref={titleRef} className={`font-black text-white leading-tight tracking-tight ${tamanhoTexto} min-w-0 whitespace-nowrap`}>
                 {displayText}
               </h2>
             )}
@@ -200,6 +245,7 @@ const HeaderBar = () => {
             isDot={false}
             isBackMode={isBackMode}
             theme={theme}
+            forceWhiteIcons={forceWhiteIcons}
           />
         )}
 
@@ -211,6 +257,7 @@ const HeaderBar = () => {
           isBackMode={isBackMode}
           customClass={isBackMode ? "bg-black/30" : ""}
           theme={theme}
+          forceWhiteIcons={forceWhiteIcons}
         />
       </div>
     </header>

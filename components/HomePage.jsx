@@ -111,9 +111,9 @@ export default function HomePage({ categorias, turmas }) {
                                 <div className="card-body grow-0 p-4">
                                     <h2 className="card-title text-lg">{item.ano}° {item.nomecurso}</h2>
 
-                                    <p className="text-sm opacity-70">{item.descricao}</p>
+                                    <p className="text-sm opacity-90">{item.descricao}</p>
 
-                                    <p className="text-sm h-5 text-primary font-semibold">Servimos:</p>
+                                    <p className="text-sm h-5 text-(--text) font-semibold">Servimos:</p>
                               
 
                                     {item.resumoprodutos && (

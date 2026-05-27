@@ -15,6 +15,7 @@ export default function AdminPage({ adminData, produtos }) {
   const [storeOpen, setStoreOpen] = useState(adminData.turma?.is_active || false);
   const [superadm, setSuperadm] = useState(adminData.is_superadmin)
   const [isMaintenance, setIsMaintenance] = useState(false);
+  const [edicoesPendentes, setEdicoesPendentes] = useState({});
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -292,6 +293,41 @@ export default function AdminPage({ adminData, produtos }) {
     }
   };
 
+  const handleEditChange = (id, field, value) => {
+    setEdicoesPendentes(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSalvarEdicao = async (id) => {
+    const edicao = edicoesPendentes[id];
+    if (!edicao) return;
+
+    let atualizouAlgo = false;
+
+    if (edicao.preco !== undefined && edicao.preco !== "") {
+      await updatePrice(id, edicao.preco);
+      atualizouAlgo = true;
+    }
+
+    if (edicao.estoque !== undefined && edicao.estoque !== "") {
+      await updateStock(id, edicao.estoque);
+      atualizouAlgo = true;
+    }
+
+    if (atualizouAlgo) {
+      setEdicoesPendentes(prev => {
+        const novoEstado = { ...prev };
+        delete novoEstado[id];
+        return novoEstado;
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-28">
       <AdminHeaderPage nometurma={adminData.turma?.nomecurso || `SUPER ADM`} anoturma={adminData.turma?.ano || 'mod'} logo={adminData.turma?.logo || '/hackerman.png'} />
@@ -350,13 +386,9 @@ export default function AdminPage({ adminData, produtos }) {
               </div>
             </div>
 
-            <ConfigurarPagamento idAdmin={adminData.idturma}/>
+            <ConfigurarPagamento idAdmin={adminData.idturma} />
           </div>
-
-
         )}
-
-
 
         {/* Formulário de Cadastro */}
         <form onSubmit={handleSubmit} className="bg-(--surface) p-6 rounded-[24px] shadow-xl mb-6 border border-white/10">
@@ -480,10 +512,32 @@ export default function AdminPage({ adminData, produtos }) {
                   <p className="text-[#026A4C] font-semibold">R$ {Number(product.preco).toFixed(2)}</p>
                   <p className="text-sm opacity-60 mb-3">Estoque: {product.estoque || "0"} un</p>
                   <div className="flex flex-col gap-2 mb-3">
-                    <input type="number" placeholder="Novo preço" className="w-full p-2 rounded-full border bg-(--bg) text-sm" onBlur={(e) => updatePrice(product.idproduto, e.target.value)} />
-                    <input type="number" placeholder="Estoque" className="w-full p-2 rounded-full border bg-(--bg) text-sm" onBlur={(e) => updateStock(product.idproduto, e.target.value)} />
+                    <input
+                      type="number"
+                      placeholder={`Preço (Atual: R$ ${Number(product.preco).toFixed(2)})`}
+                      className="w-full p-2.5 rounded-xl border border-white/10 bg-(--bg) text-sm outline-none focus:border-[#D97016]"
+                      value={edicoesPendentes[product.idproduto]?.preco || ""}
+                      onChange={(e) => handleEditChange(product.idproduto, 'preco', e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      placeholder={`Estoque (Atual: ${product.estoque || "0"})`}
+                      className="w-full p-2.5 rounded-xl border border-white/10 bg-(--bg) text-sm outline-none focus:border-[#D97016]"
+                      value={edicoesPendentes[product.idproduto]?.estoque || ""}
+                      onChange={(e) => handleEditChange(product.idproduto, 'estoque', e.target.value)}
+                    />
+
+                    {(edicoesPendentes[product.idproduto]?.preco || edicoesPendentes[product.idproduto]?.estoque) && (
+                      <button
+                        onClick={() => handleSalvarEdicao(product.idproduto)}
+                        className="mt-1 mb-1 w-full bg-[#026A4C] hover:bg-[#037a58] text-white py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 shadow-md"
+                      >
+                        <CheckCircle size={18} /> Confirmar Edição
+                      </button>
+                    )}
                   </div>
-                  <button onClick={() => removeProduct(product.idproduto)} className="w-full bg-[#D95032] text-white py-2 rounded-full font-medium">Remover</button>
+
+                  <button onClick={() => removeProduct(product.idproduto)} className="w-full bg-[#D95032] hover:bg-[#E05A3F] text-white py-2.5 rounded-xl font-medium transition-colors">Remover</button>
                 </div>
               ))}
             </div>

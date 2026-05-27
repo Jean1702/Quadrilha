@@ -162,7 +162,7 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
                                                 </div>
                                                 <div className="flex flex-1 flex-col gap-2 pb-0 justify-center">
                                                     <h2 className="text-2xl font-black md:text-3xl">{prod.nome}</h2>
-                                                    <p className="max-w-3xl text-md leading-7 text-preto md:text-base line-clamp-3">
+                                                    <p className="max-w-3xl text-md leading-7 text-(--text) md:text-base line-clamp-3">
                                                         {prod.descricao}
                                                     </p>
                                                     <p className="text-xl md:text-2xl font-black text-vermelho mt-4 md:mt-auto">
