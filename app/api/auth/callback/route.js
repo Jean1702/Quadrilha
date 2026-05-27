@@ -37,13 +37,12 @@ export async function GET(request) {
 
     const tokenDoVendedor = data.access_token;
     const idDoVendedorNoMP = data.user_id;
-    console.log(tokenDoVendedor)
-    console.log(idDoVendedorNoMP)
+    
     // CORREÇÃO 2: 'idturma' agora está entre aspas
     const { error: ErrorToken } = await supabase
       .from('admin')
       .update({ acess_token: tokenDoVendedor, idvendedor: idDoVendedorNoMP })
-      .eq('idturma', state);
+      .eq('idturma', parseInt(state));
     
     if (ErrorToken) {
         console.error('Erro ao salvar no Supabase:', ErrorToken);
