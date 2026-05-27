@@ -99,7 +99,8 @@ export default function NotificationPage() {
           )
         `)
         .eq("iduser", idUsuarioPedido)
-        .order("criada_em", { ascending: false });
+        .order("criada_em", { ascending: false })
+        .neq('status', 'entregue');
 
       const { data: pedidosLegados, error: errorLegado } = await supabase
         .from("venda")
