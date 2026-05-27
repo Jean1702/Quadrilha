@@ -1,104 +1,206 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CreateClient } from "../lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { FiTrash, FiChevronDown } from "react-icons/fi";
+import { CreateClient } from "../lib/supabase/client"; 
+import { useRouter } from "next/navigation"; 
+import { FiLogOut, FiChevronDown } from "react-icons/fi"; 
 
+const statusConfig = {
+  pago: { label: "Esperando Pagamento", color: "#FCD34D" },
+  em_analise: { label: "Em Análise", color: "#FDBA74" },
+  sendo_feito: { label: "Sendo Preparado", color: "#BBDC67" },
+  pronto: { label: "Pronto", color: "#4ADE80" },
+  entregue: { label: "Entregue", color: "#047857" }, 
+  cancelado: { label: "Cancelado", color: "#EF4444" },
+};
 
-export default function User({ name, phone }) {
-  const [image, setImage] = useState(null);
+export default function User({ name, phone, userId }) {
+  // --- DECLARAÇÃO DE ESTADOS ---
+  const [image, setImage] = useState(null); 
+  const [pedidos, setPedidos] = useState([]); 
+  const [expandedPedidos, setExpandedPedidos] = useState({}); 
+  const [loading, setLoading] = useState(true); 
+  const [showOrder, setShowOrder] = useState(true); 
+  
+  const router = useRouter(); 
+  const supabase = CreateClient(); 
 
-  // STATE QUE CONTROLA SE O PEDIDO ESTÁ ABERTO OU FECHADO
-  const [showOrder, setShowOrder] = useState(true);
-
-  // STATE QUE INFORMA SE EXISTE UM PEDIDO ATIVO
-  const [hasOrder, setHasOrder] = useState(true);
-  const router = useRouter();
-
-
+  // --- EFEITOS (USEEFFECT) ---
   useEffect(() => {
-
     const savedImage = localStorage.getItem("user_profile_image");
-
     if (savedImage) setImage(savedImage);
 
+    let isMounted = true;
+
+    // --- FUNÇÃO: BUSCAR PEDIDOS IGUAL AO NOTIFICATION ---
+    const fetchPedidos = async () => {
+      try {
+        setLoading(true);
+        
+        // 1. Pega o usuário autenticado no Supabase Auth
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.error("Usuário não autenticado no Auth");
+          if (isMounted) {
+            setPedidos([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // 2. Busca o ID vinculado na tabela customizada 'usuarios' (igual feito na notification)
+        const { data: usuario, error: usuarioError } = await supabase
+          .from("usuarios")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
+
+        if (usuarioError && usuarioError.code !== "PGRST116") {
+          console.error("Erro ao carregar usuário vinculado:", usuarioError);
+        }
+
+        // Se achar o id customizado usa ele, senão usa o do auth direto
+        const idUsuarioPedido = usuario?.id || user.id;
+
+        if (!isMounted) return;
+
+        // 3. Faz a busca única trazendo a venda e os produtos associados
+        const { data: vendasComProdutos, error } = await supabase
+          .from("venda")
+          .select(`
+            idvenda,
+            valor_total,
+            metodo_pagamento,
+            status,
+            criada_em,
+            atualizada_em,
+            idturma,
+            venda_produto (
+              quantidade,
+              produtos (*)
+            )
+          `)
+          .eq("iduser", idUsuarioPedido) // Usa o ID correto aqui!
+          .order("criada_em", { ascending: false });
+
+        if (!isMounted) return;
+
+        if (error) {
+          console.error("Erro ao buscar vendas do usuário:", error?.message || error);
+          return;
+        }
+
+        // 4. Formata os dados para o padrão que o seu JSX espera (.itens)
+        const formatados = (vendasComProdutos || []).map(venda => {
+          const itensFormatados = (venda.venda_produto || []).map(item => ({
+            quantidade: item.quantidade,
+            // Alinhado com a estrutura da tabela 'produtos' da sua página de notificação
+            produto: item.produtos || { nome: "Item do pedido", preco: 0 }
+          }));
+
+          return {
+            ...venda,
+            itens: itensFormatados
+          };
+        });
+
+        setPedidos(formatados);
+      } catch (error) {
+        console.error("Erro no fluxo de busca do usuário:", error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchPedidos();
+    
+    // --- OUVINTE REALTIME ---
+    const channel = supabase
+      .channel("pedidos_usuario")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "venda" },
+        () => {
+          fetchPedidos();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-
-
-  // FUNÇÃO PARA ALTERAR A FOTO
+  // --- FUNÇÃO: ALTERAR E SALVAR FOTO DE PERFIL ---
   function handleImageChange(e) {
-
     const file = e.target.files?.[0];
     if (!file) return;
+    
     if (file.size > 2 * 1024 * 1024) {
-
       alert("A imagem é muito grande! Escolha uma de até 2MB.");
-
       return;
     }
 
     const reader = new FileReader();
-
     reader.onloadend = () => {
       const base64String = reader.result;
       setImage(base64String);
       localStorage.setItem("user_profile_image", base64String);
     };
-
     reader.readAsDataURL(file);
   }
 
-
-  async function UserOut() {
-
-    // SE EXISTIR PEDIDO ATIVO
-    if (hasOrder) {
-
-      // BLOQUEIA A EXCLUSÃO
-      alert("Você não pode excluir o perfil com um pedido em andamento!");
-
-      return;
-    }
-
-    const supabase = await CreateClient();
-
-    await supabase.auth.signOut();
-
-    localStorage.removeItem("user_profile_image");
-    router.push("/login");
+  // --- FUNÇÃO: ABRIR / FECHAR UM CARD DE PEDIDO ---
+  function togglePedido(id) {
+    setExpandedPedidos((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   }
 
+  // --- FUNÇÕES AUXILIARES ---
+  function calcularTotalItens(itens) {
+    return itens.reduce((total, item) => total + item.quantidade, 0);
+  }
 
+  function formatarData(data) {
+    return new Date(data).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  // --- FUNÇÃO: SAIR DA CONTA ---
+  async function handleSignOut() {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem("user_profile_image");
+      router.push("/login");
+    } catch (error) {
+      console.error("Erro ao deslogar:", error);
+      alert("Erro ao tentar desconectar. Tente novamente.");
+    }
+  }
+
+  // --- RENDERIZAÇÃO DA INTERFACE ---
   return (
-
-    // CONTAINER PRINCIPAL
-    <div className="full-h-screen flex flex-col items-center justify-center p-4">
-
-      {/* CARD PRINCIPAL */}
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm bg-(--surface) rounded-[12px] p-6 shadow-lg border border-black/5">
-
-        {/* TÍTULO */}
+        
         <h1 className="text-2xl font-bold text-center mb-6 text-(--text)">
           Meu Perfil
         </h1>
+        
 
-
-
-        {/* TABELA PRINCIPAL */}
         <table className="w-full border-collapse mb-6">
-
           <tbody>
-
             <tr>
-
-              {/* COLUNA DA FOTO */}
               <td className="w-24 align-middle pr-4 text-center">
-
                 <div className="flex flex-col items-center justify-center gap-2">
-
-                  {/* INPUT DE IMAGEM ESCONDIDO */}
                   <input
                     type="file"
                     className="hidden"
@@ -107,92 +209,36 @@ export default function User({ name, phone }) {
                     onChange={handleImageChange}
                   />
 
-
-
-                  {/* LABEL QUE ABRE O INPUT */}
                   <label htmlFor="profileImageInput" className="cursor-pointer group">
-
-                    {/* CÍRCULO DA FOTO */}
                     <div className="w-21 h-21 rounded-full border-2 border-card overflow-hidden flex items-center justify-center bg-(--bg) shadow-inner relative">
-
-                      {/* SE EXISTIR IMAGEM */}
                       {image ? (
-
-                        // MOSTRA A FOTO
-                        <img
-                          src={image}
-                          className="w-full h-full object-cover"
-                          alt="Perfil"
-                        />
-
+                        <img src={image} className="w-full h-full object-cover" alt="Perfil" />
                       ) : (
-
-                        // SE NÃO EXISTIR FOTO
-                        <span className="text-xs text-(--text) opacity-70 font-medium">
-                          Sem Foto
-                        </span>
+                        <span className="text-xs text-(--text) opacity-70 font-medium">Sem Foto</span>
                       )}
-
-                      {/* EFEITO ESCURO AO PASSAR O MOUSE */}
                       <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </label>
 
-
-
-                  {/* BOTÃO ALTERAR FOTO */}
                   <button
                     className="mt-1 text-[10px] bg-card px-3 py-1 rounded-full hover:opacity-80 transition font-medium whitespace-nowrap"
-
-                    // SIMULA CLIQUE NO INPUT ESCONDIDO
-                    onClick={() =>
-                      document.getElementById("profileImageInput").click()
-                    }
+                    onClick={() => document.getElementById("profileImageInput").click()}
                   >
-
                     Alterar Foto
-
                   </button>
                 </div>
               </td>
 
-
-
-              {/* COLUNA DAS INFORMAÇÕES */}
               <td className="align-middle">
-
                 <div className="flex flex-col gap-3">
-
-                  {/* CAMPO NOME */}
                   <div className="flex flex-col gap-1">
-
-                    <label className="text-[10px] uppercase ml-1 font-bold text-(--text) opacity-50">
-                      Nome
-                    </label>
-
-                    {/* INPUT SOMENTE LEITURA */}
-                    <input
-                      value={name}
-                      readOnly
-                      className="w-full rounded-full px-3 py-3 bg-(--bg) text-(--text) outline-none border border-transparent focus:border-card transition"
-                    />
+                    <label className="text-[10px] uppercase ml-1 font-bold text-(--text) opacity-50">Nome</label>
+                    <input value={name} readOnly className="w-full rounded-full px-3 py-3 bg-(--bg) text-(--text) outline-none border border-transparent" />
                   </div>
 
-
-
-                  {/* CAMPO TELEFONE */}
                   <div className="flex flex-col gap-1">
-
-                    <label className="text-[10px] uppercase ml-1 font-bold text-(--text) opacity-50">
-                      Telefone
-                    </label>
-
-                    {/* INPUT SOMENTE LEITURA */}
-                    <input
-                      value={phone}
-                      readOnly
-                      className="w-full rounded-full px-3 py-3 bg-(--bg) text-(--text) outline-none border border-transparent focus:border-card transition"
-                    />
+                    <label className="text-[10px] uppercase ml-1 font-bold text-(--text) opacity-50">Telefone</label>
+                    <input value={phone} readOnly className="w-full rounded-full px-3 py-3 bg-(--bg) text-(--text) outline-none border border-transparent" />
                   </div>
                 </div>
               </td>
@@ -200,178 +246,113 @@ export default function User({ name, phone }) {
           </tbody>
         </table>
 
-
-
-        {/* BOTÃO PARA ABRIR/FECHAR STATUS DO PEDIDO */}
         <button
           onClick={() => setShowOrder(!showOrder)}
           className="w-full mt-6 bg-card py-3 rounded-md font-bold flex items-center justify-between px-4 hover:brightness-95 transition"
         >
-
-          <span>Status do Pedido</span>
-
-          {/* ÍCONE QUE GIRA */}
-          <FiChevronDown
-            className={`transition-transform duration-300 ${
-              showOrder ? "rotate-180" : ""
-            }`}
-          />
+          <span>Status dos Pedidos</span>
+          <FiChevronDown className={`transition-transform duration-300 ${showOrder ? "rotate-180" : ""}`} />
         </button>
 
-
-
-        {/* MOSTRA PEDIDO SOMENTE SE EXISTIR E ESTIVER ABERTO */}
-        {hasOrder && showOrder && (
-
-          <div className="mt-2 bg-(--bg) rounded-md p-4 shadow-sm border border-black/5 animate-in fade-in slide-in-from-top-2">
-
-            {/* TÍTULO */}
-            <h2 className="font-bold mb-2 text-primary border-b border-black/5 pb-1">
-              Pedido Ativo
-            </h2>
-
-
-
-            {/* DETALHES */}
-            <div className="text-sm space-y-1">
-
-              <p>
-                <strong>Curso:</strong> Informática
-              </p>
-
-              <p>
-                <strong>Item:</strong> Pastel de Queijo
-              </p>
-
-              <p>
-                <strong>Quantidade:</strong> 2
-              </p>
-
-
-
-              {/* STATUS */}
-              <div className="flex items-center gap-2 mt-3 bg-white/50 w-fit px-2 py-1 rounded-full">
-
-                {/* BOLINHA PISCANDO */}
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-400 animate-pulse"></span>
-
-                <span className="text-xs font-bold uppercase">
-                  Sendo preparado
-                </span>
+        {showOrder && (
+          <div className="mt-6">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-card"></div>
               </div>
-
-
-
-              {/* PAGAMENTO */}
-              <div className="mt-3 pt-2 border-t border-black/5">
-
-                <p>
-                  <strong>Pagamento:</strong> Pix
-                </p>
-
-                <p className="text-lg font-bold text-primary">
-                  Total: R$ 10,00
-                </p>
+            ) : pedidos.length === 0 ? (
+              <div className="bg-(--bg) rounded-md p-6 text-center border border-black/5">
+                <p className="text-(--text) opacity-70">Você ainda não fez nenhum pedido.</p>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                {pedidos.map((pedido) => {
+                  const st = statusConfig[pedido.status] || statusConfig.pago;
+                  const isExpanded = expandedPedidos[pedido.idvenda];
+                  const totalItens = calcularTotalItens(pedido.itens);
+
+                  return (
+                    <div key={pedido.idvenda} className="bg-(--bg) rounded-md border border-black/5 overflow-hidden shadow-sm">
+                      <button
+                        onClick={() => togglePedido(pedido.idvenda)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-black/2 transition"
+                      >
+                        <div className="flex items-center gap-3 text-left flex-1">
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: st.color }}></div>
+                            <span className="text-xs font-bold text-(--text) opacity-60">#{pedido.idvenda}</span>
+                          </div>
+
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-(--text)">{st.label}</span>
+                              <span className="text-xs text-(--text) opacity-60">
+                                ({totalItens} {totalItens === 1 ? "item" : "itens"})
+                              </span>
+                            </div>
+                            <p className="text-xs text-(--text) opacity-60">{formatarData(pedido.criada_em)}</p>
+                          </div>
+
+                          <div className="text-right">
+                            <p className="font-bold text-primary">R$ {parseFloat(pedido.valor_total).toFixed(2)}</p>
+                            <p className="text-xs text-(--text) opacity-60">{pedido.metodo_pagamento}</p>
+                          </div>
+                        </div>
+
+                        <FiChevronDown className={`ml-2 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {isExpanded && (
+                        <div className="border-t border-black/5 bg-black/2 p-4 space-y-3">
+                          <div>
+                            <h4 className="font-bold text-sm mb-2 text-(--text)">Itens</h4>
+                            <div className="space-y-2">
+                              {pedido.itens.map((item, index) => (
+                                <div key={index} className="flex items-center justify-between text-sm bg-(--surface) p-2 rounded">
+                                  <div>
+                                    <p className="font-medium text-(--text)">
+                                      {item.produto?.nome || "Produto não encontrado"}
+                                    </p>
+                                    <p className="text-xs text-(--text) opacity-60">Qtd: {item.quantidade}</p>
+                                  </div>
+                                  <p className="font-bold text-primary">
+                                    {item.produto?.preco 
+                                      ? `R$ ${(item.produto.preco * item.quantidade).toFixed(2)}` 
+                                      : "—"
+                                    }
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-black/5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: st.color }}></div>
+                              <span className="text-xs font-bold uppercase text-(--text) opacity-70">{st.label}</span>
+                            </div>
+                            <p className="text-xs text-(--text) opacity-60 mt-1">
+                              Atualizado em {formatarData(pedido.atualizada_em || pedido.criada_em)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
-
-
-        {/* BOTÃO ABRIR MODAL */}
-        <label
-          htmlFor="delete_modal"
-          className="flex items-center justify-center gap-2 text-sm font-medium hover:text-[#D95032] transition mt-8 cursor-pointer opacity-70 hover:opacity-100"
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 text-sm font-medium text-gray-500 hover:text-red-500 transition mt-8 opacity-80"
         >
+          <FiLogOut size={16} />
+          <span>Sair da conta</span>
+        </button>
 
-          {/* ÍCONE DE LIXEIRA */}
-          <FiTrash size={14} />
-
-          <span>Excluir meu perfil</span>
-        </label>
-      </div>
-
-
-
-      {/* CHECKBOX USADO PELO DAISYUI PARA CONTROLAR MODAL */}
-      <input type="checkbox" id="delete_modal" className="modal-toggle" />
-
-
-
-      {/* MODAL */}
-      <div className="modal" role="dialog">
-
-        {/* CAIXA DO MODAL */}
-        <div className="modal-box bg-[#F5E6C8] text-[#514442] border-2 border-[#D95032]/20">
-
-          <h3 className="text-xl font-bold text-[#D95032]">
-            Atenção!
-          </h3>
-
-
-
-          <p className="py-4 font-medium">
-            Você tem certeza que deseja excluir seu perfil permanentemente?
-          </p>
-
-
-
-          {/* ALERTA CASO TENHA PEDIDO */}
-          {hasOrder && (
-
-            <div className="bg-[#D95032]/10 p-3 rounded-lg border border-[#D95032]/20 mb-4">
-
-              <p className="text-[#D95032] text-sm font-bold">
-                ⚠️ Bloqueado: Você possui um pedido em andamento.
-              </p>
-            </div>
-          )}
-
-
-
-          {/* BOTÕES */}
-          <div className="modal-action">
-
-            {/* BOTÃO FECHAR */}
-            <label
-              htmlFor="delete_modal"
-              className="btn btn-ghost"
-            >
-              Voltar
-            </label>
-
-
-
-            {/* BOTÃO CONFIRMAR */}
-            <button
-              onClick={UserOut}
-
-              // DESABILITA SE TIVER PEDIDO
-              disabled={hasOrder}
-
-              className={`btn ${
-                hasOrder
-                  ? "btn-disabled opacity-50"
-                  : "bg-[#D95032] hover:bg-[#b04028] text-white border-none"
-              }`}
-            >
-
-              Confirmar Exclusão
-
-            </button>
-          </div>
-        </div>
-
-
-
-        {/* FUNDO ESCURO DO MODAL */}
-        <label
-          className="modal-backdrop"
-          htmlFor="delete_modal"
-        >
-          Close
-        </label>
       </div>
     </div>
   );
