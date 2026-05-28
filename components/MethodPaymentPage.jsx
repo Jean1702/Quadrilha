@@ -90,7 +90,6 @@ if (paymentMethod !== 'pix') {
 
     // Criamos o objeto de dados limpando espaços e garantindo strings
     const cardPayload = {
-        cardNumber: String(cardData.number || '').replace(/\s/g, ''),
         cardholderName: String(cardData.name || '').trim(),
         cardExpirationMonth: String(mes || '').trim(),
         cardExpirationYear: String(anoCompleto || '').trim(),
@@ -136,7 +135,8 @@ if (paymentMethod !== 'pix') {
             body: JSON.stringify({
                 carrinho: carrinho,
                 paymentMethod: paymentMethodId,
-                nomeCliente: cardData?.name || "Cliente Anonimo",
+                CPF: cardData.CPF,
+                nomeCliente: cardData.name || "Cliente Anonimo",
                 mpData: paymentMethod !== 'pix' ? {
                     token: mpToken, // MANDANDO O TOKEN REAL GERADO AGORA
                     installments: 1
@@ -153,10 +153,7 @@ if (paymentMethod !== 'pix') {
         
         if (data.pix) {
             // Guarda o QR Code e o Copia/Cola temporariamente na sessão do navegador
-            sessionStorage.setItem('pixTemporario', JSON.stringify(data.pix));
-            
-            // Redireciona o usuário para a sua nova tela de Pix
-            router.push('/checkout/pagamento-pix');
+            redirect(`/pagamento?pedidoId=${data.pedidoId}&qrCode=${data.qrCode}&total=${data.total}`);
         } else {
             // Se for cartão, vai para o index/sucesso direto
             setTimeout(() => {

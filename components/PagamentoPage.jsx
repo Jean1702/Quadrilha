@@ -1,92 +1,153 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
+// Certifique-se de importar o seu cliente web do supabase aqui! Exemplo padrão:
+import { createClient } from '@supabase/supabase-js';
+
+// Inicialização rápida do cliente front-end (Substitua pelas suas variáveis de ambiente públicas)
+const supabaseFront = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 export default function PagamentoPage() {
-    const pagamento = {
-        codigoPedido: "55958859",
-        Barraca: "3° Informática",
-        status: "Aguardando pagamento",
-        itens: [
-            { id: 1, nome: "Patel", valor: 23.00, quantidade: 1 },
-            { id: 3, nome: "Caldo de frango", valor: 10.00, quantidade: 1 },
-        ],
-        chavePix: "yssa62250521mpqrinter150036319381630475C6",
-        tempoRestante: 5 * 60,
-    };
+    const searchParams = useSearchParams();
+    const router = useRouter();
 
-    const [tempo, setTempo] = useState(pagamento.tempoRestante);
+    // 1. Captura os dados reais gerados pelo Mercado Pago vindos da URL
+    const codigoPedido = searchParams.get('pedidoId') || "000000"; // ID Mestre do MP
+    const chavePix = searchParams.get('qrCode') || "";            // Link Copia e Cola
+    const totalPedido = Number(searchParams.get('total') || 0);
 
+    const [tempo, setTempo] = useState(5 * 60); // 5 minutos padrão
+    const [statusPedido, setStatusPedido] = useState("Aguardando pagamento");
+
+    // 2. Timer do tempo restante para pagar
     useEffect(() => {
-        if (tempo > 0) {
+        if (tempo > 0 && statusPedido === "Aguardando pagamento") {
             const timer = setInterval(() => {
                 setTempo(prev => prev - 1);
             }, 1000);
             return () => clearInterval(timer);
         }
-    }, [tempo]);
+    }, [tempo, statusPedido]);
+
+    // 3. Consulta em Polling (Seguro e em tempo real)
+    useEffect(() => {
+        if (!codigoPedido || codigoPedido === "000000") return;
+
+        let intervalo;
+
+        const checarStatus = async () => {
+            // Buscamos na tabela de vendas onde o mp_payment_id bata com o ID gerado pelo Mercado Pago
+            const { data, error } = await supabaseFront
+                .from('venda') 
+                .select('status')
+                .eq('mp_payment_id', codigoPedido)
+                .limit(1); // Limitamos a 1 para o registro ser rápido
+
+            if (!error && data && data.length > 0) {
+                const statusVenda = data[0].status;
+                if (statusVenda === 'pago' || statusVenda === 'approved') {
+                    setStatusPedido("Pagamento Confirmado!");
+                    clearInterval(intervalo);
+                    
+                    // Aguarda 2 segundos e joga o cliente na rota do usuário
+                    setTimeout(() => {
+                        router.push(`/user`);
+                    }, 2000);
+                }
+            }
+        };
+
+        // Executa a primeira checa imediata e depois de 3 em 3 segundos
+        checarStatus();
+        intervalo = setInterval(checarStatus, 3000);
+
+        return () => clearInterval(intervalo);
+    }, [codigoPedido, router]);
 
     const copiarChavePix = () => {
-        navigator.clipboard.writeText(pagamento.chavePix);
-        alert("Chave Pix copiada!");
+        if (!chavePix) return;
+        navigator.clipboard.writeText(chavePix);
+        alert("Código Pix copiado!");
     };
 
     const minutos = Math.floor(tempo / 60);
     const segundos = tempo % 60;
 
     return (
-        <div className="flex justify-center items-center min-h-screen relative overflow-hidden ">
-            <div className="w-95 max-w-md bg-[var(--surface)] rounded-[4px] shadow-xl p-6">
+        <div className="flex justify-center items-center min-h-screen relative overflow-hidden bg-gray-50">
+            <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-6 border border-gray-100">
+                
                 <div className="text-center mb-6">
-                    <h1 className="text-3xl font-bold ">Pagamento</h1>
-                    <p className="text-lg ">Complete o pagamento para finalizar seu pedido.</p>
+                    <h1 className="text-3xl font-bold text-gray-800">
+                        {statusPedido === "Pagamento Confirmado!" ? "🎉 Sucesso!" : "Pagamento Pix"}
+                    </h1>
+                    <p className="text-sm text-gray-600 mt-2">
+                        {statusPedido === "Pagamento Confirmado!" 
+                            ? "Seu pagamento foi recebido e processado!" 
+                            : "Escaneie o QR Code ou copie o código abaixo para pagar."}
+                    </p>
                 </div>
 
-                <div className="flex justify-center mb-6">
-                    <div className="relative p-4 rounded-lg">
-                        <QRCode value={`pix:${pagamento.chavePix}`} size={150} />
-                        <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[#514442] rounded-tl-lg"></div>
-                        <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[#514442] rounded-tr-lg"></div>
-                        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[#514442] rounded-bl-lg"></div>
-                        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[#514442] rounded-br-lg"></div>
-                    </div>
-                </div>
-
-                <div className="mb-6 text-center">
-                    <p className="font-semibold ">Código Pix:</p>
-                    <p className="text-lg break-all">{pagamento.chavePix}</p>
-                    <button
-                        onClick={copiarChavePix}
-                        className="mt-2 px-4 py-2 bg-card text-white rounded-full hover:bg-card/70"
-                    >
-                        Copiar Código Pix
-                    </button>
-                </div>
-
-                <div className="text-center mb-6">
-                    <p className="font-semibold ">Tempo restante:</p>
-                    <p className="text-xl ">{`${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`}</p>
-                </div>
-
-                <div className="bg-(--bg) p-4 rounded-lg shadow-md mb-6">
-                    <p className="font-semibold text-lg ">PEDIDO #{pagamento.codigoPedido}</p>
-                    <p className="text-sm ">{pagamento.Barraca}</p>
-                </div>
-
-                <div className="bg-(--bg) p-4 rounded-lg shadow-md">
-                    <h3 className="font-semibold text-lg ">Itens:</h3>
-                    {pagamento.itens.map((item, index) => (
-                        <div key={index} className="flex justify-between text-sm ">
-                            <p>{item.nome}</p>
-                            <p>R$ {item.valor.toFixed(2)}</p>
+                {/* Se ainda não pagou, exibe o QR Code */}
+                {statusPedido === "Aguardando pagamento" && chavePix ? (
+                    <>
+                        <div className="flex justify-center mb-6">
+                            <div className="relative p-4 rounded-lg bg-white border-2 border-dashed border-gray-200">
+                                <QRCode value={chavePix} size={180} />
+                            </div>
                         </div>
-                    ))}
-                    <div className="flex justify-between font-semibold text-lg mt-4">
-                        <p>Total</p>
-                        <p>R$ {pagamento.itens.reduce((acc, item) => acc + item.valor, 0).toFixed(2)}</p>
+
+                        <div className="mb-6 text-center">
+                            <p className="font-semibold text-gray-700 text-sm">Código Pix (Copia e Cola):</p>
+                            <p className="text-xs break-all bg-gray-100 p-3 rounded-lg mt-1 select-all font-mono text-gray-600 max-h-20 overflow-y-auto">
+                                {chavePix}
+                            </p>
+                            <button
+                                onClick={copiarChavePix}
+                                className="mt-3 px-6 py-2.5 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all font-medium text-sm w-full shadow-md"
+                            >
+                                Copiar Código Pix
+                            </button>
+                        </div>
+
+                        <div className="text-center mb-6 bg-gray-50 py-2 rounded-lg">
+                            <p className="text-xs text-gray-500 font-medium">Tempo restante para pagar:</p>
+                            <p className="text-xl font-bold font-mono text-gray-700 mt-0.5">
+                                {tempo > 0 
+                                    ? `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`
+                                    : "Código expirado"}
+                            </p>
+                        </div>
+                    </>
+                ) : (
+                    statusPedido === "Pagamento Confirmado!" && (
+                        <div className="flex flex-col items-center justify-center p-6 my-4 bg-green-50 rounded-xl text-green-700 border border-green-200">
+                            <svg className="w-16 h-16 mb-2 text-green-500 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="font-bold text-lg">Processando pedido na cozinha...</span>
+                        </div>
+                    )
+                )}
+
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4">
+                    <p className="font-semibold text-sm text-gray-700">IDENTIFICAÇÃO DO PAGAMENTO</p>
+                    <p className="text-xs text-gray-500 mt-1 font-mono break-all">ID: {codigoPedido}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Status: <span className="font-medium text-orange-600">{statusPedido}</span></p>
+                </div>
+
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                    <div className="flex justify-between font-bold text-gray-800">
+                        <p>Total do Pedido</p>
+                        <p className="text-orange-600">R$ {totalPedido.toFixed(2)}</p>
                     </div>
                 </div>
+
             </div>
         </div>
     );
