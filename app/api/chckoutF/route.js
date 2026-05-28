@@ -5,7 +5,7 @@ export async function POST(request) {
     try {
         const body = await request.json();
         // mpData agora traz os dados do CardForm (token do cartão, parcelas, e dados do comprador)
-        const { carrinho, paymentMethod, mpData, nomeCliente, CPF } = body;
+        const { carrinho, paymentMethod, mpData, nomeCliente, CPF, email} = body;
 
         if (!carrinho || carrinho.length === 0) {
             return NextResponse.json({ error: "Carrinho vazio" }, { status: 400 });
@@ -147,7 +147,7 @@ export async function POST(request) {
 
         const mpPayload = {
             payer: {
-                email: user.email,
+                email: email,
                 identification: {
                     type: "CPF",
                     number: CPF

@@ -1,30 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react'; // Importamos o Suspense aqui
 import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
-// Certifique-se de importar o seu cliente web do supabase aqui! Exemplo padrão:
 import { createClient } from '@supabase/supabase-js';
 
-// Inicialização rápida do cliente front-end (Substitua pelas suas variáveis de ambiente públicas)
 const supabaseFront = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-export default function PagamentoPage() {
+// 1. Criamos um subcomponente com toda a lógica da página
+function PaymentContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    // 1. Captura os dados reais gerados pelo Mercado Pago vindos da URL
-    const codigoPedido = searchParams.get('pedidoId') || "000000"; // ID Mestre do MP
-    const chavePix = searchParams.get('qrCode') || "";            // Link Copia e Cola
+    const codigoPedido = searchParams.get('pedidoId') || "000000";
+    const chavePix = searchParams.get('qrCode') || "";
     const totalPedido = Number(searchParams.get('total') || 0);
 
-    const [tempo, setTempo] = useState(5 * 60); // 5 minutos padrão
+    const [tempo, setTempo] = useState(5 * 60);
     const [statusPedido, setStatusPedido] = useState("Aguardando pagamento");
 
-    // 2. Timer do tempo restante para pagar
     useEffect(() => {
         if (tempo > 0 && statusPedido === "Aguardando pagamento") {
             const timer = setInterval(() => {
@@ -34,19 +31,17 @@ export default function PagamentoPage() {
         }
     }, [tempo, statusPedido]);
 
-    // 3. Consulta em Polling (Seguro e em tempo real)
     useEffect(() => {
         if (!codigoPedido || codigoPedido === "000000") return;
 
         let intervalo;
 
         const checarStatus = async () => {
-            // Buscamos na tabela de vendas onde o mp_payment_id bata com o ID gerado pelo Mercado Pago
             const { data, error } = await supabaseFront
                 .from('venda') 
                 .select('status')
-                .eq('mp_payment_id', codigoPedido)
-                .limit(1); // Limitamos a 1 para o registro ser rápido
+                .eq('id', codigoPedido)
+                .limit(1);
 
             if (!error && data && data.length > 0) {
                 const statusVenda = data[0].status;
@@ -54,7 +49,6 @@ export default function PagamentoPage() {
                     setStatusPedido("Pagamento Confirmado!");
                     clearInterval(intervalo);
                     
-                    // Aguarda 2 segundos e joga o cliente na rota do usuário
                     setTimeout(() => {
                         router.push(`/user`);
                     }, 2000);
@@ -62,7 +56,6 @@ export default function PagamentoPage() {
             }
         };
 
-        // Executa a primeira checa imediata e depois de 3 em 3 segundos
         checarStatus();
         intervalo = setInterval(checarStatus, 3000);
 
@@ -93,7 +86,6 @@ export default function PagamentoPage() {
                     </p>
                 </div>
 
-                {/* Se ainda não pagou, exibe o QR Code */}
                 {statusPedido === "Aguardando pagamento" && chavePix ? (
                     <>
                         <div className="flex justify-center mb-6">
@@ -150,5 +142,21 @@ export default function PagamentoPage() {
 
             </div>
         </div>
+    );
+}
+
+// 2. A página padrão exporta o conteúdo envelopado em Suspense
+export default function PagamentoPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex justify-center items-center min-h-screen bg-gray-50">
+                <div className="text-center">
+                    <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-sm text-gray-500 font-medium">Carregando dados de pagamento...</p>
+                </div>
+            </div>
+        }>
+            <PaymentContent />
+        </Suspense>
     );
 }

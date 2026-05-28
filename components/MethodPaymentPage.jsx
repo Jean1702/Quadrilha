@@ -136,6 +136,7 @@ if (paymentMethod !== 'pix') {
                 carrinho: carrinho,
                 paymentMethod: paymentMethodId,
                 CPF: cardData.CPF,
+                email: cardData.email,
                 nomeCliente: cardData.name || "Cliente Anonimo",
                 mpData: paymentMethod !== 'pix' ? {
                     token: mpToken, // MANDANDO O TOKEN REAL GERADO AGORA
