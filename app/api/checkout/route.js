@@ -12,39 +12,44 @@ export async function POST(request) {
 
         const supabase = await CreateClient();
 
-        // === TRAVA DE SEGURANÇA 1: VERIFICA SE O USUÁRIO ESTÁ REALMENTE LOGADO NO SERVIDOR ===
+        // === TRAVA DE SEGURANÇA 1: USUÁRIO LOGADO ===
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
             return NextResponse.json({ error: "Sessão expirada ou usuário não autenticado." }, { status: 401 });
         }
 
-        // =========================================================================
-        // === PASSO 2: BUSCAR O ID INTERNO DA TABELA 'usuarios' ===
-        // =========================================================================
+        // === PASSO 2: BUSCAR O ID INTERNO DO USUÁRIO ===
         const { data: usuarioPerfil, error: erroPerfil } = await supabase
             .from('usuarios')
-            .select('id') // Queremos pegar a coluna 'id' (PK)
-            .eq('user_id', user.id) // Onde a coluna 'user_id' seja igual ao auth do Supabase
+            .select('id')
+            .eq('user_id', user.id)
             .single();
 
-        // Se der erro ou não achar o usuário, barramos a venda pois falta o perfil
         if (erroPerfil || !usuarioPerfil) {
-            console.error("Erro ao buscar o ID interno do usuário:", erroPerfil);
-            return NextResponse.json({ error: "Perfil de usuário não encontrado. Por favor, complete seu cadastro." }, { status: 400 });
+            return NextResponse.json({ error: "Perfil de usuário não encontrado." }, { status: 400 });
         }
-        // =========================================================================
 
-        // === TRAVA DE SEGURANÇA 3: VALIDAR ESTOQUE ===
+        // === TRAVA DE SEGURANÇA 3: VALIDAR SE HÁ ESTOQUE DISPONÍVEL AGORA ===
         const idsProdutos = carrinho.map(item => item.produto.idproduto);
 
         const { data: produtosNoBanco, error: errEstoque } = await supabase
             .from('produtos')
-            .select('idproduto, estoque, nome')
+            .select('idproduto, estoque, nome, isActivy, idturma')
             .in('idproduto', idsProdutos);
 
         if (errEstoque || !produtosNoBanco) {
-            return NextResponse.json({ error: "Erro ao validar o estoque dos produtos." }, { status: 500 });
+            return NextResponse.json({ error: "Erro ao validar os produtos no banco." }, { status: 500 });
+        }
+
+        const idsTurmasEnvolvidas = [...new Set(produtosNoBanco.map(p => p.idturma))];
+        const { data: turmasNoBanco, error: errTurmas } = await supabase
+            .from('turma')
+            .select('idturma, is_active')
+            .in('idturma', idsTurmasEnvolvidas);
+
+        if (errTurmas || !turmasNoBanco) {
+            return NextResponse.json({ error: "Erro ao validar o status das lojas." }, { status: 500 });
         }
 
         const quantidadesPedidas = carrinho.reduce((acc, item) => {
@@ -54,14 +59,24 @@ export async function POST(request) {
 
         for (const prodBanco of produtosNoBanco) {
             const qtdPedida = quantidadesPedidas[prodBanco.idproduto];
+            const turmaDoProduto = turmasNoBanco.find(t => t.idturma === prodBanco.idturma);
+
+            if (prodBanco.isActivy === false) {
+                return NextResponse.json({ error: `O produto '${prodBanco.nome}' não está mais disponível.` }, { status: 400 });
+            }
+
+            if (turmaDoProduto && turmaDoProduto.is_active === false) {
+                return NextResponse.json({ error: "Uma das lojas fechou antes da conclusão do pedido." }, { status: 400 });
+            }
+
             if (qtdPedida > prodBanco.estoque) {
                 return NextResponse.json({
-                    error: `Ops! O produto '${prodBanco.nome}' acabou de ter o estoque esgotado ou reduzido. Estoque disponível: ${prodBanco.estoque}.`
+                    error: `Ops! O produto '${prodBanco.nome}' não tem estoque suficiente. Disponível: ${prodBanco.estoque}.`
                 }, { status: 400 });
             }
         }
 
-        // === PASSO 4: REALIZAR O SPLIT DE PEDIDOS POR TURMA ===
+        // === PASSO 4: SPLIT DE PEDIDOS POR TURMA ===
         const pedidosPorTurma = carrinho.reduce((acc, item) => {
             const idTurma = item.produto.idturma;
             if (!acc[idTurma]) {
@@ -72,27 +87,26 @@ export async function POST(request) {
             return acc;
         }, {});
 
-        // === PASSO 5: SALVAR NO BANCO (SEM SUBTRAIR ESTOQUE POR ENQUANTO) ===
+        // === PASSO 5: SALVAR NO BANCO COM STATUS 'aguardando_pagamento' ===
+        // O estoque NÃO é alterado aqui!
         for (const idTurmaString in pedidosPorTurma) {
             const pacote = pedidosPorTurma[idTurmaString];
 
-            // A: Cria a venda injetando o ID correto!
             const { data: novaVenda, error: erroVenda } = await supabase
                 .from('venda')
                 .insert([{
-                    status: 'aguardando_pagamento',
+                    status: 'aguardando_pagamento', // Entra como pendente
                     valor_total: pacote.totalDaTurma,
                     metodo_pagamento: paymentMethod,
                     idturma: parseInt(idTurmaString),
                     online: true,
-                    iduser: usuarioPerfil.id // <--- MÁGICA AQUI: Injetando o ID interno da tabela 'usuarios'
+                    iduser: usuarioPerfil.id
                 }])
                 .select()
                 .single();
 
             if (erroVenda) throw erroVenda;
 
-            // B: Prepara os produtos para a tabela venda_produto
             const itensParaInserir = pacote.itens.map(item => ({
                 idvenda: novaVenda.idvenda,
                 idproduto: item.produto.idproduto,
@@ -107,7 +121,7 @@ export async function POST(request) {
             if (erroItens) throw erroItens;
         }
 
-        return NextResponse.json({ success: true, message: "Pedido gerado com sucesso!" }, { status: 200 });
+        return NextResponse.json({ success: true, message: "Pedido gerado com sucesso! Aguardando pagamento." }, { status: 200 });
 
     } catch (error) {
         console.error("Erro interno na API de checkout:", error);

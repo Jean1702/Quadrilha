@@ -10,9 +10,13 @@ import { CartContext } from '@/context/CartContext';
 import { CreateClient } from "@/lib/supabase/client";
 import { getCorTurma } from '@/lib/turmaColors';
 
-const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode, theme, forceWhiteIcons }) => {
+const NavIcon = ({ href, icon: Icon, count, isDot, onClick, showBadge = true, customClass = "", isBackMode, theme, forceWhite }) => {
 
-  const colorClass = isBackMode || forceWhiteIcons ? 'text-white' : theme === 'dark' ? 'text-black' : 'text-white';
+  const colorClass = isBackMode || forceWhite
+    ? 'text-white'
+    : theme === 'dark'
+      ? 'text-black'
+      : 'text-white';
 
   const commonClasses = `group relative p-2 ${colorClass} rounded-full transition-all flex items-center justify-center ${customClass}`;
 
@@ -51,13 +55,11 @@ const HeaderBar = () => {
 
   const isBackMode = pathname.includes('/product') || pathname.includes('/cart');
 
-  const courseLogos = { curso1: '../public/logos/LogoTipo.png' };
   const segments = pathname.split('/').filter(Boolean);
 
   const isCoursePage = pathname.includes('/course');
   const courseIndex = segments.indexOf('course');
   let courseKey = courseIndex !== -1 ? segments[courseIndex + 1] : null;
-
 
   const isCategoryPage = pathname.includes('/categoria');
   const categoryIndex = segments.indexOf('categoria');
@@ -79,7 +81,6 @@ const HeaderBar = () => {
 
       const idUsuarioPedido = usuario?.id || user.id;
 
-      // Busca pedidos do usuário que estão em status "ativos"
       const { data: pedidosAtivos } = await supabase
         .from("venda")
         .select("idvenda")
@@ -106,7 +107,6 @@ const HeaderBar = () => {
     };
   }, []);
 
-
   useEffect(() => {
     if (isCoursePage && courseKey) {
       const fetchTurma = async () => {
@@ -130,16 +130,16 @@ const HeaderBar = () => {
 
   useEffect(() => {
     if (isCategoryPage && categoryKey) {
-      const fetchCategoria = async () => {
+      const fetchCategory = async () => {
         const { data } = await supabase
-          .from('categoria') // ATENÇÃO: Confirme o nome da tabela
-          .select('nomecategoria') // Confirme o nome da coluna do nome
-          .eq('idcategoria', categoryKey) // Confirme o nome da coluna do ID
+          .from('categoria')
+          .select('nomecategoria')
+          .eq('idcategoria', categoryKey)
           .single();
 
         if (data) setCategoriaAtual(data);
       };
-      fetchCategoria();
+      fetchCategory();
     } else {
       setCategoriaAtual(null);
     }
@@ -155,7 +155,6 @@ const HeaderBar = () => {
         'text-2xl md:text-3xl')
     : 'text-xl';
 
-  const shouldWrap = textoParaExibir && textoParaExibir.includes(' ');
   const normalize = (s) =>
     String(s || '')
       .toLowerCase()
@@ -167,24 +166,25 @@ const HeaderBar = () => {
 
   let displayText = textoParaExibir || '';
   const norm = normalize(displayText);
+
+  const listaTurmasEspecificas = ['informatica', 'seguranca', 'automacao', 'edificacoes', 'eletrotecnica', '1seg', '1seh', '2seg'];
+
+  const forceWhiteIcons = listaTurmasEspecificas.some(turma => norm.includes(turma));
+
   if (norm && (norm.includes('seguranca') || norm === '1seg' || norm === '1seh' || norm === '2seg')) {
     displayText = 'Segurança';
   }
-
-  const forceWhiteIcons = norm.includes('informatica');
 
   const titleRef = useRef(null);
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
-    // reset
     el.style.fontSize = '';
     el.style.whiteSpace = 'nowrap';
     const minSize = 10;
     const computed = parseFloat(getComputedStyle(el).fontSize) || 16;
     let size = computed;
     const fit = () => {
-      // ensure one-line and shrink until fits
       while (el.scrollWidth > el.clientWidth && size > minSize) {
         size -= 1;
         el.style.fontSize = `${size}px`;
@@ -245,7 +245,7 @@ const HeaderBar = () => {
             isDot={false}
             isBackMode={isBackMode}
             theme={theme}
-            forceWhiteIcons={forceWhiteIcons}
+            forceWhite={forceWhiteIcons}
           />
         )}
 
@@ -257,7 +257,7 @@ const HeaderBar = () => {
           isBackMode={isBackMode}
           customClass={isBackMode ? "bg-black/30" : ""}
           theme={theme}
-          forceWhiteIcons={forceWhiteIcons}
+          forceWhite={forceWhiteIcons}
         />
       </div>
     </header>

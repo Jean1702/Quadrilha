@@ -11,7 +11,11 @@ export default function HomePage({ categorias, turmas }) {
     const categoriasData = categorias?.data || []
     const turmasData = turmas || []
     const supabase = CreateClient();
-    const [turmaDataNOVO, setTurmaData] = useState(turmasData);
+    const [turmaDataNOVO, setTurmaData] = useState(() => {
+        const turmasIniciais = turmas || [];
+
+        return turmasIniciais.filter(turma => turma.is_active !== false);
+    });
 
     useEffect(() => {
         const channelTodasAsLojas = supabase
@@ -26,25 +30,31 @@ export default function HomePage({ categorias, turmas }) {
                 (payload) => {
                     const lojaAtualizada = payload.new;
 
-                    setTurmaData((turmasData) => {
-                        let novaLista = [];
+                    if (lojaAtualizada.is_active === false) {
+                        setTurmaData(prev => prev.filter(loja => String(loja.idturma) !== String(lojaAtualizada.idturma)));
+                        return;
+                    }
 
-                        if (lojaAtualizada.is_active) {
-                            const lojaJaExiste = turmasData.some(loja => loja.idturma === lojaAtualizada.idturma);
-
-                            if (lojaJaExiste) {
-                                novaLista = turmasData.map(loja => loja.idturma === lojaAtualizada.idturma ? lojaAtualizada : loja);
-                            } else {
-                                novaLista = [...turmasData, lojaAtualizada];
-                            }
+                    setTurmaData(prev => {
+                        const lojaJaExiste = prev.some(loja => String(loja.idturma) === String(lojaAtualizada.idturma));
+                        if (lojaJaExiste) {
+                            return prev.map(loja => String(loja.idturma) === String(lojaAtualizada.idturma) ? lojaAtualizada : loja);
                         } else {
-                            novaLista = turmasData.filter(loja => loja.idturma !== lojaAtualizada.idturma);
+                            return [...prev, lojaAtualizada].sort((a, b) => Number(a.idturma) - Number(b.idturma));
                         }
-
-                        return novaLista.sort((a, b) => a.idturma - b.idturma);
-
-
                     });
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'turma'
+                },
+                (payload) => {
+
+                    setTurmaData(prev => prev.filter(loja => String(loja.idturma) !== String(payload.old.idturma)));
                 }
             )
             .subscribe();
@@ -52,8 +62,8 @@ export default function HomePage({ categorias, turmas }) {
         return () => {
             supabase.removeChannel(channelTodasAsLojas);
         };
-    }, []); // O array vazio [] significa que esse canal vai ser criado uma vez só quando a Home carregar
-   
+    }, [supabase]);
+
     return (
         <div className="min-h-screen w-full overflow-x-hidden">
 
@@ -93,41 +103,49 @@ export default function HomePage({ categorias, turmas }) {
 
                 <div className="flex flex-col gap-6 md:carousel md:carousel-center md:flex-row md:gap-4 md:overflow-x-auto">
 
-                    {turmaDataNOVO.map((item) => (
-                        <div key={item.idturma} className="w-full md:w-80 md:carousel-item md:shrink-0">
-                            <div className="card card-compact bg-base-100 shadow-xl overflow-hidden hover:scale-105 transition-transform duration-300 outline-0">
-
-                                <figure className="relative h-48">
-                                    <Link href={`/course/${item.idturma}`} className="block w-full h-full">
-                                        <img
-                                            src={item.imagemcurso}
-                                            alt={item.nomeres}
-                                            className="w-full h-full object-cover "
-                                        />
-                                        <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
-                                    </Link>
-                                </figure>
-
-                                <div className="card-body grow-0 p-4">
-                                    <h2 className="card-title text-lg">{item.ano}° {item.nomecurso}</h2>
-
-                                    <p className="text-sm opacity-90">{item.descricao}</p>
-
-                                    <p className="text-sm h-5 text-(--text) font-semibold">Servimos:</p>
-                              
-
-                                    {item.resumoprodutos && (
-                                        <ul className=" text-sm flex flex-col justify-start list-disc list-inside opacity-80 space-y-1">
-                                            {item.resumoprodutos.map((e) => (
-                                                <li key={e.idresumo}>{e.nome}</li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-
-                            </div>
+                    {turmaDataNOVO.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-10 opacity-60 text-center">
+                            <p className="font-bold text-lg">Nenhum restaurante aberto no momento</p>
                         </div>
-                    ))}
+                    ) : (
+                        <div className="flex flex-col gap-6 md:carousel md:carousel-center md:flex-row md:gap-4 md:overflow-x-auto">
+
+                            {turmaDataNOVO.map((item) => (
+                                <div key={item.idturma} className="w-full md:w-80 md:carousel-item md:shrink-0">
+                                    <div className="card card-compact bg-base-100 shadow-xl overflow-hidden hover:scale-105 transition-transform duration-300 outline-0">
+
+                                        <figure className="relative h-48">
+                                            <Link href={`/course/${item.idturma}`} className="block w-full h-full">
+                                                <img
+                                                    src={item.imagemcurso}
+                                                    alt={item.nomeres}
+                                                    className="w-full h-full object-cover "
+                                                />
+                                                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
+                                            </Link>
+                                        </figure>
+
+                                        <div className="card-body grow-0 p-4">
+                                            <h2 className="card-title text-lg">{item.ano}° {item.nomecurso}</h2>
+
+                                            <p className="text-sm opacity-90">{item.descricao}</p>
+
+                                            <p className="text-sm h-5 text-(--text) font-semibold">Servimos:</p>
+
+                                            {item.resumoprodutos && (
+                                                <ul className=" text-sm flex flex-col justify-start list-disc list-inside opacity-80 space-y-1">
+                                                    {item.resumoprodutos.map((e) => (
+                                                        <li key={e.idresumo}>{e.nome}</li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
             </div>

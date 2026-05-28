@@ -1,29 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CreateClient } from "../lib/supabase/client"; 
-import { useRouter } from "next/navigation"; 
-import { FiLogOut, FiChevronDown } from "react-icons/fi"; 
+import { CreateClient } from "../lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { FiLogOut, FiChevronDown } from "react-icons/fi";
 
 const statusConfig = {
   aguardando_pagamento: { label: "Aguardando pagamento", color: "#D97016" },
   pago: { label: "Recebido", color: "#D97016" },
   sendo_feito: { label: "Em andamento", color: "#D95032" },
   pronto: { label: "Pronto", color: "#059b70" },
-  entregue: { label: "Entregue", color: "#026A4C" }, 
+  entregue: { label: "Entregue", color: "#026A4C" },
   cancelado: { label: "Cancelado", color: "#D95032" },
 };
 
 export default function User({ name, phone, userId }) {
   // --- DECLARAÇÃO DE ESTADOS ---
-  const [image, setImage] = useState(null); 
-  const [pedidos, setPedidos] = useState([]); 
-  const [expandedPedidos, setExpandedPedidos] = useState({}); 
-  const [loading, setLoading] = useState(true); 
-  const [showOrder, setShowOrder] = useState(true); 
-  
-  const router = useRouter(); 
-  const supabase = CreateClient(); 
+  const [image, setImage] = useState(null);
+  const [pedidos, setPedidos] = useState([]);
+  const [expandedPedidos, setExpandedPedidos] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [showOrder, setShowOrder] = useState(true);
+
+  const router = useRouter();
+  const supabase = CreateClient();
 
   // --- EFEITOS (USEEFFECT) ---
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function User({ name, phone, userId }) {
     const fetchPedidos = async () => {
       try {
         setLoading(true);
-        
+
         // 1. Pega o usuário autenticado no Supabase Auth
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -113,7 +113,7 @@ export default function User({ name, phone, userId }) {
     };
 
     fetchPedidos();
-    
+
     // --- OUVINTE REALTIME ---
     const channel = supabase
       .channel("pedidos_usuario")
@@ -136,7 +136,7 @@ export default function User({ name, phone, userId }) {
   function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     if (file.size > 2 * 1024 * 1024) {
       alert("A imagem é muito grande! Escolha uma de até 2MB.");
       return;
@@ -176,6 +176,10 @@ export default function User({ name, phone, userId }) {
 
   // --- FUNÇÃO: SAIR DA CONTA ---
   async function handleSignOut() {
+    const confirmarSaida = window.confirm("Tem certeza que deseja sair da sua conta?");
+
+    if (!confirmarSaida) return;
+
     try {
       await supabase.auth.signOut();
       localStorage.removeItem("user_profile_image");
@@ -190,11 +194,11 @@ export default function User({ name, phone, userId }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm bg-(--surface) rounded-[12px] p-6 shadow-lg border border-black/5">
-        
+
         <h1 className="text-2xl font-bold text-center mb-6 text-(--text)">
           Meu Perfil
         </h1>
-        
+
 
         <table className="w-full border-collapse mb-6">
           <tbody>
@@ -316,8 +320,8 @@ export default function User({ name, phone, userId }) {
                                     <p className="text-xs text-(--text) opacity-60">Qtd: {item.quantidade}</p>
                                   </div>
                                   <p className="font-bold text-primary">
-                                    {item.produto?.preco 
-                                      ? `R$ ${(item.produto.preco * item.quantidade).toFixed(2)}` 
+                                    {item.produto?.preco
+                                      ? `R$ ${(item.produto.preco * item.quantidade).toFixed(2)}`
                                       : "—"
                                     }
                                   </p>

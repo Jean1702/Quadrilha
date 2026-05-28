@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import 'swiper/css';
 import Pagination from '@mui/material/Pagination';
 import Stack from '@mui/material/Stack';
+import { CreateClient } from "@/lib/supabase/client";
 
 export default function CategoriaPage({ produtos, imagem, categorias, turmas, categoria_produto }) {
 
@@ -18,20 +19,82 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
     const [page, setPage] = useState(1);
     const itensPorPagina = 10;
 
-    const produto = produtos?.data || []
+    const [listaProdutos, setListaProdutos] = useState(() => {
+        const prod = produtos?.data || produtos || [];
+        return prod.filter(p => p.isActivy !== false);
+    });
+
+    const [turmasAtivas, setTurmasAtivas] = useState(() => {
+        const turm = turmas?.data || turmas || [];
+        return turm.filter(t => t.is_active !== false).map(t => String(t.idturma));
+    });
+
     const imagens = imagem?.data || []
     const categoriasData = categorias?.data || []
-
     const relacoes = categoria_produto?.data || []
 
     const categoriasFiltradas = categoriasData.filter(cat => cat.idcategoria !== idDaCategoriaAtual);
 
+    useEffect(() => {
+        const supabase = CreateClient();
+
+        const channelProdutos = supabase
+            .channel('categoria_page_produtos')
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'produtos' },
+                (payload) => {
+                    const atualizado = payload.new;
+                    if (atualizado.isActivy === false) {
+                        setListaProdutos(prev => prev.filter(p => String(p.idproduto) !== String(atualizado.idproduto)));
+                    } else {
+                        setListaProdutos(prev => prev.map(p => String(p.idproduto) === String(atualizado.idproduto) ? { ...p, ...atualizado } : p));
+                    }
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'DELETE', schema: 'public', table: 'produtos' },
+                (payload) => {
+                    setListaProdutos(prev => prev.filter(p => String(p.idproduto) !== String(payload.old.idproduto)));
+                }
+            )
+            .subscribe();
+
+        const channelTurmas = supabase
+            .channel('categoria_page_turmas')
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'turma' },
+                (payload) => {
+                    const atualizada = payload.new;
+                    if (atualizada.is_active === false) {
+                        setTurmasAtivas(prev => prev.filter(id => id !== String(atualizada.idturma)));
+                    } else {
+                        setTurmasAtivas(prev => {
+                            const idStr = String(atualizada.idturma);
+                            return prev.includes(idStr) ? prev : [...prev, idStr];
+                        });
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channelProdutos);
+            supabase.removeChannel(channelTurmas);
+        };
+    }, []);
 
     const idsProdutosDestaCategoria = relacoes
-        .filter(rel => rel.idcategoria === idDaCategoriaAtual)
-        .map(rel => rel.idproduto);
+        .filter(rel => Number(rel.idcategoria) === idDaCategoriaAtual)
+        .map(rel => String(rel.idproduto));
 
-    const produtosFiltrados = produto.filter(prod => idsProdutosDestaCategoria.includes(prod.idproduto));
+    const produtosFiltrados = listaProdutos.filter(prod => {
+        const pertenceCategoria = idsProdutosDestaCategoria.includes(String(prod.idproduto));
+        const turmaAberta = turmasAtivas.includes(String(prod.idturma));
+        return pertenceCategoria && turmaAberta;
+    });
 
     const gruposPorTurma = {};
     produtosFiltrados.forEach(prod => {
@@ -47,13 +110,12 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
     let aindaTemProduto = true;
 
     while (aindaTemProduto) {
-        aindaTemProduto = false; // Começamos assumindo que acabou
+        aindaTemProduto = false;
 
         idsDasTurmas.forEach(turmaId => {
-            // Se essa turma ainda tiver um produto no indiceAtual, nós adicionamos
             if (gruposPorTurma[turmaId][indiceAtual]) {
                 produtosOrdenadosJustos.push(gruposPorTurma[turmaId][indiceAtual]);
-                aindaTemProduto = true; // Se achamos pelo menos um, o loop continua pra próxima rodada
+                aindaTemProduto = true;
             }
         });
 
@@ -75,7 +137,7 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
         if (produtosOrdenadosJustos.length > 0 && imagens) {
             carregarDados(produtosOrdenadosJustos, imagens)
         }
-    }, [idDaCategoriaAtual, produto, imagens])
+    }, [idDaCategoriaAtual, listaProdutos, turmasAtivas, imagens])
 
     return (
         <>
@@ -165,7 +227,7 @@ export default function CategoriaPage({ produtos, imagem, categorias, turmas, ca
                                                     <p className="max-w-3xl text-md leading-7 text-(--text) md:text-base line-clamp-3">
                                                         {prod.descricao}
                                                     </p>
-                                                    <p className="text-xl md:text-2xl font-black text-vermelho mt-4 md:mt-auto">
+                                                    <p className="text-xl md:text-2xl font-black text-[#10a379] mt-4 md:mt-auto">
                                                         R$ {prod.preco.toFixed(2)}
                                                     </p>
                                                 </div>

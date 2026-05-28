@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
-import { CreditCard, Banknote, ShoppingBasket, ArrowLeft, QrCode, ChevronDown, Info } from 'lucide-react';
+import { CreditCard, Banknote, ShoppingBasket, ArrowLeft, QrCode, ChevronDown, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 import { CartContext } from '@/context/CartContext';
 import { redirect } from 'next/navigation';
 
@@ -12,7 +12,8 @@ export default function MethodPaymentPage() {
     const [paymentMethod, setPaymentMethod] = useState('credito');
     const [isLoading, setIsLoading] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
-
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     const [cardData, setCardData] = useState({
         number: '',
@@ -42,6 +43,7 @@ export default function MethodPaymentPage() {
 
     const handlePaymentMethodClick = (methodId) => {
         setPaymentMethod(prev => prev === methodId ? null : methodId);
+        setErrorMessage('');
     };
 
     const handleInputChange = (e) => {
@@ -55,15 +57,17 @@ export default function MethodPaymentPage() {
         { id: 'pix', label: 'Pix', icon: <QrCode size={25} />, desc: 'Aprovação instantânea' },
     ];
 
-    // 4. A MÁGICA: Função para processar o Split e Enviar pro Supabase
+    const isCardMethod = paymentMethod === 'credito' || paymentMethod === 'debito';
+    const isFormIncomplete = isCardMethod && (!cardData.number || !cardData.name || !cardData.expiry || !cardData.security_code || !cardData.CPF);
+
     const handleFinalizarCompra = async () => {
         if (!paymentMethod) {
-            alert("Selecione um método de pagamento!");
+            setErrorMessage("Por favor, selecione um método de pagamento antes de prosseguir.");
             return;
         }
 
         if (carrinho.length === 0) {
-            alert("Seu carrinho está vazio!");
+            setErrorMessage("Seu carrinho está vazio!");
             return;
         }
 
@@ -78,7 +82,8 @@ export default function MethodPaymentPage() {
                 },
                 body: JSON.stringify({
                     carrinho: carrinho,
-                    paymentMethod: paymentMethod
+                    paymentMethod: paymentMethod,
+                    cardData: paymentMethod !== 'pix' ? cardData : null
                 })
             });
 
@@ -91,14 +96,15 @@ export default function MethodPaymentPage() {
 
             // 3. Sucesso! Limpa o carrinho e redireciona
             limparCarrinho();
-            alert(data.message);
-            redirect('/');
+            setSuccessMessage(data.message || "Pedido gerado com sucesso!");
+            setTimeout(() => {
+                redirect('/');
+            }, 2500);
 
         } catch (error) {
             console.error("Erro no front-end ao enviar pedido:", error);
             alert(error.message || "Houve um erro ao processar o seu pedido. Tente novamente.");
-        } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
     };
 
@@ -255,10 +261,38 @@ export default function MethodPaymentPage() {
                             </span>
                         </div>
 
+                        <div className="flex items-start gap-2 mb-5 p-3 bg-red-50 text-red-600 rounded-xl border border-red-100">
+                            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                            <p className="text-xs leading-snug font-medium">
+                                Atenção: Após a confirmação do pagamento, <span className="font-bold">não será possível cancelar ou alterar</span> o seu pedido.
+                            </p>
+                        </div>
+
+                        {errorMessage && (
+                            <div className="flex items-start gap-2 mb-5 p-4 bg-red-100 border border-red-200 rounded-2xl text-red-700 animate-pulse">
+                                <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+                                <p className="text-sm font-semibold leading-snug">
+                                    {errorMessage}
+                                </p>
+                            </div>
+                        )}
+
+                        {successMessage && (
+                            <div className="flex items-start gap-2 mb-5 p-4 bg-green-100 border border-green-200 rounded-2xl text-green-700 animate-pulse">
+                                <CheckCircle size={20} className="shrink-0 mt-0.5" />
+                                <p className="text-sm font-semibold leading-snug">
+                                    {successMessage} Redirecionando...
+                                </p>
+                            </div>
+                        )}
+
                         <button
-                            onClick={handleFinalizarCompra}
-                            disabled={isLoading || carrinho.length === 0}
-                            className="w-full bg-laranja hover:brightness-95 text-black font-bold py-4 rounded-[40px] transition-all active:scale-95 shadow-lg shadow-yellow-900/10 flex items-center justify-center gap-2"
+                            onClick={handleFinalizarCompra}disabled={isLoading || carrinho.length === 0 || isFormIncomplete}
+                            className={`w-full font-bold py-4 rounded-[40px] transition-all flex items-center justify-center gap-2
+                                ${isLoading || carrinho.length === 0 || isFormIncomplete
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-laranja hover:brightness-95 text-black active:scale-95 shadow-lg shadow-yellow-900/10 cursor-pointer'
+                                }`}
                         >
                             {isLoading ? 'PROCESSANDO...' : 'PAGAR AGORA'}
                         </button>

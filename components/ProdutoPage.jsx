@@ -1,7 +1,7 @@
 'use client'
 import TextareaAutosize from '@mui/material/TextareaAutosize';
-import { useState, useContext } from 'react';
-import { redirect, useParams } from 'next/navigation';
+import { useState, useContext, useEffect } from 'react';
+import { redirect, useParams, useRouter } from 'next/navigation';
 import { Minus, Plus } from "lucide-react"
 import Link from 'next/link';
 import { ProductContext } from "@/context/ProductContext"
@@ -10,23 +10,77 @@ import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import { CartContext } from '@/context/CartContext';
+import { CreateClient } from "@/lib/supabase/client";
 
 export default function ProdutoPage() {
 
-    const { id } = useParams()
+    const { id } = useParams();
+    const router = useRouter();
     const { produtosGlobais, imagensGlobais } = useContext(ProductContext)
 
     const { adicionarAoCarrinho, carrinho } = useContext(CartContext);
 
     const [itemquantity, setItemquantity] = useState(1);
     const [observacao, setObservacao] = useState('');
+    const [produtoDinamico, setProdutoDinamico] = useState(null);
 
 
-    const produtoSelecionado = produtosGlobais.find(p => String(p.idproduto) === String(id))
+    const produtoBase = produtosGlobais.find(p => String(p.idproduto) === String(id));
+    const produtoExibicao = produtoDinamico || produtoBase;
     const imagensDesteProduto = imagensGlobais.filter(img => String(img.idproduto) == String(id))
 
 
-    if (!produtoSelecionado) {
+    useEffect(() => {
+        if (!id) return;
+
+        const supabase = CreateClient();
+
+        const channel = supabase
+            .channel(`produto_realtime_${id}`)
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'produtos', filter: `idproduto=eq.${id}` },
+                (payload) => {
+                    const atualizado = payload.new;
+
+                    if (atualizado.isActivy === false) {
+                        router.push('/');
+                        return;
+                    }
+                    atualizado.preco = parseFloat(atualizado.preco);
+                    atualizado.estoque = parseInt(atualizado.estoque, 10);
+
+                    setProdutoDinamico(atualizado);
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'DELETE', schema: 'public', table: 'produtos', filter: `idproduto=eq.${id}` },
+                () => {
+                    router.push('/');
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [id, router]);
+
+
+    const qtdJaNoCarrinho = carrinho
+        .filter((item) => String(item.produto.idproduto) === String(produtoExibicao?.idproduto))
+        .reduce((total, item) => total + item.quantidade, 0);
+
+    const estoqueDisponivelParaAdd = produtoExibicao ? produtoExibicao.estoque - qtdJaNoCarrinho : 0;
+
+    useEffect(() => {
+        if (estoqueDisponivelParaAdd >= 0 && itemquantity > estoqueDisponivelParaAdd) {
+            setItemquantity(estoqueDisponivelParaAdd > 0 ? estoqueDisponivelParaAdd : 1);
+        }
+    }, [estoqueDisponivelParaAdd, itemquantity]);
+
+    if (!produtoExibicao) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center">
                 <p>Carregando informações do produto...</p>
@@ -35,12 +89,6 @@ export default function ProdutoPage() {
         );
     }
 
-    const qtdJaNoCarrinho = carrinho
-        .filter((item) => item.produto.idproduto === produtoSelecionado.idproduto)
-        .reduce((total, item) => total + item.quantidade, 0);
-
-    const estoqueDisponivelParaAdd = produtoSelecionado.estoque - qtdJaNoCarrinho;
-
     const handleIncrease = () => {
         setItemquantity(prev => (prev < estoqueDisponivelParaAdd ? prev + 1 : prev));
     };
@@ -48,18 +96,17 @@ export default function ProdutoPage() {
     const handleDecrease = () => setItemquantity(prev => (prev > 1 ? prev - 1 : 1));
 
     const handleAddToCart = () => {
-        if (produtoSelecionado.estoque === 0) return;
+        if (produtoExibicao.estoque === 0 || estoqueDisponivelParaAdd <= 0) return;
 
-        if (estoqueDisponivelParaAdd <= 0) {
-            alert("Você já atingiu o limite de estoque deste produto no seu carrinho!");
-            return;
-        }
-
-        const sucesso = adicionarAoCarrinho(produtoSelecionado, itemquantity, observacao);
+        const sucesso = adicionarAoCarrinho(produtoExibicao, itemquantity, observacao);
         if (sucesso) {
             redirect('/cart');
         }
     };
+
+    const isEsgotado = produtoExibicao.estoque <= 0;
+    const limiteAtingido = estoqueDisponivelParaAdd <= 0;
+    const isButtonDisabled = isEsgotado || limiteAtingido;
 
     return (
         <div className="min-h-screen font-sans">
@@ -83,7 +130,7 @@ export default function ProdutoPage() {
                             <img
                                 className="w-full h-full object-cover"
                                 src={img.url_imagem}
-                                alt={produtoSelecionado.nome}
+                                alt={produtoExibicao.nome}
                             />
                         </SwiperSlide>
                     ))}
@@ -94,10 +141,10 @@ export default function ProdutoPage() {
 
                 <section className="text-center space-y-4">
                     <h1 className="text-4xl font-black uppercase tracking-tighter ">
-                        {produtoSelecionado.nome}
+                        {produtoExibicao.nome}
                     </h1>
                     <p className='text-sm leading-relaxed '>
-                        {produtoSelecionado.descricao}
+                        {produtoExibicao.descricao}
                     </p>
                 </section>
 
@@ -115,27 +162,27 @@ export default function ProdutoPage() {
 
                 <div className="mt-2 flex items-center">
                     <span
-                        className={`inline-flex w-full justify-center items-center gap-3 px-6 py-3.5 text-sm md:text-base font-bold uppercase tracking-widest rounded-xl border-2 transition-colors ${produtoSelecionado.estoque > 5
+                        className={`inline-flex w-full justify-center items-center gap-3 px-6 py-3.5 text-sm md:text-base font-bold uppercase tracking-widest rounded-xl border-2 transition-colors ${produtoExibicao.estoque > 5
 
                             ? "bg-(--surface) border-[#514442]/20 text-(--text)"
-                            : produtoSelecionado.estoque > 0
+                            : produtoExibicao.estoque > 0
 
                                 ? "bg-[#D95032]/10 border-[#D95032]/30 text-[#D95032]"
 
-                                : "bg-(--surface) border-[#514442]/10 text-[#514442]/50"
+                                : "bg-(--surface) border-[#514442]/10"
                             }`}
                     >
-                        {produtoSelecionado.estoque > 0 && produtoSelecionado.estoque <= 5 && (
+                        {produtoExibicao.estoque > 0 && produtoExibicao.estoque <= 5 && (
                             <span className="relative flex h-3.5 w-3.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D95032] opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#D95032]"></span>
                             </span>
                         )}
 
-                        {produtoSelecionado.estoque > 5
-                            ? `Estoque: ${produtoSelecionado.estoque} unidades`
-                            : produtoSelecionado.estoque > 0
-                                ? `Últimas ${produtoSelecionado.estoque} unidades!`
+                        {produtoExibicao.estoque > 5
+                            ? `Estoque: ${produtoExibicao.estoque} unidades`
+                            : produtoExibicao.estoque > 0
+                                ? `Últimas ${produtoExibicao.estoque} unidades!`
                                 : "Produto Esgotado"}
                     </span>
                 </div>
@@ -155,15 +202,20 @@ export default function ProdutoPage() {
 
                         <div className="text-right">
                             <p className="text-xs uppercase font-bold ">Subtotal</p>
-                            <p className="text-2xl font-black text-card">
-                                R$ {(produtoSelecionado.preco * itemquantity).toFixed(2)}
+                            <p className="text-2xl font-black text-[#10a379]">
+                                R$ {(produtoExibicao.preco * itemquantity).toFixed(2)}
                             </p>
                         </div>
                     </div>
 
                     <button className="w-full bg-(--surface) hover:bg-[#D95032]  font-bold py-4 rounded-full uppercase tracking-widest transition-all transform active:scale-95 cursor-pointer"
-                        onClick={handleAddToCart}>
-                        Adicionar ao Carrinho
+                        onClick={handleAddToCart}
+                        disabled={isButtonDisabled}>
+                        {isEsgotado
+                            ? 'Produto Esgotado'
+                            : limiteAtingido
+                                ? 'Limite Atingido no Carrinho'
+                                : 'Adicionar ao Carrinho'}
                     </button>
                 </footer>
             </main>

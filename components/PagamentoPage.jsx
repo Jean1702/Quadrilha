@@ -69,12 +69,12 @@ export default function PagamentoPage() {
                     <p className="text-xl ">{`${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`}</p>
                 </div>
 
-                <div className="bg-[var(--bg)] p-4 rounded-lg shadow-md mb-6">
+                <div className="bg-(--bg) p-4 rounded-lg shadow-md mb-6">
                     <p className="font-semibold text-lg ">PEDIDO #{pagamento.codigoPedido}</p>
                     <p className="text-sm ">{pagamento.Barraca}</p>
                 </div>
 
-                <div className="bg-[var(--bg)] p-4 rounded-lg shadow-md">
+                <div className="bg-(--bg) p-4 rounded-lg shadow-md">
                     <h3 className="font-semibold text-lg ">Itens:</h3>
                     {pagamento.itens.map((item, index) => (
                         <div key={index} className="flex justify-between text-sm ">

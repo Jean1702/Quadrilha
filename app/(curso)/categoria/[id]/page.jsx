@@ -10,17 +10,22 @@ export default async function Curso({ params }) {
     .eq("isActivy", true);
 
   const imagem = await supabase.from('imagens')
-    .select('*')
+    .select('*');
 
   const categorias = await supabase.from('categoria')
-    .select('*')
+    .select('*');
 
   const categoria_produto = await supabase.from('categoria_produto')
-    .select('*')
+    .select('*');
+
+    const turmas = await supabase.from('turma')
+    .select('*');
+
+    
 
   return (
     <>
-      <CategoriaPage produtos={produtos} imagem={imagem} categorias={categorias} categoria_produto={categoria_produto} />
+      <CategoriaPage produtos={produtos} imagem={imagem} categorias={categorias} turmas={turmas} categoria_produto={categoria_produto} />
     </>
   );
 }

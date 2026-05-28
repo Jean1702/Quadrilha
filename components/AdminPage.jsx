@@ -10,7 +10,10 @@ import { reload } from "next/navigation";
 export default function AdminPage({ adminData, produtos }) {
   const supabase = CreateClient();
 
-  const [produtosatual, setProdutos] = useState(produtos || []);
+  const [produtosatual, setProdutos] = useState(
+    (produtos || []).filter(p => p.isActivy !== false)
+  );
+
   const [selectedImages, setSelectedImages] = useState([]);
   const [storeOpen, setStoreOpen] = useState(adminData.turma?.is_active || false);
   const [superadm, setSuperadm] = useState(adminData.is_superadmin)
@@ -61,11 +64,15 @@ export default function AdminPage({ adminData, produtos }) {
             );
           }
           else if (payload.eventType === 'UPDATE') {
-            setProdutos((listaAntiga) =>
-              listaAntiga.map((item) =>
+            setProdutos((listaAntiga) => {
+              if (payload.new.isActivy === false) {
+                return listaAntiga.filter((item) => item.idproduto !== payload.new.idproduto);
+              }
+
+              return listaAntiga.map((item) =>
                 item.idproduto === payload.new.idproduto ? { ...item, ...payload.new } : item
-              )
-            );
+              );
+            });
           }
         }
       )
