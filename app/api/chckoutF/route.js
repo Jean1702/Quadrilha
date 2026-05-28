@@ -112,7 +112,6 @@ export async function POST(request) {
             const idTurmaInt = parseInt(idTurmaString);
 
             const credencial = credenciaisTurmas.find(c => c.idturma === idTurmaInt);
-            console.log(credencial)
             if (!credencial || !credencial.idvendedor) {
                 return NextResponse.json({ error: `Turma ${idTurmaString} não possui configuração válida.` }, { status: 400 });
             }
@@ -143,20 +142,21 @@ export async function POST(request) {
         }
 
         // 2. Garante o CPF do comprador (Crucial pro MP não dar erro 400)
-        const payerCPF = mpData?.payer?.identification?.number?.replace(/\D/g, '') || "00000000000";
+        const payerCPF = CPF.replace(/\D/g, '') || "00000000000";
 
         const mpPayload = {
             payer: {
-                email: email,
+                email: 'jean.carlos.ac1@gmail.com',
                 identification: {
                     type: "CPF",
-                    number: CPF
+                    number: payerCPF
                 }
             },
             payments: [paymentItem],
             disbursements: disbursements,
             external_reference: externalRef
         };
+        console.log(mpPayload)
 
         // Disparando a chamada
         const mpResponse = await fetch('https://api.mercadopago.com/v1/advanced_payments', {
