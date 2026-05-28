@@ -4,6 +4,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { CreditCard, Banknote, ShoppingBasket, ArrowLeft, QrCode, ChevronDown, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 import { CartContext } from '@/context/CartContext';
 import { redirect } from 'next/navigation';
+import Script from 'next/script';
 
 export default function MethodPaymentPage() {
 
@@ -16,6 +17,7 @@ export default function MethodPaymentPage() {
     const [successMessage, setSuccessMessage] = useState('');
 
     const [cardData, setCardData] = useState({
+        email: '',
         number: '',
         name: '',
         expiry: '',
@@ -61,57 +63,123 @@ export default function MethodPaymentPage() {
     const isFormIncomplete = isCardMethod && (!cardData.number || !cardData.name || !cardData.expiry || !cardData.security_code || !cardData.CPF);
 
     const handleFinalizarCompra = async () => {
-        if (!paymentMethod) {
-            setErrorMessage("Por favor, selecione um método de pagamento antes de prosseguir.");
-            return;
-        }
+    if (!paymentMethod) {
+        setErrorMessage("Por favor, selecione um método de pagamento antes de prosseguir.");
+        return;
+    }
 
-        if (carrinho.length === 0) {
-            setErrorMessage("Seu carrinho está vazio!");
-            return;
-        }
+    if (carrinho.length === 0) {
+        setErrorMessage("Seu carrinho está vazio!");
+        return;
+    }
 
-        setIsLoading(true);
+    setIsLoading(true);
 
-        try {
-            // 1. Fazemos a chamada para a nossa própria API
-            const response = await fetch('/api/checkout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    carrinho: carrinho,
-                    paymentMethod: paymentMethod,
-                    cardData: paymentMethod !== 'pix' ? cardData : null
-                })
-            });
+    try {
+        let mpToken = null;
 
-            const data = await response.json();
+        // SE FOR CARTÃO: Gera o token direto com o Mercado Pago antes de enviar pro seu backend
+       // SE FOR CARTÃO: Gera o token direto com o Mercado Pago
+if (paymentMethod !== 'pix') {
+    console.log("Inicializando MP com a chave:", process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY);
 
-            // 2. Verifica se a API devolveu algum erro (status 400 ou 500)
-            if (!response.ok) {
-                throw new Error(data.error || "Erro desconhecido ao finalizar");
-            }
+    const mp = new window.MercadoPago(process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY);
 
-            // 3. Sucesso! Limpa o carrinho e redireciona
-            limparCarrinho();
-            setSuccessMessage(data.message || "Pedido gerado com sucesso!");
-            setTimeout(() => {
-                redirect('/');
-            }, 2500);
+    const [mes, ano] = cardData.expiry.split('/');
+    const anoCompleto = ano.length === 2 ? `20${ano}` : ano;
 
-        } catch (error) {
-            console.error("Erro no front-end ao enviar pedido:", error);
-            alert(error.message || "Houve um erro ao processar o seu pedido. Tente novamente.");
-            setIsLoading(false)
-        }
+    // Criamos o objeto de dados limpando espaços e garantindo strings
+    const cardPayload = {
+        cardNumber: String(cardData.number || '').replace(/\s/g, ''),
+        cardholderName: String(cardData.name || '').trim(),
+        cardExpirationMonth: String(mes || '').trim(),
+        cardExpirationYear: String(anoCompleto || '').trim(),
+        securityCode: String(cardData.security_code || '').trim(),
+        identificationType: 'CPF',
+        identificationNumber: String(cardData.CPF || '').replace(/\D/g, '')
     };
+
+    console.log("Dados enviados para tokenização (sem o CVV por segurança):", { 
+        ...cardPayload, securityCode: '***' 
+    });
+
+    // Chama a API do MP de forma segura
+    const tokenResponse = await mp.createCardToken(cardPayload).catch(err => {
+        console.error("Erro crítico na chamada do SDK:", err);
+        return null;
+    });
+
+    // Se o MP retornar totalmente vazio ou der erro na estrutura
+    if (!tokenResponse || tokenResponse.error) {
+    // ISSO AQUI VAI MOSTRAR O COGUMELO DO ERRO NO SEU CONSOLE
+    console.error("--- DETALHES DO ERRO DO MERCADO PAGO ---");
+    console.log(JSON.stringify(tokenResponse?.error, null, 2));
+    console.error("---------------------------------------");
+    
+    const msgErro = tokenResponse?.error?.cause?.[0]?.description || 
+                     tokenResponse?.error?.message || 
+                     "Dados do cartão inválidos ou recusados.";
+                     
+    throw new Error(msgErro);
+}
+
+    mpToken = tokenResponse.id;
+    console.log("Sucesso! Token gerado:", mpToken);
+}
+
+        const paymentMethodId = paymentMethod === 'pix' ? 'pix' : 'visa'; // Idealmente pegar a bandeira dinamicamente
+
+        // 1. Fazemos a chamada para a nossa API
+        const response = await fetch('/api/chckoutF', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                carrinho: carrinho,
+                paymentMethod: paymentMethodId,
+                nomeCliente: cardData?.name || "Cliente Anonimo",
+                mpData: paymentMethod !== 'pix' ? {
+                    token: mpToken, // MANDANDO O TOKEN REAL GERADO AGORA
+                    installments: 1
+                } : null
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || "Erro desconhecido ao finalizar");
+
+        limparCarrinho();
+        setSuccessMessage(data.message || "Pedido gerado com sucesso!");
+        
+        if (data.pix) {
+            // Guarda o QR Code e o Copia/Cola temporariamente na sessão do navegador
+            sessionStorage.setItem('pixTemporario', JSON.stringify(data.pix));
+            
+            // Redireciona o usuário para a sua nova tela de Pix
+            router.push('/checkout/pagamento-pix');
+        } else {
+            // Se for cartão, vai para o index/sucesso direto
+            setTimeout(() => {
+                router.push('/'); 
+            }, 2000);
+        }
+
+    } catch (error) {
+        console.error("Erro no front-end:", error);
+        alert(error.message || "Houve um erro ao processar. Tente novamente.");
+    } finally {
+        setIsLoading(false);
+    }
+};
+
+
+
 
     return (
 
 
         <main className="max-w-4xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-5 gap-8 mt-2">
+            <Script src="https://sdk.mercadopago.com/js/v2" strategy="lazyOnload" />
             <div className="lg:col-span-3 space-y-4">
                 <section className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                     <div className="flex items-center gap-3 mb-8">
@@ -150,108 +218,132 @@ export default function MethodPaymentPage() {
                 <section className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm sticky top-8">
                     <h2 className="text-lg font-extrabold mb-6 text-gray-900">Pagamento</h2>
 
-                    <div className="space-y-3">
-                        {paymentOptions.map((option) => {
-                            const isSelected = paymentMethod === option.id;
-                            const isCard = option.id === 'credito' || option.id === 'debito';
+                    <div className="lg:col-span-2">
+    <section className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm sticky top-8">
+        <h2 className="text-lg font-extrabold mb-6 text-gray-900">Pagamento</h2>
 
-                            return (
-                                <div key={option.id} className="overflow-hidden">
-                                    <button
-                                        onClick={() => handlePaymentMethodClick(option.id)}
-                                        className={`w-full flex items-center p-4 rounded-2xl border-2 transition-all text-left
-                                                ${isSelected ? 'border-gray-600' : 'border-gray-50 hover:border-gray-200 bg-gray-50/30'}
-                                            `}
-                                    >
-                                        <div className={`mr-4 p-2 rounded-xl ${isSelected ? 'bg-laranja text-white' : 'bg-white text-gray-400 border border-gray-100'}`}>
-                                            {option.icon}
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className={`text-[13px] font-bold ${isSelected ? 'text-black-600' : 'text-gray-700'}`}>
-                                                {option.label}
+        <div className="space-y-3">
+            {paymentOptions.map((option) => {
+                const isSelected = paymentMethod === option.id;
+                const isCard = option.id === 'credito' || option.id === 'debito';
+
+                return (
+                    <div key={option.id} className="overflow-hidden">
+                        <button
+                            onClick={() => handlePaymentMethodClick(option.id)}
+                            className={`w-full flex items-center p-4 rounded-2xl border-2 transition-all text-left
+                                ${isSelected ? 'border-gray-600' : 'border-gray-50 hover:border-gray-200 bg-gray-50/30'}
+                            `}
+                        >
+                            <div className={`mr-4 p-2 rounded-xl ${isSelected ? 'bg-laranja text-white' : 'bg-white text-gray-400 border border-gray-100'}`}>
+                                {option.icon}
+                            </div>
+                            <div className="flex-1">
+                                <p className={`text-[13px] font-bold ${isSelected ? 'text-black-600' : 'text-gray-700'}`}>
+                                    {option.label}
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{option.desc}</p>
+                            </div>
+
+                            <div className={`transition-transform duration-300 ${isSelected ? 'rotate-180' : ''}`}>
+                                {isCard ? (
+                                    <ChevronDown size={18} className="text-gray-400" />
+                                ) : (
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-gray-500' : 'border-gray-200'}`}>
+                                        {isSelected && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />}
+                                    </div>
+                                )}
+                            </div>
+                        </button>
+
+                        <div className={`transition-all duration-300 ease-in-out ${isSelected && isCard ? 'max-h-[800px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                            <div className="p-4 bg-gray-50 rounded-2xl space-y-3 border border-gray-100">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Número do Cartão</label>
+                                    <input
+                                        type="text"
+                                        name="number"
+                                        placeholder="0000 0000 0000 0000"
+                                        className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Nome no Cartão</label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        placeholder="João Carlos da Silva"
+                                        className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+
+                                {/* === NOVOS INPUTS ADICIONADOS AQUI === */}
+                                <div className="grid grid-cols-1 gap-2">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">E-mail do Comprador</label>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            placeholder="joao@email.com"
+                                            className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                            
+                                </div>
+                                {/* ==================================== */}
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Vencimento</label>
+                                        <input
+                                            type="text"
+                                            name="expiry"
+                                            placeholder="MM/AA"
+                                            className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Código de segurança</label>
+                                        <input
+                                            type="text"
+                                            name="security_code"
+                                            placeholder="123"
+                                            className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div className='col-span-2 flex flex-col'>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">CPF/RG</label>
+                                        <input
+                                            type="text"
+                                            name="CPF"
+                                            placeholder="999.999.999-99"
+                                            className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                            onChange={handleInputChange}
+                                        />
+
+                                        <div className='flex items-start gap-2 mt-5'>
+                                            <Info size={15} className="text-gray-400 shrink-0 mt-0.5" />
+                                            <p className='text-[10px] text-gray-500 leading-tight flex-1'>
+                                                Nenhum dado será armazenado em nossa base de dados.
+                                                Todos os dados bancários serão utilizados apenas para a efetuação do pagamento.
                                             </p>
-                                            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{option.desc}</p>
-                                        </div>
-
-                                        <div className={`transition-transform duration-300 ${isSelected ? 'rotate-180' : ''}`}>
-                                            {isCard ? (
-                                                <ChevronDown size={18} className="text-gray-400" />
-                                            ) : (
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-gray-500' : 'border-gray-200'}`}>
-                                                    {isSelected && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </button>
-
-                                    <div className={`transition-all duration-300 ease-in-out ${isSelected && isCard ? 'max-h-125 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
-                                        <div className="p-4 bg-gray-50 rounded-2xl space-y-3 border border-gray-100">
-                                            <div>
-                                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Número do Cartão</label>
-                                                <input
-                                                    type="text"
-                                                    name="number"
-                                                    placeholder="0000 0000 0000 0000"
-                                                    className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-                                                    onChange={handleInputChange}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Nome no Cartão</label>
-                                                <input
-                                                    type="text"
-                                                    name="name"
-                                                    placeholder="João Carlos da Silva"
-                                                    className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-                                                    onChange={handleInputChange}
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div>
-                                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Vencimento</label>
-                                                    <input
-                                                        type="text"
-                                                        name="expiry"
-                                                        placeholder="MM/AA"
-                                                        className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-                                                        onChange={handleInputChange}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Código de segurança</label>
-                                                    <input
-                                                        type="text"
-                                                        name="security_code"
-                                                        placeholder="123"
-                                                        className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-                                                        onChange={handleInputChange}
-                                                    />
-                                                </div>
-                                                <div className='col-span-2 flex flex-col'>
-                                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">CPF/RG</label>
-                                                    <input
-                                                        type="text"
-                                                        name="CPF"
-                                                        placeholder="999.999.999-99"
-                                                        className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-                                                        onChange={handleInputChange}
-                                                    />
-
-                                                    <div className='flex items-start gap-2 mt-5'>
-                                                        <Info size={15} className="text-gray-400 shrink-0 mt-0.5" />
-                                                        <p className='text-[10px] text-gray-500 leading-tight flex-1'>
-                                                            Nenhum dado será armazenado em nossa base de dados.
-                                                            Todos os dados bancários serão utilizados apenas para a efetuação do pagamento.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        </div>
                     </div>
+                );
+            })}
+        </div>
+    </section>
+</div>
 
                     <div className="mt-8 pt-6 border-t border-gray-100">
                         <div className="flex flex-col mb-6">
