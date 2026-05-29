@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useContext, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
 import { CreateClient } from '../lib/supabase/server';
@@ -10,6 +10,7 @@ const supabase = createClient()
 function PaymentContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { carrinho, limparCarrinho } = useContext(CartContext);
 
     const codigoPedido = searchParams.get('pedidoId') || "000000";
     const chavePix = searchParams.get('qrCode') || "";
@@ -18,17 +19,28 @@ function PaymentContent() {
     const [tempo, setTempo] = useState(5 * 60);
     const [statusPedido, setStatusPedido] = useState("Aguardando pagamento");
 
-    // Correção do Timer: Removido 'tempo' das dependências para não recriar o intervalo toda hora
-    useEffect(() => {
-        if (tempo > 0 && statusPedido === "Aguardando pagamento") {
-            const timer = setInterval(() => {
-                setTempo(prev => prev - 1);
-            }, 1000);
-            return () => clearInterval(timer);
-        }
-    }, [statusPedido]);
+    // useRef para evitar que loops recriem funções do useEffect desnecessariamente
+    const redirecionando = useRef(false);
 
-    // Escuta em tempo real do banco de dados (Realtime)
+    // 1. Limpa o carrinho logo na entrada
+    useEffect(() => {
+        if (carrinho && carrinho.length > 0) {
+            limparCarrinho();
+        }
+    }, [carrinho, limparCarrinho]);
+
+    // 2. Timer regressivo
+    useEffect(() => {
+        if (tempo <= 0 || statusPedido !== "Aguardando pagamento") return;
+
+        const timer = setInterval(() => {
+            setTempo(prev => prev - 1);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [statusPedido, tempo]);
+
+    // 3. Monitoramento em Tempo Real + Fallback Inteligente
     useEffect(() => {
         if (!codigoPedido || codigoPedido === "000000") return;
 
@@ -39,6 +51,7 @@ function PaymentContent() {
                 'postgres_changes',
                 { event: 'UPDATE', filter: `mp_payment_id=eq.${codigoPedido}`, schema: 'public', table: 'venda' },
                 (payload) => {
+                    console.log("[FRONTEND] Atualização recebida via Realtime:", payload);
                     const novoStatus = payload.new.status;
                     if (novoStatus === 'pago' || novoStatus === 'approved') {
                         setStatusPedido("Pagamento Confirmado!");
@@ -77,7 +90,7 @@ function PaymentContent() {
             clearInterval(intervaloFallback);
             supabase.removeChannel(canalRealtime);
         };
-    }, [codigoPedido, router, statusPedido]);
+    }, [codigoPedido, router]);
 
     const copiarChavePix = () => {
         if (!chavePix) return;
@@ -113,7 +126,7 @@ function PaymentContent() {
 
                         <div className="mb-6 text-center">
                             <p className="font-semibold text-gray-700 text-sm">Código Pix (Copia e Cola):</p>
-                            <p className="text-xs break-all bg-gray-100 p-3 rounded-lg mt-1 select-all font-mono text-gray-600 max-h-20 overflow-y-auto后">
+                            <p className="text-xs break-all bg-gray-100 p-3 rounded-lg mt-1 select-all font-mono text-gray-600 max-h-20 overflow-y-auto">
                                 {chavePix}
                             </p>
                             <button

@@ -7,7 +7,7 @@ import { FiLogOut, FiChevronDown } from "react-icons/fi";
 
 // CONFIGURAÇÃO DOS STATUS ALTERADA AQUI
 const statusConfig = {
-  aguardando_pagamento: { label: "Pedido Solicitado", color: "#D97016" },
+  aguardando_pagamento: { label: "Aguardando Pagamento", color: "#D97016" },
   pago: { label: "Recebido", color: "#D97016" },
   sendo_feito: { label: "Em andamento", color: "#D95032" },
   pronto: { label: "Pronto", color: "#059b70" },

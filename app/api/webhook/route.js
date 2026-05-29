@@ -45,7 +45,7 @@ export async function POST(request) {
                 .eq('idturma', venda.idturma)
                 .single();
 
-            if (errCredencial || !credential || !credencial.acess_token) {
+            if (errCredencial || !credencial || !credencial.acess_token) {
                 console.error("[WEBHOOK] Credencial de acesso da turma não localizada.");
                 return NextResponse.json({ message: "Erro de credenciais da subconta" }, { status: 400 });
             }
