@@ -190,6 +190,7 @@ export async function POST(request) {
 
         return NextResponse.json(respostaFinal);
 
+        
     } catch (error) {
         console.error("Erro interno na API de checkout:", error);
         const mensagemErroMP = error.cause?.[0]?.description || error.message || "Erro ao processar pedido.";
