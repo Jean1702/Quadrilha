@@ -7,11 +7,11 @@ import { CreateClient } from "@/lib/supabase/client";
 import { ChefHat, Check, X, PackageCheck } from "lucide-react";
 
 const statusConfig = {
-  pago:        { label: "Pendente",   cor: "#D97016" },
+  pago: { label: "Pendente", cor: "#D97016" },
   sendo_feito: { label: "Preparando", cor: "#026A4C" },
-  pronto:      { label: "Pronto",     cor: "#026A4C" },
-  entregue:    { label: "Entregue",   cor: "#026A4C" },
-  cancelado:   { label: "Cancelado",  cor: "#D95032" },
+  pronto: { label: "Pronto", cor: "#026A4C" },
+  entregue: { label: "Entregue", cor: "#026A4C" },
+  cancelado: { label: "Cancelado", cor: "#D95032" },
 };
 
 export default function PedidosPage({ vendas, adminData }) {
@@ -62,7 +62,7 @@ export default function PedidosPage({ vendas, adminData }) {
     const response = await fetch(`/api/pedidos/atualizacao_status?id=${id}&status=${novoStatus}`, {
       method: "PUT",
       headers: {
-          "Content-Type": "application/json"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({ phone: user?.phone || "", name: user?.name || "" })
     });
@@ -87,7 +87,7 @@ export default function PedidosPage({ vendas, adminData }) {
 
   return (
     <main className="min-h-screen pb-28">
-      <AdminHeaderPage titulo="PEDIDOS"  nometurma={adminData.turma?.nomecurso || `SUPER ADM`} anoturma={adminData.turma?.ano || 'mod'} logo={adminData.turma?.logo || '/hackerman.png'}  />
+      <AdminHeaderPage titulo="PEDIDOS" nometurma={adminData.turma?.nomecurso || `SUPER ADM`} anoturma={adminData.turma?.ano || 'mod'} logo={adminData.turma?.logo || '/hackerman.png'} />
       <div className="h-40"></div>
 
       <div className="p-4 max-w-5xl mx-auto">
@@ -114,15 +114,20 @@ export default function PedidosPage({ vendas, adminData }) {
 
                 {/* Detalhes */}
                 <div className="space-y-1 mb-4 text-sm">
-                  <p><span className="font-semibold">Cliente:</span> {pedido.usuarios?.name || 'Administrador'}</p>
+                  <p>
+                    <span className="font-semibold">Cliente:</span>{' '}
+                    {pedido.online
+                      ? pedido.usuarios?.name || 'Usuário Não Identificado'
+                      : pedido.nome_cliente || 'Cliente Físico'}
+                  </p>
                   <p><span className="font-semibold">Quantidade:</span> {pedido.venda_produto?.[0]?.quantidade ?? 0}</p>
                   <div>
                     <span className="font-semibold">Itens:</span>
                     <ul className="list-disc list-inside ml-2 opacity-60">
                       {pedido.venda_produto?.map((item) => (
-                        <li key={item.produtos.idproduto}>{item.produtos?.nome} {item.observacao ? `(${item.observacao})`: ""}</li>
+                        <li key={item.produtos.idproduto}>{item.produtos?.nome} {item.observacao ? `(${item.observacao})` : ""}</li>
                       ))}
-                      
+
                     </ul>
                   </div>
                 </div>
@@ -148,7 +153,7 @@ export default function PedidosPage({ vendas, adminData }) {
                         Pronto
                       </button>
                     </div>
-                    <button 
+                    <button
                       onClick={() => atualizarStatus(pedido.idvenda, "entregue", pedido.usuarios)}
                       disabled={pedido.status !== "pronto"}
                       className="flex-1 flex items-center justify-center gap-1 bg-[#026A4C] hover:bg-[#037a58] active:scale-95 text-white py-2 px-3 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"

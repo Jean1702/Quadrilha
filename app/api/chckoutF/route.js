@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { CreateClient } from '@/lib/supabase/server';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export async function POST(request) {
     try {
         const body = await request.json();
-        // mpData agora traz os dados do CardForm (token do cartão, parcelas, e dados do comprador)
-        const { carrinho, paymentMethod, mpData, nomeCliente, CPF, email} = body;
+        const { carrinho, paymentMethod, mpData, nomeCliente, CPF, email } = body;
 
         if (!carrinho || carrinho.length === 0) {
             return NextResponse.json({ error: "Carrinho vazio" }, { status: 400 });
@@ -77,165 +77,138 @@ export async function POST(request) {
             }
         }
 
-        // === PASSO 4: AGRUPAR PEDIDOS POR TURMA PARA CALCULAR O SPLIT ===
-        const pedidosPorTurma = carrinho.reduce((acc, item) => {
-            const idTurma = item.produto.idturma;
-            if (!acc[idTurma]) {
-                acc[idTurma] = { totalDaTurma: 0, itens: [] };
-            }
-            acc[idTurma].itens.push(item);
-            acc[idTurma].totalDaTurma += item.subtotal;
-            return acc;
-        }, {});
+        // =================================================================
+        // === PASSO 4 & 5: COLETA DA TURMA E BUSCA DO ACCESS TOKEN ===
+        // =================================================================
+        const idTurmaDoPedido = carrinho[0].produto.idturma;
+        const totalGeralDoCarrinho = carrinho.reduce((acc, item) => acc + item.subtotal, 0);
 
-        // === PASSO 5: BUSCAR OS COLECTOR_IDS (IDs do MP) DE CADA TURMA ===
-        // Ajuste o nome da tabela 'turma_mp' e da coluna 'mp_collector_id' conforme o seu banco
-        // Busca apenas a turma e a credencial do MP (que você chamou de idvendedor)
-        const { data: credenciaisTurmas, error: errCred } = await supabase
+        console.log(`[DEBUG] Processando via SDK Oficial para a Turma: ${idTurmaDoPedido}. Total: R$ ${totalGeralDoCarrinho}`);
+
+        const { data: credencial, error: errCredencial } = await supabase
             .from('admin')
-            .select('idturma, idvendedor') 
-            .in('idturma', idsTurmasEnvolvidas);
+            .select('idturma, acess_token') 
+            .eq('idturma', idTurmaDoPedido)
+            .single();
 
-        if (errCred || !credenciaisTurmas || credenciaisTurmas.length !== idsTurmasEnvolvidas.length) {
-            console.error("Erro na busca de credenciais:", errCred, credenciaisTurmas);
-            return NextResponse.json({ error: "Erro ao mapear credenciais de pagamento das turmas envolvidas." }, { status: 500 });
+        if (errCredencial || !credencial || !credencial.acess_token) {
+            console.error("Erro na busca de credencial da turma:", errCredencial);
+            return NextResponse.json({ error: "Esta loja/turma não possui uma credencial de acesso válida vinculada via OAuth." }, { status: 400 });
         }
 
-        // === PASSO 6: MONTAR A REQUISIÇÃO DO SPLIT AVANÇADO DO MERCADO PAGO ===
-       // === PASSO 6: MONTAR A REQUISIÇÃO DO SPLIT AVANÇADO ===
-        let totalGeralDoCarrinho = 0;
-        const disbursements = [];
-        const externalRef = `IFF-${Date.now()}`;
+        // =================================================================
+        // === PASSO 6: INICIALIZAÇÃO DO SDK OFICIAL E SPLIT DE TAXA ===
+        // =================================================================
+        const client = new MercadoPagoConfig({ 
+            accessToken: credencial.acess_token, 
+            options: { timeout: 5000 } 
+        });
+        const payment = new Payment(client);
 
-        for (const idTurmaString in pedidosPorTurma) {
-            const pacote = pedidosPorTurma[idTurmaString];
-            const idTurmaInt = parseInt(idTurmaString);
-
-            const credencial = credenciaisTurmas.find(c => c.idturma === idTurmaInt);
-            if (!credencial || !credencial.idvendedor) {
-                return NextResponse.json({ error: `Turma ${idTurmaString} não possui configuração válida.` }, { status: 400 });
-            }
-
-            totalGeralDoCarrinho += pacote.totalDaTurma;
-            const minhaTaxa = pacote.totalDaTurma * 0.10; 
-
-            disbursements.push({
-                collector_id: parseInt(credencial.idvendedor), 
-                amount: Number(pacote.totalDaTurma.toFixed(2)), 
-                application_fee: Number(minhaTaxa.toFixed(2)), 
-                external_reference: `TURMA-${idTurmaString}`
-            });
-        }
-
-        const paymentTypeId = paymentMethod === 'pix' ? 'bank_transfer' : 'credit_card';
-
-        // 1. Monta o pagamento limpo (evita mandar token vazio se for Pix)
-        const paymentItem = {
-            payment_method_id: paymentMethod,
-            payment_type_id: paymentTypeId,
-            transaction_amount: Number(totalGeralDoCarrinho.toFixed(2))
-        };
-
-        if (paymentMethod !== 'pix') {
-            paymentItem.token = mpData?.token;
-            paymentItem.installments = Number(mpData?.installments || 1);
-        }
-
-        // 2. Garante o CPF do comprador (Crucial pro MP não dar erro 400)
+        const minhaTaxaPlataforma = totalGeralDoCarrinho * 0.10; 
         const payerCPF = CPF.replace(/\D/g, '') || "00000000000";
 
-        const mpPayload = {
+        // Montagem correta do corpo (Sem a propriedade token nativa)
+        const paymentBody = {
+            transaction_amount: Number(totalGeralDoCarrinho.toFixed(2)),
+            description: `Pedido unificado - App IFF (Loja ${idTurmaDoPedido})`,
+            payment_method_id: paymentMethod,
+            payment_type_id: paymentMethod === 'pix' ? 'bank_transfer' : 'credit_card',
+            installments: paymentMethod === 'pix' ? 1 : Number(mpData?.installments || 1),
+            application_fee: Number(minhaTaxaPlataforma.toFixed(2)), 
+            external_reference: `IFF-${Date.now()}`,
+            
             payer: {
-                email: 'jean.carlos.ac1@gmail.com',
+                email: email || 'jean.carlos.ac1@gmail.com',
                 identification: {
                     type: "CPF",
                     number: payerCPF
                 }
-            },
-            payments: [paymentItem],
-            disbursements: disbursements,
-            external_reference: externalRef
+            }
         };
-        console.log(mpPayload)
 
-        // Disparando a chamada
-        const mpResponse = await fetch('https://api.mercadopago.com/v1/advanced_payments', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${process.env.MERCADO_PAGO_MASTER_ACCESS_TOKEN}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(mpPayload)
-        });
+        // Injeta o token de forma limpa apenas se NÃO for Pix e o token existir
+        if (paymentMethod !== 'pix' && mpData?.token) {
+            paymentBody.token = mpData.token;
+        }
 
-        const responseData = await mpResponse.json();
+        console.log("[DEBUG] Enviando requisição oficial através do SDK...");
 
-        if (!mpResponse.ok || responseData.errors || responseData.status === 'rejected') {
-            console.error("Erro no MP:", responseData);
-            return NextResponse.json({ 
-                error: "Mercado Pago recusou a transação do split.", 
-                detalhes: responseData.message || "Verifique os dados informados." 
+        const responseData = await payment.create({ body: paymentBody });
+
+        if (!responseData || responseData.status === 'rejected') {
+            console.error("Erro ou rejeição no MP:", responseData);
+            return NextResponse.json({
+                error: "Mercado Pago recusou a transação.",
+                detalhes: responseData.status_detail || "Verifique as credenciais ou os dados informados."
             }, { status: 400 });
         }
 
-        const statusGlobalMP = responseData.status; 
+        const statusGlobalMP = responseData.status;
         const statusVendaBanco = statusGlobalMP === 'approved' ? 'pago' : 'aguardando_pagamento';
 
-        // === PASSO 7: SALVAR AS VENDAS NO BANCO ===
-        for (const idTurmaString in pedidosPorTurma) {
-            const pacote = pedidosPorTurma[idTurmaString];
+        // =================================================================
+        // === PASSO 7: SALVAR A VENDA ÚNICA NO BANCO ===
+        // =================================================================
+        
+        // ⚠️ Nota: Certifique-se se o nome correto da sua coluna no banco é 
+        // 'mp_payment_id' ou 'idvenda' para bater com o que seu webhook e front buscam.
+        const { data: novaVenda, error: erroVenda } = await supabase
+            .from('venda')
+            .insert([{
+                status: statusVendaBanco,
+                valor_total: totalGeralDoCarrinho,
+                metodo_pagamento: paymentMethod,
+                idturma: idTurmaDoPedido,
+                online: true,
+                iduser: usuarioPerfil.id,
+                mp_payment_id: responseData.id.toString() 
+            }])
+            .select()
+            .single();
 
-            const { data: novaVenda, error: erroVenda } = await supabase
-                .from('venda')
-                .insert([{
-                    status: statusVendaBanco,
-                    valor_total: pacote.totalDaTurma,
-                    metodo_pagamento: paymentMethod,
-                    idturma: parseInt(idTurmaString),
-                    online: true,
-                    iduser: usuarioPerfil.id,
-                    mp_payment_id: responseData.id.toString() 
-                }])
-                .select()
-                .single();
+        if (erroVenda) {
+            console.error("Erro ao salvar venda master:", erroVenda);
+            throw erroVenda;
+        }
 
-            if (erroVenda) throw erroVenda;
+        const itensParaInserir = carrinho.map(item => ({
+            idvenda: novaVenda.idvenda, // chave estrangeira que liga ao id real da tabela venda
+            idproduto: item.produto.idproduto,
+            quantidade: item.quantidade,
+            observacao: item.observacao || null
+        }));
 
-            const itensParaInserir = pacote.itens.map(item => ({
-                idvenda: novaVenda.idvenda,
-                idproduto: item.produto.idproduto,
-                quantidade: item.quantidade,
-                observacao: item.observacao || null
-            }));
-
-            const { error: erroItens } = await supabase.from('venda_produto').insert(itensParaInserir);
-            if (erroItens) throw erroItens;
+        const { error: erroItens } = await supabase.from('venda_produto').insert(itensParaInserir);
+        if (erroItens) {
+            console.error("Erro ao salvar subitens da venda:", erroItens);
+            throw erroItens;
         }
 
         // === PASSO 8: RETORNO PARA O FRONT-END ===
-        // Aqui está a resposta exata que a sua tela de Pix precisa para funcionar perfeitamente:
         if (paymentMethod === 'pix') {
-            const infoPix = responseData.payments?.[0]?.point_of_interaction?.transaction_data;
-            
+            const infoPix = responseData.point_of_interaction?.transaction_data;
+
             return NextResponse.json({
                 success: true,
                 paymentMethod: 'pix',
-                pedidoId: responseData.id.toString(), // ID que o front usa para escutar o supabase
-                qrCode: infoPix?.qr_code,             // Link Copia e Cola
-                qrCodeBase64: infoPix?.qr_code_base64, // Imagem
-                total: totalGeralDoCarrinho           // Total passado como parâmetro como você pediu!
+                pedidoId: responseData.id.toString(),
+                qrCode: infoPix?.qr_code,
+                qrCodeBase64: infoPix?.qr_code_base64,
+                total: totalGeralDoCarrinho
             });
         }
 
-        return NextResponse.json({ 
-            success: true, 
-            paymentMethod: 'card', 
+        return NextResponse.json({
+            success: true,
+            paymentMethod: 'card',
             pedidoId: responseData.id.toString(),
-            status: statusGlobalMP 
+            status: statusGlobalMP
         });
 
     } catch (error) {
         console.error("Erro interno na API de checkout:", error);
-        return NextResponse.json({ error: "Ocorreu um erro ao processar o pedido." }, { status: 500 });
+        const mensagemErroMP = error.cause?.[0]?.description || error.message || "Ocorreu um erro ao processar o pedido.";
+        return NextResponse.json({ error: mensagemErroMP }, { status: 500 });
     }
 }

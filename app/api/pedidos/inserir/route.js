@@ -1,29 +1,30 @@
 import { NextResponse } from "next/server";
 import { CreateClient } from "@/lib/supabase/server";
 
-export async function POST(req){
+export async function POST(req) {
     const supabase = await CreateClient();
-    try{
+    try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-        const { data : adminData, error : adminError } = await supabase
-          .from("admin")
-          .select('*')
-          .eq("user_id", user.id) 
-          .single(); 
-          
-          if (adminError || !adminData) {
+        const { data: adminData, error: adminError } = await supabase
+            .from("admin")
+            .select('*')
+            .eq("user_id", user.id)
+            .single();
+
+        if (adminError || !adminData) {
             console.error("Acesso negado: Usuário comum tentou acessar o admin.");
-            redirect('/loginadm'); 
+            redirect('/loginadm');
         }
-        
+
         const searchParams = new URL(req.url).searchParams;
         const idturma = searchParams.get("idturma");
         if (!idturma) return NextResponse.json({ error: "ID da turma é obrigatório" }, { status: 400 });
-        
+
         const body = await req.json();
-        const { itensPedido, metodo, dataehora, valor } = body;
+        const { itensPedido, metodo, dataehora, valor, nomeCliente } = body;
+
 
         if (!itensPedido || !Array.isArray(itensPedido) || itensPedido.length === 0) {
             return NextResponse.json({ error: "O campo 'itensPedido' deve ser um array não vazio" }, { status: 400 });
@@ -33,7 +34,7 @@ export async function POST(req){
         if (!dataehora) return NextResponse.json({ error: "O campo 'dataehora' é obrigatório" }, { status: 400 });
         if (!valor) return NextResponse.json({ error: "O campo 'valor' é obrigatório" }, { status: 400 });
         const iduser = adminData.id;
-        
+
         const { data: vendaData, error: vendaError } = await supabase
             .from("venda")
             .insert({
@@ -44,6 +45,7 @@ export async function POST(req){
                 status: "pago",
                 online: false,
                 idturma: idturma,
+                nome_cliente: nomeCliente
             })
             .select("idvenda")
             .single();
@@ -62,13 +64,36 @@ export async function POST(req){
 
         if (errorvendasprodutos) {
             console.error("Erro ao salvar os itens:", errorvendasprodutos);
-            throw new Error(errorvendasprodutos.message); 
+            throw new Error(errorvendasprodutos.message);
         } else {
             console.log("Todos os itens salvos com sucesso!");
         }
 
-        return NextResponse.json({ message: "Pedido inserido com sucesso!" }, { status: 201 });
-        
+        for (const item of itensPedido) {
+            const { data: produto } = await supabase
+                .from("produtos")
+                .select("estoque")
+                .eq("idproduto", item.id)
+                .single();
+
+            if (produto) {
+                const novoEstoque = Math.max(0, produto.estoque - item.quantidade);
+
+                await supabase
+                    .from("produtos")
+                    .update({ estoque: novoEstoque })
+                    .eq("idproduto", item.id);
+            }
+        }
+
+        const { data: vendaCompleta } = await supabase
+            .from("venda")
+            .select(`*, venda_produto (*, produtos(nome))`)
+            .eq("idvenda", vendaData.idvenda)
+            .single();
+
+        return NextResponse.json({ data: vendaCompleta, message: "Pedido inserido com sucesso!" }, { status: 201 });
+
     } catch (error) {
         console.error("Erro no servidor:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });

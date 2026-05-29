@@ -11,6 +11,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@mercadopago/sdk-react": "^1.0.7",
     "@mui/material": "^7.3.9",
     "@stripe/react-stripe-js": "^6.4.0",
     "@stripe/stripe-js": "^9.6.0",
@@ -21,6 +22,7 @@
     "framer-motion": "^12.40.0",
     "libphonenumber-js": "^1.12.40",
     "lucide-react": "^0.564.0",
+    "mercadopago": "^3.0.0",
     "next": "^16.2.1",
     "postcss": "^8.5.8",
     "radix-ui": "^1.4.3",
