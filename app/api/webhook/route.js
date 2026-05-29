@@ -24,7 +24,7 @@ export async function POST(request) {
             const { data: venda, error: erroVenda } = await supabase
                 .from('venda')
                 .select('idturma, status')
-                .eq('idvenda', paymentId.toString())
+                .eq('mp_payment_id', paymentId.toString())
                 .maybeSingle();
 
             if (erroVenda || !venda) {
@@ -70,7 +70,7 @@ export async function POST(request) {
                 const { error: dbError } = await supabase
                     .from('venda')
                     .update({ status: 'pago' })
-                    .eq('mp_payment_id', paymentId.toString()); // ✅ CORRIGIDO: mudado de 'idvenda' para 'mp_payment_id'
+                    .eq('mp_payment_id', paymentId.toString()); // ✅ CORRIGIDO: mudado de 'mp_payment_id' para 'mp_payment_id'
 
                 if (dbError) {
                     console.error("[WEBHOOK] Erro ao atualizar o Supabase:", dbError);

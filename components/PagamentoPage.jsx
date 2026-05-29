@@ -3,13 +3,10 @@
 import { useState, useEffect, Suspense, useContext, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
-import { createClient } from '@supabase/supabase-js';
 import { CartContext } from '@/context/CartContext';
+import { CreateClient } from '../lib/supabase/client';
 
-const supabaseFront = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+const supabaseFront = CreateClient();
 
 function PaymentContent() {
     const searchParams = useSearchParams();
