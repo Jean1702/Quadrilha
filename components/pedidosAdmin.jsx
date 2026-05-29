@@ -7,7 +7,6 @@ import { CreateClient } from "@/lib/supabase/client";
 import { ChefHat, Check, X, PackageCheck } from "lucide-react";
 
 const statusConfig = {
-  aguardando_pagamento: { label: "Solicitado", cor: "#D97016" }, 
   pago:                 { label: "Solicitado", cor: "#D97016" }, 
   sendo_feito:          { label: "Preparando", cor: "#026A4C" },
   pronto:               { label: "Pronto",     cor: "#026A4C" },

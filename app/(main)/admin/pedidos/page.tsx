@@ -42,7 +42,7 @@ export default async function Pedido(){
     
     `)
     .order('criada_em', { ascending: false })
-    .in("status", [ "sendo_feito", "pago", "pronto", "aguardando_pagamento"]);
+    .in("status", [ "sendo_feito", "pago", "pronto"]);
 
     if (!adminData.is_superadmin) {
         vendas = vendas.eq("idturma", adminData.idturma);

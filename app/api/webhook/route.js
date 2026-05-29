@@ -24,7 +24,7 @@ export async function POST(request) {
             const { data: venda, error: erroVenda } = await supabase
                 .from('venda')
                 .select('idturma, status')
-                .eq('mp_payment_id', paymentId.toString())
+                .eq('idvenda', paymentId.toString())
                 .maybeSingle();
 
             if (erroVenda || !venda) {
