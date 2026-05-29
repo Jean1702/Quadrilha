@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useContext, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
-import { CreateClient } from '../lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 
 const supabase = createClient()
 
