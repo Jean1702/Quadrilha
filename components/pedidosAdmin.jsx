@@ -77,7 +77,7 @@ export default function PedidosPage({ vendas, adminData }) {
     const response = await fetch(`/api/pedidos/atualizacao_status?id=${id}&status=${novoStatus}`, {
       method: "PUT",
       headers: {
-          "Content-Type": "application/json"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({ 
         phone: pedido.usuarios?.phone || "", 
@@ -154,7 +154,12 @@ export default function PedidosPage({ vendas, adminData }) {
 
                 {/* Detalhes */}
                 <div className="space-y-1 mb-4 text-sm">
-                  <p><span className="font-semibold">Cliente:</span> {pedido.usuarios?.name || 'Administrador'}</p>
+                  <p>
+                    <span className="font-semibold">Cliente:</span>{' '}
+                    {pedido.online
+                      ? pedido.usuarios?.name || 'Usuário Não Identificado'
+                      : pedido.nome_cliente || 'Cliente Físico'}
+                  </p>
                   <p><span className="font-semibold">Quantidade:</span> {pedido.venda_produto?.[0]?.quantidade ?? 0}</p>
                   
                   {/* Badge visual opcional para mostrar o método se ele já existir */}
@@ -171,7 +176,7 @@ export default function PedidosPage({ vendas, adminData }) {
                     <span className="font-semibold">Itens:</span>
                     <ul className="list-disc list-inside ml-2 opacity-60">
                       {pedido.venda_produto?.map((item) => (
-                        <li key={item.produtos.idproduto}>{item.produtos?.nome} {item.observacao ? `(${item.observacao})`: ""}</li>
+                        <li key={item.produtos.idproduto}>{item.produtos?.nome} {item.observacao ? `(${item.observacao})` : ""}</li>
                       ))}
                     </ul>
                   </div>

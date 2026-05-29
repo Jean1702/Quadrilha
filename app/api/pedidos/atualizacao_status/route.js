@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { CreateClient } from "@/lib/supabase/server";
 
-export async function PUT(req){
+export async function PUT(req) {
     const supabase = await CreateClient();
 
-    try{
+    try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
@@ -94,14 +94,14 @@ export async function PUT(req){
             if (!response.ok) {
                 const erroAPI = await response.text();
                 console.error("Erro na API de WhatsApp do Hook:", erroAPI);
-                return new NextResponse("Erro ao enviar mensagem", { status: 500 });
             }
         } else {
-            console.warn("Telefone do cliente não informado. Status atualizado sem envio de WhatsApp.");
+            console.log(`Pedido #${pedidoId} é físico ou não possui telefone. Ignorando disparo de WhatsApp.`);
         }
 
         return NextResponse.json({ message: "Status updated!" }, { status: 200 });
     } catch (error) {
+        console.error("Erro interno do servidor:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

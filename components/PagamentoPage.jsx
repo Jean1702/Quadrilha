@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react'; // Importamos o Suspense aqui
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
 import { createClient } from '@supabase/supabase-js';
@@ -10,7 +10,6 @@ const supabaseFront = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-// 1. Criamos um subcomponente com toda a lógica da página
 function PaymentContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -22,6 +21,7 @@ function PaymentContent() {
     const [tempo, setTempo] = useState(5 * 60);
     const [statusPedido, setStatusPedido] = useState("Aguardando pagamento");
 
+    // Correção do Timer: Removido 'tempo' das dependências para não recriar o intervalo toda hora
     useEffect(() => {
         if (tempo > 0 && statusPedido === "Aguardando pagamento") {
             const timer = setInterval(() => {
@@ -29,26 +29,43 @@ function PaymentContent() {
             }, 1000);
             return () => clearInterval(timer);
         }
-    }, [tempo, statusPedido]);
+    }, [statusPedido]);
 
+    // Escuta em tempo real do banco de dados (Realtime)
     useEffect(() => {
         if (!codigoPedido || codigoPedido === "000000") return;
 
-        let intervalo;
+        // Ativa um canal ouvindo atualizações da linha específica desta venda
+        const canalRealtime = supabaseFront
+            .channel(`venda_status_${codigoPedido}`)
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', filter: `mp_payment_id=eq.${codigoPedido}`, schema: 'public', table: 'venda' },
+                (payload) => {
+                    const novoStatus = payload.new.status;
+                    if (novoStatus === 'pago' || novoStatus === 'approved') {
+                        setStatusPedido("Pagamento Confirmado!");
+                        setTimeout(() => {
+                            router.push(`/user`);
+                        }, 2000);
+                    }
+                }
+            )
+            .subscribe();
 
-        const checarStatus = async () => {
+        // FALLBACK: Mantém o seu polling tradicional a cada 4 segundos caso o Realtime falhe ou esteja desativado no Supabase
+        const checarStatusFallback = async () => {
+            if (statusPedido === "Pagamento Confirmado!") return;
+            
             const { data, error } = await supabaseFront
-                .from('venda') 
+                .from('venda')
                 .select('status')
-                .eq('id', codigoPedido)
-                .limit(1);
+                .eq('mp_payment_id', codigoPedido)
+                .maybeSingle();
 
-            if (!error && data && data.length > 0) {
-                const statusVenda = data[0].status;
-                if (statusVenda === 'pago' || statusVenda === 'approved') {
+            if (!error && data) {
+                if (data.status === 'pago' || data.status === 'approved') {
                     setStatusPedido("Pagamento Confirmado!");
-                    clearInterval(intervalo);
-                    
                     setTimeout(() => {
                         router.push(`/user`);
                     }, 2000);
@@ -56,11 +73,13 @@ function PaymentContent() {
             }
         };
 
-        checarStatus();
-        intervalo = setInterval(checarStatus, 3000);
+        const intervaloFallback = setInterval(checarStatusFallback, 4000);
 
-        return () => clearInterval(intervalo);
-    }, [codigoPedido, router]);
+        return () => {
+            clearInterval(intervaloFallback);
+            supabaseFront.removeChannel(canalRealtime);
+        };
+    }, [codigoPedido, router, statusPedido]);
 
     const copiarChavePix = () => {
         if (!chavePix) return;
@@ -74,14 +93,14 @@ function PaymentContent() {
     return (
         <div className="flex justify-center items-center min-h-screen relative overflow-hidden bg-gray-50">
             <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-6 border border-gray-100">
-                
+
                 <div className="text-center mb-6">
                     <h1 className="text-3xl font-bold text-gray-800">
                         {statusPedido === "Pagamento Confirmado!" ? "🎉 Sucesso!" : "Pagamento Pix"}
                     </h1>
                     <p className="text-sm text-gray-600 mt-2">
-                        {statusPedido === "Pagamento Confirmado!" 
-                            ? "Seu pagamento foi recebido e processado!" 
+                        {statusPedido === "Pagamento Confirmado!"
+                            ? "Seu pagamento foi recebido e processado!"
                             : "Escaneie o QR Code ou copie o código abaixo para pagar."}
                     </p>
                 </div>
@@ -96,12 +115,12 @@ function PaymentContent() {
 
                         <div className="mb-6 text-center">
                             <p className="font-semibold text-gray-700 text-sm">Código Pix (Copia e Cola):</p>
-                            <p className="text-xs break-all bg-gray-100 p-3 rounded-lg mt-1 select-all font-mono text-gray-600 max-h-20 overflow-y-auto">
+                            <p className="text-xs break-all bg-gray-100 p-3 rounded-lg mt-1 select-all font-mono text-gray-600 max-h-20 overflow-y-auto后">
                                 {chavePix}
                             </p>
                             <button
                                 onClick={copiarChavePix}
-                                className="mt-3 px-6 py-2.5 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all font-medium text-sm w-full shadow-md"
+                                className="mt-3 px-6 py-2.5 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all font-medium text-sm w-full shadow-md cursor-pointer"
                             >
                                 Copiar Código Pix
                             </button>
@@ -110,7 +129,7 @@ function PaymentContent() {
                         <div className="text-center mb-6 bg-gray-50 py-2 rounded-lg">
                             <p className="text-xs text-gray-500 font-medium">Tempo restante para pagar:</p>
                             <p className="text-xl font-bold font-mono text-gray-700 mt-0.5">
-                                {tempo > 0 
+                                {tempo > 0
                                     ? `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`
                                     : "Código expirado"}
                             </p>
@@ -145,7 +164,6 @@ function PaymentContent() {
     );
 }
 
-// 2. A página padrão exporta o conteúdo envelopado em Suspense
 export default function PagamentoPage() {
     return (
         <Suspense fallback={

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import { Phone, User, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useForm, Controller, set} from 'react-hook-form';
+import { useForm, Controller, set } from 'react-hook-form';
 import { isValidPhoneNumber } from "libphonenumber-js"
+import { useRouter } from 'next/navigation';
 
 // 1. Colocamos as funções AQUI EM CIMA, fora do componente.
 // Assim elas sempre existem antes do código rodar!
@@ -35,14 +36,16 @@ function validatePhone(phone) {
 
 export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
   const { control, watch, handleSubmit, getValues } = useForm();
+  const router = useRouter();
   const [openpopup, setOpenpopup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [phone2, setphone2] = useState("")
   const [nome2, setnome2] = useState("")
   const phoneValue = watch("phone");
-  const phoneIsValid = validatePhone(phoneValue); 
+  const phoneIsValid = validatePhone(phoneValue);
   const [canResend, setCanResend] = useState(true);
   const [countdown, setCountdown] = useState(0);
+  const [alertMessage, setAlertMessage] = useState("");
 
   async function handleReenviar() {
     if (!canResend) return;
@@ -71,34 +74,48 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
         setCountdown((prev) => prev - 1);
       }, 1000);
     } else if (countdown === 0 && !canResend) {
-      setCanResend(true); 
+      setCanResend(true);
     }
 
-    return () => clearInterval(timer); 
+    return () => clearInterval(timer);
   }, [countdown, canResend]);
 
   const handleEntrarClick = async () => {
-    if (!phoneIsValid) return; 
-    
+    if (!phoneIsValid) return;
+
     setIsLoading(true);
-    const phone = getValues("phone"); 
+    setAlertMessage("");
+    const phone = getValues("phone");
     const nome = getValues("name")
+
+    if (!nome || nome.trim() === "") {
+      setAlertMessage("Por favor, preencha o seu nome.");
+      setIsLoading(false);
+      return;
+    }
+
     setnome2(nome)
     setphone2(phone)
     const response = await enviarWhatsapp(phone);
-    
+
     if (response?.success) {
-      setOpenpopup(true); 
+      setOpenpopup(true);
+    } else if (response?.alreadyRegistered) {
+      setAlertMessage(response.error);
+
+      setTimeout(() => {
+        router.push('/login');
+      }, 5000);
     } else {
-      alert("Erro ao enviar o código pelo WhatsApp.");
+      setAlertMessage(response?.error || "Erro ao enviar o código pelo WhatsApp.");
     }
-    
+
     setIsLoading(false);
   };
 
   async function handleConfirmarCodigo(formData) {
     setIsLoading(true); // Liga o loading
-    
+
     try {
       // 4. Aqui você chama a PROP que veio do componente pai!
       await codigoconfirm(formData);
@@ -106,18 +123,18 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
       console.error("Erro ao confirmar:", error);
     } finally {
       // Desliga o loading independente do resultado
-      setIsLoading(false); 
+      setIsLoading(false);
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      
+
       <div className="absolute size-100 sm:size-150 bg-amarelo rounded-full blur-3xl opacity-30 -top-40 -left-40 animate-pulse"></div>
 
       <div className="relative w-full bg-[var(--surface)] rounded-[30px] max-w-sm mx-4">
         <div className="backdrop-blur-xl border border-white/20 rounded-[30px] shadow-2xl p-8 transition-all duration-500 hover:scale-[1.02]">
-          
+
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold tracking-wide">
               Bem-vindo
@@ -128,7 +145,7 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
           </div>
 
           <form className="space-y-4">
-            
+
             <div className="relative group">
               <User className="absolute text-card left-4 top-1/2 -translate-y-1/2 text-card group-focus-within:text-white transition-colors" size={20} />
               <Controller
@@ -184,6 +201,12 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
               </p>
             )}
 
+            {alertMessage && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center p-3 rounded-xl mt-2">
+                {alertMessage}
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleEntrarClick}
@@ -197,7 +220,7 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
           {openpopup && (
             <div className="fixed inset-0 bg-(--surface)  rounded-[30px]  flex items-center justify-center z-50">
               <div className="relative w-full max-w-md mx-4 backdrop-blur-xl border border-white/20 shadow-2xl  rounded-[40px] p-8">
-                
+
                 <form action={handleConfirmarCodigo}>
                   <button
                     type="button"
@@ -218,24 +241,24 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
                     </p>
                   </div>
 
-                  
+
                   <Controller
                     name="codigo"
                     control={control}
                     defaultValue=""
                     render={({ field: { onChange, value, ...fieldConfig } }) => (
                       <input
-                        {...fieldConfig} 
+                        {...fieldConfig}
                         value={value}
                         onChange={(e) => {
                           const apenasNumeros = e.target.value.replace(/\D/g, "");
-                          
-                          e.target.value = apenasNumeros; 
-                          
+
+                          e.target.value = apenasNumeros;
+
                           onChange(apenasNumeros);
                         }}
-                        type="text" 
-                        inputMode="numeric" 
+                        type="text"
+                        inputMode="numeric"
                         pattern="[0-9]*"
                         maxLength={6}
                         placeholder="000000"
@@ -247,11 +270,10 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className={`w-full py-3.5 mt-3 rounded-xl font-bold text-black flex items-center justify-center transition-all duration-300 shadow-lg ${
-                      isLoading 
-                        ? "bg-amarelo/70 cursor-not-allowed shadow-none" 
-                        : "bg-amarelo/90 hover:bg-yellow-600 active:scale-95 shadow-amarelo/20"
-                    }`}
+                    className={`w-full py-3.5 mt-3 rounded-xl font-bold text-black flex items-center justify-center transition-all duration-300 shadow-lg ${isLoading
+                      ? "bg-amarelo/70 cursor-not-allowed shadow-none"
+                      : "bg-amarelo/90 hover:bg-yellow-600 active:scale-95 shadow-amarelo/20"
+                      }`}
                   >
                     {isLoading ? (
                       <>
@@ -269,11 +291,10 @@ export default function RegisterPage({ enviarWhatsapp, codigoconfirm }) {
                       type="button"
                       disabled={!canResend} // Bloqueia o clique nativamente no HTML
                       onClick={handleReenviar}
-                      className={`font-semibold transition-colors ${
-                        canResend
-                          ? "text-amarelo cursor-pointer hover:text-yellow-400 hover:underline"
-                          : "text-(--text)/80 cursor-not-allowed" // Estilo visual de desativado
-                      }`}
+                      className={`font-semibold transition-colors ${canResend
+                        ? "text-amarelo cursor-pointer hover:text-yellow-400 hover:underline"
+                        : "text-(--text)/80 cursor-not-allowed" // Estilo visual de desativado
+                        }`}
                     >
                       {canResend ? "Reenviar" : `Reenviar em ${countdown}s`}
                     </button>

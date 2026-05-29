@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CreateClient } from '../../../lib/supabase/server';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export async function POST(request) {
     try {
@@ -7,73 +8,84 @@ export async function POST(request) {
         const body = await request.json();
         console.log("=== WEBHOOK RECEBIDO DO MERCADO PAGO ===", body);
 
-        // O Advanced Payments avisa tanto em 'payment' quanto em outros tópicos estruturais, ideal validar o ID
+        // O Mercado Pago envia notificações quando a ação ou tipo envolve um pagamento
         if (body.type === 'payment' || body.action?.includes('payment')) {
-            
-            // Captura o ID do Advanced Payment de forma segura
+
+            // Captura o ID do pagamento enviado pelo Mercado Pago
             const paymentId = body.data?.id || body.resource?.split('/').pop();
 
             if (!paymentId) {
                 return NextResponse.json({ message: "ID do pagamento não encontrado" }, { status: 400 });
             }
 
-            console.log(`Consultando status do pagamento mestre ${paymentId} no Mercado Pago...`);
+            console.log(`[WEBHOOK] Buscando venda vinculada ao ID MP: ${paymentId}`);
 
-            // Consulta utilizando a API de Advanced Payments para capturar o split inteiro e garantir segurança antifraude
-            const mpResponse = await fetch(`https://api.mercadopago.com/v1/advanced_payments/${paymentId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${process.env.MERCADO_PAGO_MASTER_ACCESS_TOKEN}` // Token mestre da plataforma
-                }
-            });
+            // 1. Descobre a qual turma esse pagamento pertence e o status atual dele
+            const { data: venda, error: erroVenda } = await supabase
+                .from('venda')
+                .select('idturma, status')
+                .eq('mp_payment_id', paymentId.toString())
+                .maybeSingle();
 
-            // Se falhar, tenta consultar como pagamento individual clássico por redundância do gateway
-            let paymentData;
-            if (!mpResponse.ok) {
-                console.warn(`Tentando consulta redundante para v1/payments/${paymentId}`);
-                const fallbackResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${process.env.MERCADO_PAGO_MASTER_ACCESS_TOKEN}` }
-                });
-                
-                if (!fallbackResponse.ok) {
-                    console.error(`Erro crítico ao consultar pagamento ${paymentId} em ambas as APIs do MP`);
-                    return NextResponse.json({ message: "Erro ao consultar MP" }, { status: 500 });
-                }
-                paymentData = await fallbackResponse.json();
-            } else {
-                paymentData = await mpResponse.json();
+            if (erroVenda || !venda) {
+                console.warn(`[WEBHOOK] Venda ainda não registrada ou não encontrada para o ID MP ${paymentId}`);
+                return NextResponse.json({ message: "Venda não encontrada no banco" }, { status: 200 });
             }
 
-            const statusPagamento = paymentData.status; // 'approved', 'pending', etc.
-            const externalReference = paymentData.external_reference; 
+            // Otimização: Se a venda já estiver como 'pago', não gasta processamento nem requisição na API do MP
+            if (venda.status === 'pago') {
+                console.log(`[WEBHOOK] Venda ${paymentId} já foi processada anteriormente.`);
+                return NextResponse.json({ received: true, message: "Já pago" }, { status: 200 });
+            }
 
-            console.log(`Status do pagamento ${paymentId}: ${statusPagamento} | Ref: ${externalReference}`);
+            // 2. Busca o token de acesso daquela turma específica
+            const { data: credencial, error: errCredencial } = await supabase
+                .from('admin')
+                .select('acess_token')
+                .eq('idturma', venda.idturma)
+                .single();
 
-            // Se o pagamento geral foi APROVADO, atualiza todas as vendas vinculadas a esse ID mestre do MP
+            if (errCredencial || !credential || !credencial.acess_token) {
+                console.error("[WEBHOOK] Credencial de acesso da turma não localizada.");
+                return NextResponse.json({ message: "Erro de credenciais da subconta" }, { status: 400 });
+            }
+
+            console.log(`[WEBHOOK] Inicializando SDK com o token da Turma: ${venda.idturma}`);
+
+            // 3. Inicializa o SDK com o Token correto da subconta/turma
+            const client = new MercadoPagoConfig({
+                accessToken: credencial.acess_token
+            });
+            const payment = new Payment(client);
+
+            const paymentData = await payment.get({ id: paymentId });
+            const statusPagamento = paymentData.status;
+
+            console.log(`[WEBHOOK] Status retornado pelo MP: ${statusPagamento}`);
+
+            // Se o pagamento foi aprovado, atualiza o banco utilizando a coluna correta
             if (statusPagamento === 'approved') {
-                console.log(`Pagamento aprovado! Atualizando vendas no banco de dados...`);
+                console.log(`[WEBHOOK] Pagamento aprovado! Atualizando Supabase...`);
 
-                // ATENÇÃO AQUI: Nós filtramos e atualizamos pelo 'mp_payment_id' que gravamos no checkout!
-                const { data: vendasAtualizadas, error: dbError } = await supabase
-                    .from('venda') 
+                const { error: dbError } = await supabase
+                    .from('venda')
                     .update({ status: 'pago' })
-                    .eq('mp_payment_id', paymentId.toString()); // Atualiza todas as lojas desse carrinho unificado
+                    .eq('mp_payment_id', paymentId.toString()); // ✅ CORRIGIDO: mudado de 'idvenda' para 'mp_payment_id'
 
                 if (dbError) {
-                    console.error("Erro ao atualizar o Supabase:", dbError);
+                    console.error("[WEBHOOK] Erro ao atualizar o Supabase:", dbError);
                     return NextResponse.json({ message: "Erro ao atualizar banco" }, { status: 500 });
                 }
 
-                console.log(`Vendas associadas ao ID MP ${paymentId} atualizadas com sucesso para 'pago'!`);
+                console.log(`[WEBHOOK] Venda ${paymentId} atualizada com sucesso para 'pago'!`);
             }
         }
 
-        // Resposta imediata exigida pelo Mercado Pago
+        // Retorna sempre 200/201 para o Mercado Pago saber que a notificação foi entregue
         return NextResponse.json({ received: true }, { status: 200 });
 
     } catch (error) {
-        console.error("Erro crítico no Webhook:", error);
+        console.error("[WEBHOOK] Erro crítico no processamento:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
