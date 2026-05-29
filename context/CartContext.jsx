@@ -18,6 +18,22 @@ export function CartProvider({ children }) {
 
     // Função para adicionar um novo item
     const adicionarAoCarrinho = (produto, quantidade, observacao) => {
+        
+        // --- NOVA VALIDAÇÃO: TURMA ÚNICA ---
+        // Verifica se o carrinho já tem itens. Se tiver, compara a turma do novo produto com a turma do carrinho.
+        if (carrinho.length > 0) {
+            // Pegamos a referência da turma do primeiro item do carrinho
+            // Ajuste 'produto.turma' para a propriedade correta (ex: produto.idTurma, produto.turmaId)
+            const turmaDoCarrinho = carrinho[0].produto.turma; 
+            const turmaDoNovoProduto = produto.turma;
+
+            if (turmaDoCarrinho !== turmaDoNovoProduto) {
+                alert("Você só pode adicionar produtos de uma única turma no carrinho. Finalize sua compra atual ou limpe o carrinho para adicionar itens de outra turma.");
+                return false; // Retorna falso para avisar a página que a inserção falhou
+            }
+        }
+        // -----------------------------------
+
         // 1. Calcula quantos deste produto JÁ ESTÃO no carrinho (somando todas as observações)
         const qtdJaNoCarrinho = carrinho
             .filter((item) => item.produto.idproduto === produto.idproduto)
@@ -87,4 +103,4 @@ export function CartProvider({ children }) {
             {children}
         </CartContext.Provider>
     )
-};
+}
