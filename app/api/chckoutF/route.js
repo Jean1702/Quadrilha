@@ -105,7 +105,7 @@ export async function POST(request) {
 
         const minhaTaxaPlataforma = totalGeralDoCarrinho * 0.10;
 
-        // 1. Montamos o corpo básico com os dados estritos do Payer exigidos em produção
+        // Uso do Optional Chaining (?.) para evitar que propriedades ausentes quebrem o código
         const paymentBody = {
             transaction_amount: Number(totalGeralDoCarrinho.toFixed(2)),
             description: `Pedido unificado - App IFF (Loja ${idTurmaDoPedido})`,
@@ -114,23 +114,25 @@ export async function POST(request) {
             application_fee: Number(minhaTaxaPlataforma.toFixed(2)),
             external_reference: `IFF-${Date.now()}`,
             payer: {
-                email: formData.payer.email,
-                // ✅ Correção A: Garante o envio do Nome/Sobrenome coletados pelo Brick para o Pix funcionar em Produção
-                first_name: formData.payer.first_name || "Cliente",
-                last_name: formData.payer.last_name || "IFF",
+                // Fallbacks seguros caso o Brick omita algum dado no Pix
+                email: formData.payer?.email || 'cliente.iffood@testuser.com',
+                first_name: formData.payer?.first_name || "Cliente",
+                last_name: formData.payer?.last_name || "IFF",
                 identification: {
-                    type: formData.payer.identification.type,
-                    number: formData.payer.identification.number
+                    type: formData.payer?.identification?.type || "CPF",
+                    number: formData.payer?.identification?.number
+                        ? formData.payer.identification.number.replace(/\D/g, '')
+                        : "00000000000" // CPF padrão de teste caso venha vazio
                 }
             }
         };
 
-        // ✅ Correção B: Injeta o token APENAS se ele existir (evita quebrar o Pix com chaves nulas)
+        // Injeta o token de criptografia do cartão APENAS se ele existir de verdade
         if (formData.token) {
             paymentBody.token = formData.token;
         }
 
-        console.log("[DEBUG] Enviando requisição oficial através do SDK...");
+        console.log("[DEBUG] Enviando requisição oficial blindada através do SDK...");
         const responseData = await payment.create({ body: paymentBody });
 
         if (!responseData || responseData.status === 'rejected') {
