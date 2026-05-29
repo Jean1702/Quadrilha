@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from "@/lib/supabase/server";
+import { CreateClient } from "@/lib/supabase/server";
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export async function POST(request) {
     try {
-        const supabase = await createClient();
+        const supabase = await CreateClient();
         const body = await request.json();
         console.log("=== WEBHOOK RECEBIDO DO MERCADO PAGO ===", body);
 
