@@ -3,12 +3,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
-import { createClient } from '@supabase/supabase-js';
+import { CreateClient } from '../lib/supabase/server';
 
-const supabaseFront = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+const supabase = createClient()
 
 function PaymentContent() {
     const searchParams = useSearchParams();
@@ -36,7 +33,7 @@ function PaymentContent() {
         if (!codigoPedido || codigoPedido === "000000") return;
 
         // Ativa um canal ouvindo atualizações da linha específica desta venda
-        const canalRealtime = supabaseFront
+        const canalRealtime = supabase
             .channel(`venda_status_${codigoPedido}`)
             .on(
                 'postgres_changes',
@@ -45,6 +42,7 @@ function PaymentContent() {
                     const novoStatus = payload.new.status;
                     if (novoStatus === 'pago' || novoStatus === 'approved') {
                         setStatusPedido("Pagamento Confirmado!");
+                        console.log(statusPedido)
                         setTimeout(() => {
                             router.push(`/user`);
                         }, 2000);
@@ -57,7 +55,7 @@ function PaymentContent() {
         const checarStatusFallback = async () => {
             if (statusPedido === "Pagamento Confirmado!") return;
             
-            const { data, error } = await supabaseFront
+            const { data, error } = await supabase
                 .from('venda')
                 .select('status')
                 .eq('mp_payment_id', codigoPedido)
@@ -77,7 +75,7 @@ function PaymentContent() {
 
         return () => {
             clearInterval(intervaloFallback);
-            supabaseFront.removeChannel(canalRealtime);
+            supabase.removeChannel(canalRealtime);
         };
     }, [codigoPedido, router, statusPedido]);
 

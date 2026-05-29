@@ -24,13 +24,6 @@ export default function PedidosPage({ vendas, adminData }) {
     isLoading: false,
   });
 
-  const [paymentModal, setPaymentModal] = useState({
-    isOpen: false,
-    pedido: null,
-    metodo: "dinheiro",
-    isLoading: false,
-  });
-
   useEffect(() => {
     if (!adminData) return;
 
@@ -63,11 +56,9 @@ export default function PedidosPage({ vendas, adminData }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [vendas]);
+  }, [vendas, adminData, supabase]);
 
-  // Alteramos o parâmetro "user" para receber o "pedido" completo
-  // Alteramos o parâmetro "user" para receber o "pedido" completo
-  const atualizarStatus = async (id, novoStatus, pedido, formaPagamento = null) => {
+  const atualizarStatus = async (id, novoStatus, pedido) => {
     // Coleta o nome e ano do curso de dentro da relação da venda/pedido
     const nomeCurso = pedido.turma?.nomecurso || "Indefinido";
     const anoCurso = pedido.turma?.ano || "";
@@ -81,7 +72,6 @@ export default function PedidosPage({ vendas, adminData }) {
       body: JSON.stringify({ 
         phone: pedido.usuarios?.phone || "", 
         name: pedido.usuarios?.name || "",
-        forma_pagamento: formaPagamento,
         nome_turma: turmaFormatada // Passa o nome e o ano certinho para o backend
       })
     });
@@ -93,36 +83,6 @@ export default function PedidosPage({ vendas, adminData }) {
       const statusParaTela = novoStatus === "preparando" ? "sendo_feito" : novoStatus;
       setPedidosatual(prev => prev.map((p) => p.idvenda === id ? { ...p, status: statusParaTela } : p));
     }
-  };
-
-  // Tratamento inteligente para diferenciar Venda Física de Digital
-  const handleEntregueClick = (pedido) => {
-    // Se o pedido já tem forma_pagamento (Venda Física), atualiza direto no banco
-    if (pedido.metodo_pagamento) {
-      atualizarStatus(pedido.idvenda, "entregue", pedido, pedido.forma_pagamento);
-    } else {
-      // Se não tem forma_pagamento (Venda Digital pendente), abre o Pop-up
-      setPaymentModal({
-        isOpen: true,
-        pedido: pedido,
-        metodo: "dinheiro",
-        isLoading: false
-      });
-    }
-  };
-
-  const handleConfirmarEntrega = async () => {
-    if (!paymentModal.pedido) return;
-    setPaymentModal(prev => ({ ...prev, isLoading: true }));
-    
-    await atualizarStatus(
-      paymentModal.pedido.idvenda, 
-      "entregue", 
-      paymentModal.pedido.usuarios, 
-      paymentModal.metodo
-    );
-    
-    setPaymentModal({ isOpen: false, pedido: null, metodo: "dinheiro", isLoading: false });
   };
 
   return (
@@ -161,16 +121,6 @@ export default function PedidosPage({ vendas, adminData }) {
                   </p>
                   <p><span className="font-semibold">Quantidade:</span> {pedido.venda_produto?.[0]?.quantidade ?? 0}</p>
                   
-                  {/* Badge visual opcional para mostrar o método se ele já existir */}
-                  {pedido.forma_pagamento && (
-                    <p>
-                      <span className="font-semibold">Pagamento:</span>{" "}
-                      <span className="bg-zinc-100 text-zinc-700 text-xs px-2 py-0.5 rounded-md uppercase font-bold">
-                        {pedido.forma_pagamento}
-                      </span>
-                    </p>
-                  )}
-
                   <div>
                     <span className="font-semibold">Itens:</span>
                     <ul className="list-disc list-inside ml-2 opacity-60">
@@ -204,7 +154,7 @@ export default function PedidosPage({ vendas, adminData }) {
                     </div>
                     
                     <button 
-                      onClick={() => handleEntregueClick(pedido)}
+                      onClick={() => atualizarStatus(pedido.idvenda, "entregue", pedido)}
                       disabled={pedido.status !== "pronto"}
                       className="flex-1 flex items-center justify-center gap-1 bg-[#026A4C] hover:bg-[#037a58] active:scale-95 text-white py-2 px-3 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
                     >
@@ -222,52 +172,6 @@ export default function PedidosPage({ vendas, adminData }) {
           )}
         </div>
       </div>
-
-      {/* POP-UP / MODAL SELEÇÃO DE PAGAMENTO */}
-      {paymentModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white text-zinc-900 rounded-[24px] p-6 max-w-sm w-full shadow-2xl">
-            <h3 className="text-xl font-bold tracking-tight mb-2">Finalizar Entrega</h3>
-            <p className="text-sm text-zinc-500 mb-5">
-              Este pedido digital não possui método de pagamento registrado. Selecione como o cliente pagou:
-            </p>
-            
-            <div className="mb-6">
-              <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-2">
-                Forma de Pagamento
-              </label>
-              <select
-                value={paymentModal.metodo}
-                onChange={(e) => setPaymentModal(prev => ({ ...prev, metodo: e.target.value }))}
-                className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#026A4C] focus:border-transparent transition"
-              >
-                <option value="dinheiro">Dinheiro</option>
-                <option value="pix">Pix</option>
-                <option value="debito">Débito</option>
-                <option value="credito">Crédito</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={handleConfirmarEntrega}
-                disabled={paymentModal.isLoading}
-                className="w-full flex items-center justify-center bg-[#026A4C] hover:bg-[#037a58] text-white py-3 rounded-full font-semibold transition text-sm shadow-md disabled:opacity-50"
-              >
-                {paymentModal.isLoading ? "Salvando..." : "Confirmar e Entregar"}
-              </button>
-              
-              <button
-                onClick={() => setPaymentModal({ isOpen: false, pedido: null, metodo: "dinheiro", isLoading: false })}
-                disabled={paymentModal.isLoading}
-                className="w-full py-2.5 text-zinc-500 hover:text-zinc-800 font-medium text-sm transition text-center"
-              >
-                Voltar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

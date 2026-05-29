@@ -61,10 +61,6 @@ export async function PUT(req) {
                 atualizada_em: new Date().toISOString() 
             };
 
-            if (formaPagamento) {
-                dadosAtualizacao.metodo_pagamento = formaPagamento;
-            }
-
             const { error: updateError } = await supabase
                 .from("venda")
                 .update(dadosAtualizacao)
