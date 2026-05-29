@@ -38,7 +38,6 @@ export default async function Pedido(){
                 *
             )
         ),
-        turma(*)
     
     `)
     .order('criada_em', { ascending: false })

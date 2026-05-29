@@ -45,50 +45,8 @@ function PaymentContent() {
     useEffect(() => {
         if (!codigoPedido || codigoPedido === "000000") return;
 
-        // Função interna para mudar o status e redirecionar o usuário
-        const confirmarEIrParaPerfil = () => {
-            if (redirecionando.current) return;
-            redirecionando.current = true;
-
-            setStatusPedido("Pagamento Confirmado!");
-
-            setTimeout(() => {
-                router.push('/user');
-            }, 2000);
-        };
-
-        // Função de checagem no banco de dados (usada no mount e no polling)
-        const checarStatusBanco = async () => {
-            console.log(`[FRONTEND] Verificando banco para o ID MP: ${codigoPedido}`);
-            const { data, error } = await supabaseFront
-                .from('venda')
-                .select('status')
-                .eq('mp_payment_id', codigoPedido)
-                .maybeSingle();
-
-            // 🔍 LOG CRÍTICO: Vamos ver exatamente o que o Supabase está cuspindo
-            console.log("[DEBUG POLING]", { data, error });
-
-            if (error) {
-                console.error("[FRONTEND] Erro ao consultar venda:", error.message);
-                return;
-            }
-
-            if (data) {
-                console.log(`[FRONTEND] Status atual no banco: ${data.status}`);
-                if (data.status === 'pago' || data.status === 'approved') {
-                    console.log("[FRONTEND] Pagamento detectado via consulta direta!");
-                    confirmarEIrParaPerfil();
-                }
-            } else {
-                console.warn("[FRONTEND] NENHUM registro encontrado para esse ID MP. O RLS pode estar bloqueando.");
-            }
-        };
-        // CHECAGEM IMEDIATA: Não espera os 4 segundos do intervalo se o webhook já tiver rodado
-        checarStatusBanco();
-
-        // Configuração do Canal Realtime
-        const canalRealtime = supabaseFront
+        // Ativa um canal ouvindo atualizações da linha específica desta venda
+        const canalRealtime = supabase
             .channel(`venda_status_${codigoPedido}`)
             .on(
                 'postgres_changes',
@@ -97,24 +55,41 @@ function PaymentContent() {
                     console.log("[FRONTEND] Atualização recebida via Realtime:", payload);
                     const novoStatus = payload.new.status;
                     if (novoStatus === 'pago' || novoStatus === 'approved') {
-                        confirmarEIrParaPerfil();
+                        setStatusPedido("Pagamento Confirmado!");
+                        console.log(statusPedido)
+                        setTimeout(() => {
+                            router.push(`/user`);
+                        }, 2000);
                     }
                 }
             )
-            .subscribe((status) => {
-                console.log(`[FRONTEND] Status da inscrição Realtime: ${status}`);
-            });
+            .subscribe();
 
-        // Configuração do Intervalo de Fallback (A cada 4 segundos)
-        const intervaloFallback = setInterval(() => {
-            if (!redirecionando.current) {
-                checarStatusBanco();
+        // FALLBACK: Mantém o seu polling tradicional a cada 4 segundos caso o Realtime falhe ou esteja desativado no Supabase
+        const checarStatusFallback = async () => {
+            if (statusPedido === "Pagamento Confirmado!") return;
+            
+            const { data, error } = await supabase
+                .from('venda')
+                .select('status')
+                .eq('mp_payment_id', codigoPedido)
+                .maybeSingle();
+
+            if (!error && data) {
+                if (data.status === 'pago' || data.status === 'approved') {
+                    setStatusPedido("Pagamento Confirmado!");
+                    setTimeout(() => {
+                        router.push(`/user`);
+                    }, 2000);
+                }
             }
-        }, 4000);
+        };
+
+        const intervaloFallback = setInterval(checarStatusFallback, 4000);
 
         return () => {
             clearInterval(intervaloFallback);
-            supabaseFront.removeChannel(canalRealtime);
+            supabase.removeChannel(canalRealtime);
         };
     }, [codigoPedido, router]);
 
