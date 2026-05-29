@@ -34,7 +34,8 @@ export default async function Presencial() {
             produtos!inner(
                 *
             )
-        )
+        ),
+        turma(*)
     
   `)
   .order('criada_em', { ascending: false })
