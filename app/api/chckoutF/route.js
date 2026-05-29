@@ -190,6 +190,64 @@ export async function POST(request) {
 
         return NextResponse.json(respostaFinal);
 
+           for (const item of pacote.itens) {
+                const prodBanco = produtosNoBanco.find(p => String(p.idproduto) === String(item.produto.idproduto));
+
+                if (prodBanco) {
+                    const novoEstoque = prodBanco.estoque - item.quantidade;
+
+                    const { error: erroEstoque } = await supabase
+                        .from('produtos')
+                        .update({ estoque: novoEstoque })
+                        .eq('idproduto', prodBanco.idproduto);
+
+                    if (erroEstoque) throw erroEstoque;
+                }
+            }
+
+            // 4. ENVIO PARA O SERVIDOR DE WHATSAPP (COM TEMPO LIMITE DE SEGURANÇA)
+            if (user.phone) {
+                const mensagemFormatada = `*IFFOOD Informa!* \n\nO seu pedido *#${novaVenda.idvenda}* foi solicitado para as turmas. Fique atento ao aplicativo para acompanhar o andamento!`;
+
+                const payloadWhatsApp = {
+                    to: user.phone,
+                    type: 'text',
+                    text: mensagemFormatada
+                };
+
+                // Configura um cancelamento automático da requisição após 2 segundos (2000ms)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                const disparo = fetch('http://164.163.33.150:8001/api/v1/sessions/3c993713-6d8e-4fab-9bea-491e9af3ed92/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': process.env.WHATSAPP_API_KEY
+                    },
+                    body: JSON.stringify(payloadWhatsApp),
+                    signal: controller.signal // Vincula o sinal do aborto à requisição
+                })
+                    .then((res) => {
+                        clearTimeout(timeoutId); // Cancela o cronômetro se o servidor respondeu rápido
+                        if (!res.ok) {
+                            console.error(`[WhatsApp] API recusou o envio para ${user.phone}. Status: ${res.status}`);
+                        } else {
+                            console.log(`[WhatsApp] Mensagem enviada com sucesso para ${user.phone}`);
+                        }
+                    })
+                    .catch(err => {
+                        clearTimeout(timeoutId); // Garante a limpeza do cronômetro em caso de erro
+                        if (err.name === 'AbortError') {
+                            console.error(`[WhatsApp Timeout] Conexão com o gateway demorou mais de 2s e foi cortada para proteger o Checkout.`);
+                        } else {
+                            console.error(`[WhatsApp Error] Falha de rede interna:`, err.message);
+                        }
+                    });
+
+                promessasEnvioWhats.push(disparo);
+            }
+        
         
     } catch (error) {
         console.error("Erro interno na API de checkout:", error);
