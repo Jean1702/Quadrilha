@@ -51,25 +51,23 @@ export default function MethodPaymentPage() {
 
                     const settings = {
                         initialization: {
-                            // Garante que o valor sempre seja válido e maior que zero
-                            amount: total > 0 ? total : 1.00,
+                            amount: total,
                             payer: {
-                                // 🚨 IMPORTANTE: Use o e-mail real do usuário logado no seu app
-                                // Se não houver, use um e-mail com formato válido e real para testes em produção
-                                email: carrinho[0]?.produto?.usuarios?.email || 'cliente.teste.iff@gmail.com',
-                                entityType: 'individual'
+                                email: 'test_user_123456@testuser.com', // E-mail de teste do comprador
+                                entityType: 'individual' // Mantém a correção para CPF
                             },
                         },
                         customization: {
                             visual: {
                                 style: {
-                                    theme: 'default',
+                                    theme: 'default', // 'default' | 'dark' | 'bootstrap' | 'flat'
                                 }
                             },
+                            // ✅ ESTRUTURA CORRETA PARA O PAYMENT BRICK V2:
                             paymentMethods: {
                                 creditCard: 'all',
                                 debitCard: 'all',
-                                bankTransfer: 'all',
+                                bankTransfer: 'all', // 👈 Isso ativa o Pix nativo sem quebrar o componente
                                 maxInstallments: 12
                             },
                         },
@@ -110,8 +108,7 @@ export default function MethodPaymentPage() {
                             },
                             onError: (error) => {
                                 console.error("Erro interno no widget do Brick:", error);
-                                // Mostra o erro real na tela para sabermos se o MP rejeitou as credenciais
-                                setErrorMessage(`Falha na inicialization: ${error.cause || 'Verifique suas credenciais'}`);
+                                setErrorMessage("Falha ao inicializar o gateway de pagamento.");
                             },
                         },
                     };
