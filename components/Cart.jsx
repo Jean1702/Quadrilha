@@ -2,20 +2,20 @@
 import { Trash2, AlertCircle } from "lucide-react"
 import { useState, useContext, useEffect, useRef } from 'react';
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CartContext } from "@/context/CartContext";
 import { ProductContext } from '@/context/ProductContext';
 import { CreateClient } from "@/lib/supabase/client"
-import { redirect } from "next/navigation";
 
 export default function Cart() {
-
     const { carrinho, removerDoCarrinho, atualizarCarrinhoTotal } = useContext(CartContext);
     const { imagensGlobais, produtosGlobais } = useContext(ProductContext);
 
-    const [erroEstoque, setErroEstoque] = useState(false);
+    const [enviando, setEnviando] = useState(false);
+    const router = useRouter();
+    const supabase = CreateClient();
 
     const carrinhoRef = useRef(carrinho);
-
     const jaSincronizou = useRef(false);
 
     useEffect(() => {
@@ -51,9 +51,6 @@ export default function Cart() {
     }, [produtosGlobais, carrinho, atualizarCarrinhoTotal]);
 
     useEffect(() => {
-        const supabase = CreateClient();
-
-        // 1. Canal escutando os Produtos
         const channelProdutos = supabase
             .channel('carrinho_realtime_produtos')
             .on(
@@ -107,7 +104,6 @@ export default function Cart() {
             )
             .subscribe();
 
-        // 2. NOVO: Canal escutando as Turmas (Lojas)
         const channelTurmas = supabase
             .channel('carrinho_realtime_turmas')
             .on(
@@ -117,12 +113,8 @@ export default function Cart() {
                     const turmaAtualizada = payload.new;
                     const carrinhoAtual = carrinhoRef.current;
 
-                    // Se a loja fechou
                     if (turmaAtualizada.is_active === false) {
-                        // Encontra todos os itens no carrinho que pertencem à loja que fechou
                         const itensParaRemover = carrinhoAtual.filter(item => String(item.produto.idturma) === String(turmaAtualizada.idturma));
-
-                        // Remove cada um deles do carrinho
                         itensParaRemover.forEach(item => {
                             removerDoCarrinho(item.idItemCarrinho);
                         });
@@ -135,7 +127,7 @@ export default function Cart() {
             supabase.removeChannel(channelProdutos);
             supabase.removeChannel(channelTurmas);
         };
-    }, [atualizarCarrinhoTotal, removerDoCarrinho]);
+    }, [atualizarCarrinhoTotal, removerDoCarrinho, supabase]);
 
     const totalAmount = carrinho.reduce((acc, item) => {
         return acc + item.subtotal;
@@ -143,22 +135,49 @@ export default function Cart() {
 
     const temProblemaNoEstoque = carrinho.some(item => item.produto.estoque === 0 || item.quantidade > item.produto.estoque);
 
-    const supabase = CreateClient();
-
     const handleIrParaPagamento = async (e) => {
         e.preventDefault();
 
-        if (temProblemaNoEstoque) return;
+        if (temProblemaNoEstoque || enviando) return;
 
-        const { data: { session } } = await supabase.auth.getSession();
+        try {
+            setEnviando(true);
 
-        if (!session) {
-            redirect('/login');
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                router.push('/login');
+                return;
+            }
+
+            // Enviando apenas o carrinho para a API
+            const response = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    carrinho: carrinho
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.error || "Houve um erro ao processar o seu pedido.");
+                return;
+            }
+
+            alert("Pedido registrado com sucesso!");
+            atualizarCarrinhoTotal([]); 
+            router.push('/user');       
+
+        } catch (error) {
+            console.error("Erro ao enviar pedido:", error);
+            alert("Erro de conexão. Verifique sua internet e tente novamente.");
+        } finally {
+            setEnviando(false);
         }
-
-        redirect('/method_payment');
     };
-
 
     return (
         <div className="min-h-screen bg-(--bg) text-(--text) pt-8 pb-32 px-4 sm:pt-12 font-sans">
@@ -170,10 +189,8 @@ export default function Cart() {
                 </div>
 
                 <div className="flex flex-col gap-6">
-
                     {carrinho.map((item) => {
                         const imagemProduto = imagensGlobais.find(img => String(img.idproduto) === String(item.produto.idproduto))?.url_imagem || '/placeholder.png';
-
                         const isEsgotado = item.produto.estoque === 0;
                         const isQuantidadeExcedida = item.quantidade > item.produto.estoque;
                         const isProblematico = isEsgotado || isQuantidadeExcedida;
@@ -181,7 +198,6 @@ export default function Cart() {
                         return (
                             <div
                                 key={item.idItemCarrinho}
-
                                 className={`flex flex-col p-5 border-[1.5px] rounded-[32px] shadow-sm transition-all duration-300 
                                 ${isProblematico ? 'border-red-500 bg-red-50 dark:bg-red-950/20 grayscale-40' : 'border-[#514442]/15 bg-(--surface)'}`}
                             >
@@ -199,7 +215,6 @@ export default function Cart() {
                                             {item.produto.nome}
                                         </h2>
 
-                                        {/* Mensagens de Alerta Dinâmicas */}
                                         {isEsgotado ? (
                                             <span className="text-red-600 font-bold text-xs uppercase tracking-wider mt-1">
                                                 Produto Esgotado
@@ -224,7 +239,7 @@ export default function Cart() {
 
                                 <div className="flex items-end justify-between mt-auto pt-2">
                                     <div className={isProblematico ? 'opacity-50 line-through' : ''}>
-                                        <p className="text-[11px]  sm:text-xs uppercase font-bold tracking-wider mb-1">
+                                        <p className="text-[11px] sm:text-xs uppercase font-bold tracking-wider mb-1">
                                             Subtotal
                                         </p>
                                         <p className="text-2xl sm:text-3xl font-black text-[#10a379] leading-none">
@@ -246,7 +261,7 @@ export default function Cart() {
                     {carrinho.length > 0 ? (
                         <div className="flex flex-col gap-6 p-6 sm:p-8 border-[1.5px] border-[#514442]/15 bg-white/20 rounded-[40px] shadow-sm mt-2">
                             <div className="flex justify-between items-end border-b border-text pb-4">
-                                <span className="text-lg sm:text-xl font-bold uppercase tracking-wide ">
+                                <span className="text-lg sm:text-xl font-bold uppercase tracking-wide">
                                     Total
                                 </span>
                                 <span className="text-3xl sm:text-4xl font-black text-[#10a379]">
@@ -263,16 +278,20 @@ export default function Cart() {
                                 </div>
                             )}
 
-                            <button onClick={handleIrParaPagamento} disabled={temProblemaNoEstoque} className={`w-full text-lg sm:text-xl font-black uppercase py-5 rounded-full transition-all shadow-md 
-                                    ${temProblemaNoEstoque
+                            <button 
+                                onClick={handleIrParaPagamento} 
+                                disabled={temProblemaNoEstoque || enviando} 
+                                className={`w-full text-lg sm:text-xl font-black uppercase py-5 rounded-full transition-all shadow-md 
+                                    ${(temProblemaNoEstoque || enviando)
                                     ? 'bg-gray-400/30 text-gray-400 cursor-not-allowed opacity-60'
-                                    : 'bg-(--bg) hover:bg-[#D95032] active:scale-95 cursor-pointer'}`}>
-                                Pagar Agora
+                                    : 'bg-(--bg) hover:bg-[#D95032] active:scale-95 cursor-pointer'}`}
+                            >
+                                {enviando ? 'Processando...' : 'Registrar Pedido'}
                             </button>
                         </div>
                     ) : (
                         <div className="flex-center flex-col h-full p-10 border-[1.5px] border-[#514442]/15 bg-(--surface) shadow-sm rounded-[40px] text-center mt-2">
-                            <p className="text-xl font-black uppercase mb-2 ">Seu carrinho está vazio</p>
+                            <p className="text-xl font-black uppercase mb-2">Seu carrinho está vazio</p>
                             <p className="opacity-70 mb-6">Explore o nosso menu e adicione os seus favoritos.</p>
                             <Link href="/">
                                 <button className="bg-(--bg) px-8 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-[#D95032] transition-colors shadow-sm">
@@ -281,7 +300,6 @@ export default function Cart() {
                             </Link>
                         </div>
                     )}
-
                 </div>
             </div>
         </div>

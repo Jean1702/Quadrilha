@@ -4,7 +4,7 @@ import { CreateClient } from '@/lib/supabase/server';
 export async function POST(request) {
     try {
         const body = await request.json();
-        const { carrinho, paymentMethod } = body;
+        const { carrinho } = body;
 
         if (!carrinho || carrinho.length === 0) {
             return NextResponse.json({ error: "Carrinho vazio" }, { status: 400 });
@@ -87,17 +87,18 @@ export async function POST(request) {
             return acc;
         }, {});
 
-        // === PASSO 5: SALVAR NO BANCO COM STATUS 'aguardando_pagamento' ===
-        // O estoque NÃO é alterado aqui!
+        const promessasEnvioWhats = [];
+
+        // === PASSO 5: SALVAR NO BANCO, ATUALIZAR ESTOQUE E PREPARAR NOTIFICAÇÃO ===
         for (const idTurmaString in pedidosPorTurma) {
             const pacote = pedidosPorTurma[idTurmaString];
 
+            // 1. Cria o registro da venda principal
             const { data: novaVenda, error: erroVenda } = await supabase
                 .from('venda')
                 .insert([{
-                    status: 'aguardando_pagamento', // Entra como pendente
+                    status: 'aguardando_pagamento',
                     valor_total: pacote.totalDaTurma,
-                    metodo_pagamento: paymentMethod,
                     idturma: parseInt(idTurmaString),
                     online: true,
                     iduser: usuarioPerfil.id
@@ -107,6 +108,7 @@ export async function POST(request) {
 
             if (erroVenda) throw erroVenda;
 
+            // 2. Cria os registros dos produtos vinculados à venda
             const itensParaInserir = pacote.itens.map(item => ({
                 idvenda: novaVenda.idvenda,
                 idproduto: item.produto.idproduto,
@@ -119,9 +121,71 @@ export async function POST(request) {
                 .insert(itensParaInserir);
 
             if (erroItens) throw erroItens;
+
+            // 3. Sistema de Baixa de Estoque
+            for (const item of pacote.itens) {
+                const prodBanco = produtosNoBanco.find(p => String(p.idproduto) === String(item.produto.idproduto));
+
+                if (prodBanco) {
+                    const novoEstoque = prodBanco.estoque - item.quantidade;
+
+                    const { error: erroEstoque } = await supabase
+                        .from('produtos')
+                        .update({ estoque: novoEstoque })
+                        .eq('idproduto', prodBanco.idproduto);
+
+                    if (erroEstoque) throw erroEstoque;
+                }
+            }
+
+            // 4. ENVIO PARA O SERVIDOR DE WHATSAPP (COM TEMPO LIMITE DE SEGURANÇA)
+            if (user.phone) {
+                const mensagemFormatada = `*IFFOOD Informa!* \n\nO seu pedido *#${novaVenda.idvenda}* foi solicitado para as turmas. Fique atento ao aplicativo para acompanhar o andamento!`;
+
+                const payloadWhatsApp = {
+                    to: user.phone,
+                    type: 'text',
+                    text: mensagemFormatada
+                };
+
+                // Configura um cancelamento automático da requisição após 2 segundos (2000ms)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                const disparo = fetch('http://164.163.33.150:8001/api/v1/sessions/3c993713-6d8e-4fab-9bea-491e9af3ed92/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': process.env.WHATSAPP_API_KEY
+                    },
+                    body: JSON.stringify(payloadWhatsApp),
+                    signal: controller.signal // Vincula o sinal do aborto à requisição
+                })
+                    .then((res) => {
+                        clearTimeout(timeoutId); // Cancela o cronômetro se o servidor respondeu rápido
+                        if (!res.ok) {
+                            console.error(`[WhatsApp] API recusou o envio para ${user.phone}. Status: ${res.status}`);
+                        } else {
+                            console.log(`[WhatsApp] Mensagem enviada com sucesso para ${user.phone}`);
+                        }
+                    })
+                    .catch(err => {
+                        clearTimeout(timeoutId); // Garante a limpeza do cronômetro em caso de erro
+                        if (err.name === 'AbortError') {
+                            console.error(`[WhatsApp Timeout] Conexão com o gateway demorou mais de 2s e foi cortada para proteger o Checkout.`);
+                        } else {
+                            console.error(`[WhatsApp Error] Falha de rede interna:`, err.message);
+                        }
+                    });
+
+                promessasEnvioWhats.push(disparo);
+            }
         }
 
-        return NextResponse.json({ success: true, message: "Pedido gerado com sucesso! Aguardando pagamento." }, { status: 200 });
+        // Aguarda todas as tarefas finalizarem (seja por sucesso, erro de rede ou cancelamento por timeout)
+        await Promise.allSettled(promessasEnvioWhats);
+
+        return NextResponse.json({ success: true, message: "Pedido gerado com sucesso e estoque atualizado!" }, { status: 200 });
 
     } catch (error) {
         console.error("Erro interno na API de checkout:", error);

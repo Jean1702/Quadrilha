@@ -18,17 +18,6 @@ export function CartProvider({ children }) {
 
     // Função para adicionar um novo item
     const adicionarAoCarrinho = (produto, quantidade, observacao) => {
-
-        // 🚨 === NOVA TRAVA: VALIDAÇÃO DE TURMA ÚNICA ===
-        if (carrinho.length > 0) {
-            const idTurmaNoCarrinho = carrinho[0].produto.idturma;
-
-            if (idTurmaNoCarrinho !== produto.idturma) {
-                alert("Você só pode adicionar produtos de uma mesma turma/loja por vez no carrinho. Finalize a compra atual ou limpe o seu carrinho para comprar desta outra turma.");
-                return false; // Retorna falso e barra a inserção de forma limpa
-            }
-        }
-
         // 1. Calcula quantos deste produto JÁ ESTÃO no carrinho (somando todas as observações)
         const qtdJaNoCarrinho = carrinho
             .filter((item) => item.produto.idproduto === produto.idproduto)
@@ -37,25 +26,27 @@ export function CartProvider({ children }) {
         // 2. Validação Mestre: Bloqueia se a soma ultrapassar o estoque
         if (qtdJaNoCarrinho + quantidade > produto.estoque) {
             alert(`Você não pode adicionar essa quantidade. O estoque máximo é ${produto.estoque} e você já tem ${qtdJaNoCarrinho} no carrinho.`);
-            return false;
+            return false; // Retorna falso para avisar a página que a inserção falhou
         }
 
         const obsLimpa = observacao ? observacao.trim() : "";
 
-        // Verificação se o produto com a MESMA observação já existe para agrupar
-        const itemExistenteIndex = carrinho.findIndex(
+        const indexExistente = carrinho.findIndex(
             (item) => item.produto.idproduto === produto.idproduto && item.observacao === obsLimpa
         );
 
         let novoCarrinho;
 
-        if (itemExistenteIndex > -1) {
+        if (indexExistente >= 0) {
             novoCarrinho = [...carrinho];
-            const novaQuantidade = novoCarrinho[itemExistenteIndex].quantidade + quantidade;
-            novoCarrinho[itemExistenteIndex] = {
-                ...novoCarrinho[itemExistenteIndex],
+            const itemAtual = novoCarrinho[indexExistente];
+            const novaQuantidade = itemAtual.quantidade + quantidade;
+            const novoSubtotal = novaQuantidade * produto.preco;
+
+            novoCarrinho[indexExistente] = {
+                ...itemAtual,
                 quantidade: novaQuantidade,
-                subtotal: produto.preco * novaQuantidade
+                subtotal: novoSubtotal
             };
         } else {
             const novoItem = {
@@ -70,7 +61,7 @@ export function CartProvider({ children }) {
 
         setCarrinho(novoCarrinho);
         localStorage.setItem("carrinhoApp", JSON.stringify(novoCarrinho));
-        return true;
+        return true; // Retorna verdadeiro indicando sucesso
     };
 
     const removerDoCarrinho = (idItemCarrinho) => {

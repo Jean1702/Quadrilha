@@ -5,8 +5,9 @@ import { CreateClient } from "../lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { FiLogOut, FiChevronDown } from "react-icons/fi";
 
+// CONFIGURAÇÃO DOS STATUS ALTERADA AQUI
 const statusConfig = {
-  aguardando_pagamento: { label: "Aguardando pagamento", color: "#D97016" },
+  aguardando_pagamento: { label: "Pedido Solicitado", color: "#D97016" },
   pago: { label: "Recebido", color: "#D97016" },
   sendo_feito: { label: "Em andamento", color: "#D95032" },
   pronto: { label: "Pronto", color: "#059b70" },
@@ -70,7 +71,6 @@ export default function User({ name, phone, userId }) {
           .select(`
             idvenda,
             valor_total,
-            metodo_pagamento,
             status,
             criada_em,
             atualizada_em,
@@ -199,7 +199,6 @@ export default function User({ name, phone, userId }) {
           Meu Perfil
         </h1>
 
-
         <table className="w-full border-collapse mb-6">
           <tbody>
             <tr>
@@ -299,7 +298,6 @@ export default function User({ name, phone, userId }) {
 
                           <div className="text-right">
                             <p className="font-bold text-primary">R$ {parseFloat(pedido.valor_total).toFixed(2)}</p>
-                            <p className="text-xs text-(--text) opacity-60">{pedido.metodo_pagamento}</p>
                           </div>
                         </div>
 
@@ -322,8 +320,7 @@ export default function User({ name, phone, userId }) {
                                   <p className="font-bold text-primary">
                                     {item.produto?.preco
                                       ? `R$ ${(item.produto.preco * item.quantidade).toFixed(2)}`
-                                      : "—"
-                                    }
+                                      : "—"}
                                   </p>
                                 </div>
                               ))}
