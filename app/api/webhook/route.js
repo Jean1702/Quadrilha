@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { CreateClient } from '../../../lib/supabase/server';
+import {CreateClient} from "../../lib/supabase/server.ts";
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export async function POST(request) {
