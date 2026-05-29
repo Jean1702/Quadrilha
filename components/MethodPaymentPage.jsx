@@ -92,10 +92,8 @@ export default function MethodPaymentPage() {
                                         throw new Error(data.error || "Houve uma falha ao registrar o seu pagamento.");
                                     }
 
-                                    limparCarrinho();
-
                                     if (data.paymentMethod === 'pix') {
-                                        router.push(`/pagamento?pedidoId=${data.pedidoId}&qrCode=${encodeURIComponent(data.qrCode)}&total=${data.total}`);
+                                        router.push(`/payment?pedidoId=${data.pedidoId}&qrCode=${encodeURIComponent(data.qrCode)}&total=${data.total}`);
                                     } else {
                                         router.push('/user');
                                     }

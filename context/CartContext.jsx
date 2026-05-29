@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useCallback } from "react";
 
 // 1. Cria o Contexto
 export const CartContext = createContext();
@@ -72,10 +72,10 @@ export function CartProvider({ children }) {
         localStorage.setItem("carrinhoApp", JSON.stringify(novoCarrinho));
     };
 
-    const limparCarrinho = () => {
+    const limparCarrinho = useCallback(() => {
         setCarrinho([]);
-        localStorage.removeItem("carrinhoApp"); // Remove os dados salvos no navegador
-    };
+        localStorage.removeItem("carrinhoApp");
+    }, []);
 
     const atualizarCarrinhoTotal = (novoCarrinho) => {
         setCarrinho(novoCarrinho);
