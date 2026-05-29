@@ -1,4 +1,4 @@
-import PagamentoPage from "../../components/PagamentoPage";
+import PagamentoPage from "../../../components/PagamentoPage";
 
 export default function Pagamento() {
     
