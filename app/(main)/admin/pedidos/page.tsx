@@ -36,7 +36,8 @@ export default async function Pedido() {
                 quantidade,
                 observacao,
                 produtos(*)
-            )
+            ),
+            turma(*)
         `)
         .order('criada_em', { ascending: false })
         .in("status", [ "sendo_feito", "pago", "pronto"]);

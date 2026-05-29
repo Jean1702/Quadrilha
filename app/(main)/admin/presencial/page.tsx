@@ -35,7 +35,7 @@ export default async function Presencial() {
                 *
             )
         ),
-        turma(*)
+       
     
   `)
   .order('criada_em', { ascending: false })
