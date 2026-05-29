@@ -40,6 +40,7 @@ export default async function Pedido(){
         ),
     
     `)
+ 
     .order('criada_em', { ascending: false })
     .in("status", [ "sendo_feito", "pago", "pronto"]);
 
@@ -54,7 +55,7 @@ export default async function Pedido(){
         console.error("Erro ao buscar vendas:", vendaError);
         venda = [];
     }
-
+   console.log(vendas)
 
     return(
         <>

@@ -105,7 +105,6 @@ export async function POST(request) {
 
         const minhaTaxaPlataforma = totalGeralDoCarrinho * 0.10;
 
-        // Uso do Optional Chaining (?.) para evitar que propriedades ausentes quebrem o código
         const paymentBody = {
             transaction_amount: Number(totalGeralDoCarrinho.toFixed(2)),
             description: `Pedido unificado - App IFF (Loja ${idTurmaDoPedido})`,
@@ -115,7 +114,6 @@ export async function POST(request) {
             external_reference: `IFF-${Date.now()}`,
             notification_url: "https://iffood.shop/api/webhook",
             payer: {
-                // Fallbacks seguros caso o Brick omita algum dado no Pix
                 email: formData.payer?.email || 'cliente.iffood@testuser.com',
                 first_name: formData.payer?.first_name || "Cliente",
                 last_name: formData.payer?.last_name || "IFF",
@@ -123,13 +121,11 @@ export async function POST(request) {
                     type: formData.payer?.identification?.type || "CPF",
                     number: formData.payer?.identification?.number
                         ? formData.payer.identification.number.replace(/\D/g, '')
-                        : "00000000000" // CPF padrão de teste caso venha vazio
+                        : "00000000000"
                 }
-                
             }
         };
 
-        // Injeta o token de criptografia do cartão APENAS se ele existir de verdade
         if (formData.token) {
             paymentBody.token = formData.token;
         }
@@ -174,7 +170,74 @@ export async function POST(request) {
         const { error: erroItens } = await supabase.from('venda_produto').insert(itensParaInserir);
         if (erroItens) throw erroItens;
 
-        // === PASSO 8: RETORNO UNIFICADO PARA O FRONT-END ===
+        // === NOVO: ATUALIZAR ESTOQUE DOS PRODUTOS VENDIDOS ===
+        // Mudado de pacote.itens para ler diretamente do 'carrinho' recebido no body
+        for (const item of carrinho) {
+            const prodBanco = produtosNoBanco.find(p => String(p.idproduto) === String(item.produto.idproduto));
+
+            if (prodBanco) {
+                const novoEstoque = prodBanco.estoque - item.quantidade;
+
+                const { error: erroEstoque } = await supabase
+                    .from('produtos')
+                    .update({ estoque: novoEstoque })
+                    .eq('idproduto', prodBanco.idproduto);
+
+                if (erroEstoque) throw erroEstoque;
+            }
+        }
+
+        // === NOVO: ENVIO PARA O SERVIDOR DE WHATSAPP ===
+        const promessasEnvioWhats = []; // Declarando o array que faltava
+        
+        // Verifica se veio o telefone da autenticação do Supabase
+        const telefoneDoUsuario = user.user_metadata?.phone || user.phone;
+
+        if (telefoneDoUsuario) {
+            const mensagemFormatada = `*IFFOOD Informa!* \n\nO seu pedido *#${novaVenda.idvenda}* foi solicitado para as turmas. Fique atento ao aplicativo para acompanhar o andamento!`;
+
+            const payloadWhatsApp = {
+                to: telefoneDoUsuario,
+                type: 'text',
+                text: mensagemFormatada
+            };
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+            const disparo = fetch('http://164.163.33.150:8001/api/v1/sessions/3c993713-6d8e-4fab-9bea-491e9af3ed92/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': process.env.WHATSAPP_API_KEY
+                },
+                body: JSON.stringify(payloadWhatsApp),
+                signal: controller.signal
+            })
+            .then((res) => {
+                clearTimeout(timeoutId);
+                if (!res.ok) {
+                    console.error(`[WhatsApp] API recusou o envio para ${telefoneDoUsuario}. Status: ${res.status}`);
+                } else {
+                    console.log(`[WhatsApp] Mensagem enviada com sucesso para ${telefoneDoUsuario}`);
+                }
+            })
+            .catch(err => {
+                clearTimeout(timeoutId);
+                if (err.name === 'AbortError') {
+                    console.error(`[WhatsApp Timeout] Conexão com o gateway demorou mais de 2s e foi cortada.`);
+                } else {
+                    console.error(`[WhatsApp Error] Falha de rede interna:`, err.message);
+                }
+            });
+
+            promessasEnvioWhats.push(disparo);
+        }
+
+        // Se quiser esperar o WhatsApp antes de responder o front (opcional, mas evita travar o cliente se demorar)
+        // await Promise.all(promessasEnvioWhats);
+
+        // === PASSO 8: RETORNO UNIFICADO PARA O FRONT-END (AGORA NO LUGAR CERTO) ===
         const respostaFinal = {
             success: true,
             paymentMethod: formData.payment_method_id === 'pix' ? 'pix' : 'card',
@@ -189,69 +252,10 @@ export async function POST(request) {
         }
 
         return NextResponse.json(respostaFinal);
-
-           for (const item of pacote.itens) {
-                const prodBanco = produtosNoBanco.find(p => String(p.idproduto) === String(item.produto.idproduto));
-
-                if (prodBanco) {
-                    const novoEstoque = prodBanco.estoque - item.quantidade;
-
-                    const { error: erroEstoque } = await supabase
-                        .from('produtos')
-                        .update({ estoque: novoEstoque })
-                        .eq('idproduto', prodBanco.idproduto);
-
-                    if (erroEstoque) throw erroEstoque;
-                }
-            }
-
-            // 4. ENVIO PARA O SERVIDOR DE WHATSAPP (COM TEMPO LIMITE DE SEGURANÇA)
-            if (user.phone) {
-                const mensagemFormatada = `*IFFOOD Informa!* \n\nO seu pedido *#${novaVenda.idvenda}* foi solicitado para as turmas. Fique atento ao aplicativo para acompanhar o andamento!`;
-
-                const payloadWhatsApp = {
-                    to: user.phone,
-                    type: 'text',
-                    text: mensagemFormatada
-                };
-
-                // Configura um cancelamento automático da requisição após 2 segundos (2000ms)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-                const disparo = fetch('http://164.163.33.150:8001/api/v1/sessions/3c993713-6d8e-4fab-9bea-491e9af3ed92/messages', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-API-Key': process.env.WHATSAPP_API_KEY
-                    },
-                    body: JSON.stringify(payloadWhatsApp),
-                    signal: controller.signal // Vincula o sinal do aborto à requisição
-                })
-                    .then((res) => {
-                        clearTimeout(timeoutId); // Cancela o cronômetro se o servidor respondeu rápido
-                        if (!res.ok) {
-                            console.error(`[WhatsApp] API recusou o envio para ${user.phone}. Status: ${res.status}`);
-                        } else {
-                            console.log(`[WhatsApp] Mensagem enviada com sucesso para ${user.phone}`);
-                        }
-                    })
-                    .catch(err => {
-                        clearTimeout(timeoutId); // Garante a limpeza do cronômetro em caso de erro
-                        if (err.name === 'AbortError') {
-                            console.error(`[WhatsApp Timeout] Conexão com o gateway demorou mais de 2s e foi cortada para proteger o Checkout.`);
-                        } else {
-                            console.error(`[WhatsApp Error] Falha de rede interna:`, err.message);
-                        }
-                    });
-
-                promessasEnvioWhats.push(disparo);
-            }
-        
         
     } catch (error) {
         console.error("Erro interno na API de checkout:", error);
         const mensagemErroMP = error.cause?.[0]?.description || error.message || "Erro ao processar pedido.";
-        return NextResponse.json({ error: mensagemErroMP }, { status: 500 });
+        return NextResponse.json({ error: mensajeErroMP }, { status: 500 });
     }
 }
