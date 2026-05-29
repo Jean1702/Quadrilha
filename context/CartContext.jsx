@@ -19,24 +19,22 @@ export function CartProvider({ children }) {
     // Função para adicionar um novo item
     const adicionarAoCarrinho = (produto, quantidade, observacao) => {
         
-        // --- NOVA VALIDAÇÃO: TURMA ÚNICA ---
-        // Verifica se o carrinho já tem itens. Se tiver, compara a turma do novo produto com a turma do carrinho.
+        // --- NOVA VALIDAÇÃO: TURMA ÚNICA (CORRIGIDA) ---
         if (carrinho.length > 0) {
-            // Pegamos a referência da turma do primeiro item do carrinho
-            // Ajuste 'produto.turma' para a propriedade correta (ex: produto.idTurma, produto.turmaId)
-            const turmaDoCarrinho = carrinho[0].produto.turma; 
-            const turmaDoNovoProduto = produto.turma;
+            // Agora usa idturma e previne bugs transformando em String
+            const turmaDoCarrinho = carrinho[0].produto.idturma; 
+            const turmaDoNovoProduto = produto.idturma;
 
-            if (turmaDoCarrinho !== turmaDoNovoProduto) {
+            if (String(turmaDoCarrinho) !== String(turmaDoNovoProduto)) {
                 alert("Você só pode adicionar produtos de uma única turma no carrinho. Finalize sua compra atual ou limpe o carrinho para adicionar itens de outra turma.");
-                return false; // Retorna falso para avisar a página que a inserção falhou
+                return false; 
             }
         }
-        // -----------------------------------
+        // ----------------------------------------------
 
         // 1. Calcula quantos deste produto JÁ ESTÃO no carrinho (somando todas as observações)
         const qtdJaNoCarrinho = carrinho
-            .filter((item) => item.produto.idproduto === produto.idproduto)
+            .filter((item) => String(item.produto.idproduto) === String(produto.idproduto))
             .reduce((total, item) => total + item.quantidade, 0);
 
         // 2. Validação Mestre: Bloqueia se a soma ultrapassar o estoque
@@ -48,7 +46,7 @@ export function CartProvider({ children }) {
         const obsLimpa = observacao ? observacao.trim() : "";
 
         const indexExistente = carrinho.findIndex(
-            (item) => item.produto.idproduto === produto.idproduto && item.observacao === obsLimpa
+            (item) => String(item.produto.idproduto) === String(produto.idproduto) && item.observacao === obsLimpa
         );
 
         let novoCarrinho;
@@ -103,4 +101,4 @@ export function CartProvider({ children }) {
             {children}
         </CartContext.Provider>
     )
-}
+};
