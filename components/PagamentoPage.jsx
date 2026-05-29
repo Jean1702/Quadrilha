@@ -3,9 +3,9 @@
 import { useState, useEffect, Suspense, useContext, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
-import { createClient } from '@/lib/supabase/client'
+import { CreateClient } from '@/lib/supabase/client';
 
-const supabase = createClient()
+const supabase = CreateClient()
 
 function PaymentContent() {
     const searchParams = useSearchParams();
