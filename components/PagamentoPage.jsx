@@ -6,7 +6,7 @@ import QRCode from 'react-qr-code';
 import { CartContext } from '@/context/CartContext';
 import { CreateClient } from '../lib/supabase/client';
 
-const supabaseFront = CreateClient();
+const supabase = CreateClient();
 
 function PaymentContent() {
     const searchParams = useSearchParams();
