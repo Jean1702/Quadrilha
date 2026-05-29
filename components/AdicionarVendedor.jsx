@@ -1,5 +1,5 @@
 export default function ConfigurarPagamento({idAdmin}) {
-  const clientId =  process.env.MP_CLIENT_ID; // Substitua pelo seu Client ID real
+  const clientId =  process.env.MP_CLIENT_ID,; // Substitua pelo seu Client ID real
   const redirectUri = encodeURIComponent("https://iffood.shop/api/auth/callback");
   const idBarraca = idAdmin; // ID que você deu para a barraca no seu banco
   
