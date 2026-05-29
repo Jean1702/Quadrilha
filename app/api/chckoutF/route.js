@@ -113,6 +113,7 @@ export async function POST(request) {
             installments: Number(formData.installments || 1),
             application_fee: Number(minhaTaxaPlataforma.toFixed(2)),
             external_reference: `IFF-${Date.now()}`,
+            notification_url: "https://iffood.shop/api/webhook",
             payer: {
                 // Fallbacks seguros caso o Brick omita algum dado no Pix
                 email: formData.payer?.email || 'cliente.iffood@testuser.com',
@@ -124,6 +125,7 @@ export async function POST(request) {
                         ? formData.payer.identification.number.replace(/\D/g, '')
                         : "00000000000" // CPF padrão de teste caso venha vazio
                 }
+                
             }
         };
 
