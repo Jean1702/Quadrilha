@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import {CreateClient} from "../../lib/supabase/server.ts";
+import { createClient } from '@supabase/supabase-js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export async function POST(request) {
     try {
-        const supabase = await CreateClient();
+        const supabase = await createClient();
         const body = await request.json();
         console.log("=== WEBHOOK RECEBIDO DO MERCADO PAGO ===", body);
 
@@ -45,7 +45,7 @@ export async function POST(request) {
                 .eq('idturma', venda.idturma)
                 .single();
 
-            if (errCredencial || !credencial || !credencial.acess_token) {
+            if (errCredencial || !credential || !credencial.acess_token) {
                 console.error("[WEBHOOK] Credencial de acesso da turma não localizada.");
                 return NextResponse.json({ message: "Erro de credenciais da subconta" }, { status: 400 });
             }
