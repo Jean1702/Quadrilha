@@ -1,5 +1,5 @@
 export default function ConfigurarPagamento({idAdmin}) {
-  const clientId = "2598096309853119"; // Substitua pelo seu Client ID real
+  const clientId = "2968201342617841"; // Substitua pelo seu Client ID real
   const redirectUri = encodeURIComponent("https://iffood.shop/api/auth/callback");
   const idBarraca = idAdmin; // ID que você deu para a barraca no seu banco
   
