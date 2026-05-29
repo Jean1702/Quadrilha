@@ -1,99 +1,99 @@
 import { NextResponse } from 'next/server';
-import { CreateClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export async function POST(request) {
     try {
-        const body = await request.json();
-
-        // formData é o objeto padrão que o Checkout Bricks envia no onSubmit
-        // recebemos também o carrinho vindo do seu contexto do front-end
-        const { formData, carrinho } = body;
-
-        if (!carrinho || carrinho.length === 0) {
-            return NextResponse.json({ error: "Carrinho vazio" }, { status: 400 });
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            return NextResponse.json({ error: "FALTA VARIÁVEL DE AMBIENTE" }, { status: 500 });
         }
 
-        if (!formData) {
-            return NextResponse.json({ error: "Dados de pagamento ausentes." }, { status: 400 });
+        const supabaseAdmin = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+
+        // 1. Tenta ler o corpo (JSON) de forma segura
+        let body = {};
+        try {
+            body = await request.json();
+        } catch (e) {
+            console.log("Corpo da requisição não é JSON ou está vazio.");
         }
 
-        const supabase = await CreateClient();
+        // 2. Tenta ler os parâmetros da URL (Query Params)
+        const url = new URL(request.url);
+        const idFromQuery = url.searchParams.get('data.id') || url.searchParams.get('id');
 
-        // === TRAVA DE SEGURANÇA 1: USUÁRIO LOGADO ===
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-            return NextResponse.json({ error: "Sessão expirada ou usuário não autenticado." }, { status: 401 });
+        // 3. Verifica se o evento é de pagamento (via body ou query)
+        const type = body.type || url.searchParams.get('type') || url.searchParams.get('topic');
+        const action = body.action || '';
+
+        if (type !== 'payment' && !action.includes('payment')) {
+            return NextResponse.json({ message: "Ignorado - Não é notificação de pagamento" }, { status: 200 });
         }
 
-        // === PASSO 2: BUSCAR O ID INTERNO DO USUÁRIO ===
-        const { data: usuarioPerfil, error: erroPerfil } = await supabase
-            .from('usuarios')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
+        // 4. O "Cata-Tudo": Procura o ID no body ou na URL
+        const paymentId = body.data?.id || body.resource?.split('/').pop() || idFromQuery;
 
-        if (erroPerfil || !usuarioPerfil) {
-            return NextResponse.json({ error: "Perfil de usuário não encontrado." }, { status: 400 });
+        // Se MESMO ASSIM não achar o ID, ele mostra exatamente o que o MP mandou
+        if (!paymentId) {
+            return NextResponse.json({ 
+                error: "ID não encontrado em nenhum lugar", 
+                bodyQueO_MP_Mandou: body, 
+                urlQueO_MP_Mandou: url.searchParams.toString() 
+            }, { status: 400 });
         }
 
-        // === TRAVA DE SEGURANÇA 3: VALIDAR ESTOQUE ===
-        const idsProdutos = carrinho.map(item => item.produto.idproduto);
-        const { data: produtosNoBanco, error: errEstoque } = await supabase
-            .from('produtos')
-            .select('idproduto, estoque, nome, isActivy, idturma')
-            .in('idproduto', idsProdutos);
+        // 5. Daqui pra baixo é igual: Busca a venda
+        const { data: venda, error: erroVenda } = await supabaseAdmin
+            .from('venda')
+            .select('idturma, status')
+            .eq('mp_payment_id', paymentId.toString())
+            .maybeSingle();
 
-        if (errEstoque || !produtosNoBanco) {
-            return NextResponse.json({ error: "Erro ao validar os produtos no banco." }, { status: 500 });
+        if (erroVenda) {
+            return NextResponse.json({ error: "Erro ao buscar venda no Supabase", detalhe: erroVenda }, { status: 500 });
         }
 
-        const idsTurmasEnvolvidas = [...new Set(produtosNoBanco.map(p => p.idturma))];
-        const { data: turmasNoBanco, error: errTurmas } = await supabase
-            .from('turma')
-            .select('idturma, is_active')
-            .in('idturma', idsTurmasEnvolvidas);
-
-        if (errTurmas || !turmasNoBanco) {
-            return NextResponse.json({ error: "Erro ao validar o status das lojas." }, { status: 500 });
+        if (!venda) {
+            return NextResponse.json({ message: "Venda não encontrada no banco", idProcurado: paymentId }, { status: 200 });
         }
 
-        const quantidadesPedidas = carrinho.reduce((acc, item) => {
-            acc[item.produto.idproduto] = (acc[item.produto.idproduto] || 0) + item.quantidade;
-            return acc;
-        }, {});
-
-        for (const prodBanco of produtosNoBanco) {
-            const qtdPedida = quantidadesPedidas[prodBanco.idproduto];
-            const turmaDoProduto = turmasNoBanco.find(t => t.idturma === prodBanco.idturma);
-
-            if (prodBanco.isActivy === false) {
-                return NextResponse.json({ error: `O produto '${prodBanco.nome}' não está mais disponível.` }, { status: 400 });
-            }
-
-            if (turmaDoProduto && turmaDoProduto.is_active === false) {
-                return NextResponse.json({ error: "Uma das lojas fechou antes da conclusão do pedido." }, { status: 400 });
-            }
-
-            if (qtdPedida > prodBanco.estoque) {
-                return NextResponse.json({
-                    error: `Ops! O produto '${prodBanco.nome}' não tem estoque suficiente. Disponível: ${prodBanco.estoque}.`
-                }, { status: 400 });
-            }
+        if (venda.status === 'pago') {
+            return NextResponse.json({ message: "Já estava pago" }, { status: 200 });
         }
 
-        // === PASSO 4 & 5: COLETA DA TURMA E BUSCA DO ACCESS TOKEN DO OAUTH ===
-        const idTurmaDoPedido = carrinho[0].produto.idturma;
-        const totalGeralDoCarrinho = carrinho.reduce((acc, item) => acc + item.subtotal, 0);
-
-        const { data: credencial, error: errCredencial } = await supabase
+        const { data: credencial, error: errCredencial } = await supabaseAdmin
             .from('admin')
-            .select('idturma, acess_token')
-            .eq('idturma', idTurmaDoPedido)
+            .select('acess_token')
+            .eq('idturma', venda.idturma)
             .single();
 
         if (errCredencial || !credencial || !credencial.acess_token) {
-            return NextResponse.json({ error: "Esta loja não possui credencial válida vinculada." }, { status: 400 });
+            return NextResponse.json({ error: "Credencial não encontrada", detalhe: errCredencial }, { status: 500 });
+        }
+
+        try {
+            const client = new MercadoPagoConfig({ accessToken: credencial.acess_token });
+            const payment = new Payment(client);
+            const paymentData = await payment.get({ id: paymentId });
+
+            if (paymentData.status === 'approved') {
+                const { error: dbError } = await supabaseAdmin
+                    .from('venda')
+                    .update({ status: 'pago' })
+                    .eq('mp_payment_id', paymentId.toString()); 
+
+                if (dbError) {
+                    return NextResponse.json({ error: "Erro ao atualizar venda", detalhe: dbError }, { status: 500 });
+                }
+            }
+
+            return NextResponse.json({ success: true, status_mp: paymentData.status }, { status: 200 });
+            
+        } catch (mpError) {
+            return NextResponse.json({ error: "Erro no SDK do Mercado Pago", detalhe: mpError.message }, { status: 500 });
         }
 
         // === PASSO 6: INICIALIZAÇÃO DO SDK OFICIAL E MONTAGEM DO SPLIT COM BRICKS ===
@@ -188,12 +188,7 @@ export async function POST(request) {
             respostaFinal.qrCodeBase64 = infoPix?.qr_code_base64;
         }
 
-        return NextResponse.json(respostaFinal);
-
-        
     } catch (error) {
-        console.error("Erro interno na API de checkout:", error);
-        const mensagemErroMP = error.cause?.[0]?.description || error.message || "Erro ao processar pedido.";
-        return NextResponse.json({ error: mensagemErroMP }, { status: 500 });
+        return NextResponse.json({ error: "Erro CRÍTICO no Catch Geral", detalhe: error.message }, { status: 500 });
     }
 }
