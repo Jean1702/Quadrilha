@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
-import { CreateClient } from "@/lib/supabase/server";
+import { CreateClient } from '../../../lib/supabase/server';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
+
+// 1. Usa a Service Role Key para contornar o RLS em rotas de Webhook
+const supabaseAdmin = CreateClient()
 
 export async function POST(request) {
     try {
-        const supabase = await CreateClient();
         const body = await request.json();
         console.log("=== WEBHOOK RECEBIDO DO MERCADO PAGO ===", body);
 
@@ -20,8 +22,8 @@ export async function POST(request) {
 
             console.log(`[WEBHOOK] Buscando venda vinculada ao ID MP: ${paymentId}`);
 
-            // 1. Descobre a qual turma esse pagamento pertence e o status atual dele
-            const { data: venda, error: erroVenda } = await supabase
+            // 1. Descobre a qual turma esse pagamento pertence e o status atual dele usando supabaseAdmin
+            const { data: venda, error: erroVenda } = await supabaseAdmin
                 .from('venda')
                 .select('idturma, status')
                 .eq('mp_payment_id', paymentId.toString())
@@ -32,20 +34,21 @@ export async function POST(request) {
                 return NextResponse.json({ message: "Venda não encontrada no banco" }, { status: 200 });
             }
 
-            // Otimização: Se a venda já estiver como 'pago', não gasta processamento nem requisição na API do MP
+            // Otimização: Se a venda já estiver como 'pago', não gasta processamento
             if (venda.status === 'pago') {
                 console.log(`[WEBHOOK] Venda ${paymentId} já foi processada anteriormente.`);
                 return NextResponse.json({ received: true, message: "Já pago" }, { status: 200 });
             }
 
             // 2. Busca o token de acesso daquela turma específica
-            const { data: credencial, error: errCredencial } = await supabase
+            const { data: credencial, error: errCredencial } = await supabaseAdmin
                 .from('admin')
                 .select('acess_token')
                 .eq('idturma', venda.idturma)
                 .single();
 
-            if (errCredencial || !credential || !credencial.acess_token) {
+            // ✅ CORRIGIDO O TYPO AQUI (de !credential para !credencial)
+            if (errCredencial || !credencial || !credencial.acess_token) {
                 console.error("[WEBHOOK] Credencial de acesso da turma não localizada.");
                 return NextResponse.json({ message: "Erro de credenciais da subconta" }, { status: 400 });
             }
@@ -63,14 +66,14 @@ export async function POST(request) {
 
             console.log(`[WEBHOOK] Status retornado pelo MP: ${statusPagamento}`);
 
-            // Se o pagamento foi aprovado, atualiza o banco utilizando a coluna correta
+            // Se o pagamento foi aprovado, atualiza o banco
             if (statusPagamento === 'approved') {
                 console.log(`[WEBHOOK] Pagamento aprovado! Atualizando Supabase...`);
 
-                const { error: dbError } = await supabase
+                const { error: dbError } = await supabaseAdmin
                     .from('venda')
                     .update({ status: 'pago' })
-                    .eq('mp_payment_id', paymentId.toString()); // ✅ CORRIGIDO: mudado de 'idvenda' para 'mp_payment_id'
+                    .eq('mp_payment_id', paymentId.toString()); 
 
                 if (dbError) {
                     console.error("[WEBHOOK] Erro ao atualizar o Supabase:", dbError);
@@ -81,7 +84,6 @@ export async function POST(request) {
             }
         }
 
-        // Retorna sempre 200/201 para o Mercado Pago saber que a notificação foi entregue
         return NextResponse.json({ received: true }, { status: 200 });
 
     } catch (error) {

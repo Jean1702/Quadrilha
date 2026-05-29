@@ -3,9 +3,10 @@
 import { useState, useEffect, Suspense, useContext, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
-import { CreateClient } from '@/lib/supabase/client';
+import { CartContext } from '@/context/CartContext';
+import { CreateClient } from '../lib/supabase/client';
 
-const supabase = CreateClient()
+const supabase = CreateClient();
 
 function PaymentContent() {
     const searchParams = useSearchParams();
@@ -18,6 +19,7 @@ function PaymentContent() {
 
     const [tempo, setTempo] = useState(5 * 60);
     const [statusPedido, setStatusPedido] = useState("Aguardando pagamento");
+    const [verificando, setVerificando] = useState(false); // Novo estado para o botão
 
     // useRef para evitar que loops recriem funções do useEffect desnecessariamente
     const redirecionando = useRef(false);
@@ -40,11 +42,10 @@ function PaymentContent() {
         return () => clearInterval(timer);
     }, [statusPedido, tempo]);
 
-    // 3. Monitoramento em Tempo Real + Fallback Inteligente
+    // 3. Monitoramento em Tempo Real + Fallback Automático
     useEffect(() => {
         if (!codigoPedido || codigoPedido === "000000") return;
 
-        // Ativa um canal ouvindo atualizações da linha específica desta venda
         const canalRealtime = supabase
             .channel(`venda_status_${codigoPedido}`)
             .on(
@@ -55,7 +56,6 @@ function PaymentContent() {
                     const novoStatus = payload.new.status;
                     if (novoStatus === 'pago' || novoStatus === 'approved') {
                         setStatusPedido("Pagamento Confirmado!");
-                        console.log(statusPedido)
                         setTimeout(() => {
                             router.push(`/user`);
                         }, 2000);
@@ -64,7 +64,6 @@ function PaymentContent() {
             )
             .subscribe();
 
-        // FALLBACK: Mantém o seu polling tradicional a cada 4 segundos caso o Realtime falhe ou esteja desativado no Supabase
         const checarStatusFallback = async () => {
             if (statusPedido === "Pagamento Confirmado!") return;
             
@@ -90,7 +89,39 @@ function PaymentContent() {
             clearInterval(intervaloFallback);
             supabase.removeChannel(canalRealtime);
         };
-    }, [codigoPedido, router]);
+    }, [codigoPedido, router, statusPedido]);
+
+    // 4. Nova Função: Verificação Manual pelo Botão "Já Paguei"
+    const verificarPagamentoManual = async () => {
+        if (!codigoPedido || codigoPedido === "000000") return;
+        
+        setVerificando(true);
+        
+        try {
+            const { data, error } = await supabase
+                .from('venda')
+                .select('status')
+                .eq('mp_payment_id', codigoPedido)
+                .maybeSingle();
+
+            if (error) throw error;
+
+            if (data && (data.status === 'pago' || data.status === 'approved')) {
+                setStatusPedido("Pagamento Confirmado!");
+                setTimeout(() => {
+                    router.push(`/user`);
+                }, 2000);
+            } else {
+                // Feedback visual de que ainda não caiu
+                alert("Ainda não identificamos o pagamento. Se você acabou de pagar, aguarde alguns segundos e tente novamente!");
+            }
+        } catch (error) {
+            console.error("Erro ao verificar pagamento manual:", error);
+            alert("Erro ao checar o status. Tente novamente.");
+        } finally {
+            setVerificando(false);
+        }
+    };
 
     const copiarChavePix = () => {
         if (!chavePix) return;
@@ -144,6 +175,20 @@ function PaymentContent() {
                                     ? `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`
                                     : "Código expirado"}
                             </p>
+                        </div>
+
+                        {/* NOVO: Botão "Já Paguei" */}
+                        <div className="mb-6">
+                            <button
+                                onClick={verificarPagamentoManual}
+                                disabled={verificando}
+                                className={`w-full py-3 rounded-lg font-bold text-sm transition-all border-2 
+                                    ${verificando 
+                                        ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' 
+                                        : 'bg-white text-orange-600 border-orange-500 hover:bg-orange-50'}`}
+                            >
+                                {verificando ? "Verificando..." : "Já realizei o pagamento"}
+                            </button>
                         </div>
                     </>
                 ) : (
