@@ -16,13 +16,17 @@ export async function PUT(req){
         const phone = body.phone || "";
         const formatado = phone.replace(/\D/g, "");
         const nome = body.name || "";
+        const formaPagamento = body.forma_pagamento || null;
+        
+        // Agora recebe a string contendo "Curso - Ano" gerada individualmente por venda
+        const nomeTurma = body.nome_turma || "nossa barraquinha"; 
 
         const mensagensStatus = {
-            'preparando': `*IFFOOD Informa!* \n\nO seu pedido *#${pedidoId}* já está sendo preparado. Enviaremos uma nova mensagem assim que estiver pronto para retirada.`,
+            'preparando': `*IFFOOD Informa!* \n\nO seu pedido *#${pedidoId}* já está sendo preparado pela turma *${nomeTurma}*. Enviaremos uma nova mensagem assim que estiver pronto para retirada.`,
             
-            'pronto': `*IFFOOD Informa!* \n\nSeu pedido *#${pedidoId}* está pronto! Você já pode vir fazer a retirada aqui na nossa barraquinha.`,
+            'pronto': `*IFFOOD Informa!* \n\nSeu pedido *#${pedidoId}* está pronto! Você já pode vir fazer a retirada aqui na barraquinha da turma: *${nomeTurma}*.`,
             
-            'entregue': `*IFFOOD Informa!* \n\nPedido *#${pedidoId}* retirado com sucesso. Agradecemos a preferência!`,
+            'entregue': `*IFFOOD Informa!* \n\nPedido *#${pedidoId}* retirado com sucesso na barraquinha da turma *${nomeTurma}*. Agradecemos a preferência!`,
             
             'cancelado': `*IFFOOD Informa!* \n\nO seu pedido *#${pedidoId}* foi cancelado e logo cairá o reembolso. Se tiver alguma dúvida, por favor, entre em contato conosco.`
         };
@@ -36,7 +40,6 @@ export async function PUT(req){
         };
         
         if (!pedidoId) return NextResponse.json({ error: "ID do pedido é obrigatório" }, { status: 400 });
-
         if (!novoStatus) return NextResponse.json({ error: "Campo 'status' é obrigatório" }, { status: 400 });
         
         if (novoStatus == "preparando") {
@@ -53,10 +56,20 @@ export async function PUT(req){
                 .eq("idvenda", pedidoId);
             if (updateError) throw new Error(updateError.message);
         } else if (novoStatus == "entregue") {
+            const dadosAtualizacao = { 
+                status: "entregue", 
+                atualizada_em: new Date().toISOString() 
+            };
+
+            if (formaPagamento) {
+                dadosAtualizacao.metodo_pagamento = formaPagamento;
+            }
+
             const { error: updateError } = await supabase
                 .from("venda")
-                .update({ status: "entregue", atualizada_em: new Date().toISOString() })
+                .update(dadosAtualizacao)
                 .eq("idvenda", pedidoId);
+                
             if (updateError) throw new Error(updateError.message);
         } else if (novoStatus == "cancelado") {
             const { error: updateError } = await supabase
@@ -87,7 +100,7 @@ export async function PUT(req){
             console.warn("Telefone do cliente não informado. Status atualizado sem envio de WhatsApp.");
         }
 
-        return NextResponse.json({ message: "Status atualizado com sucesso!" }, { status: 200 });
+        return NextResponse.json({ message: "Status updated!" }, { status: 200 });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

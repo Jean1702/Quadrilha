@@ -7,11 +7,12 @@ import { CreateClient } from "@/lib/supabase/client";
 import { ChefHat, Check, X, PackageCheck } from "lucide-react";
 
 const statusConfig = {
-  pago:        { label: "Pendente",   cor: "#D97016" },
-  sendo_feito: { label: "Preparando", cor: "#026A4C" },
-  pronto:      { label: "Pronto",     cor: "#026A4C" },
-  entregue:    { label: "Entregue",   cor: "#026A4C" },
-  cancelado:   { label: "Cancelado",  cor: "#D95032" },
+  aguardando_pagamento: { label: "Solicitado", cor: "#D97016" }, 
+  pago:                 { label: "Solicitado", cor: "#D97016" }, 
+  sendo_feito:          { label: "Preparando", cor: "#026A4C" },
+  pronto:               { label: "Pronto",     cor: "#026A4C" },
+  entregue:             { label: "Entregue",   cor: "#026A4C" },
+  cancelado:            { label: "Cancelado",  cor: "#D95032" },
 };
 
 export default function PedidosPage({ vendas, adminData }) {
@@ -21,6 +22,13 @@ export default function PedidosPage({ vendas, adminData }) {
   const [modalState, setModalState] = useState({
     isOpen: false,
     pedidoId: null,
+    isLoading: false,
+  });
+
+  const [paymentModal, setPaymentModal] = useState({
+    isOpen: false,
+    pedido: null,
+    metodo: "dinheiro",
     isLoading: false,
   });
 
@@ -58,14 +66,27 @@ export default function PedidosPage({ vendas, adminData }) {
     };
   }, [vendas]);
 
-  const atualizarStatus = async (id, novoStatus, user) => {
+  // Alteramos o parâmetro "user" para receber o "pedido" completo
+  // Alteramos o parâmetro "user" para receber o "pedido" completo
+  const atualizarStatus = async (id, novoStatus, pedido, formaPagamento = null) => {
+    // Coleta o nome e ano do curso de dentro da relação da venda/pedido
+    const nomeCurso = pedido.turma?.nomecurso || "Indefinido";
+    const anoCurso = pedido.turma?.ano || "";
+    const turmaFormatada = anoCurso ? `${nomeCurso} - ${anoCurso}º ano` : nomeCurso;
+
     const response = await fetch(`/api/pedidos/atualizacao_status?id=${id}&status=${novoStatus}`, {
       method: "PUT",
       headers: {
           "Content-Type": "application/json"
       },
-      body: JSON.stringify({ phone: user?.phone || "", name: user?.name || "" })
+      body: JSON.stringify({ 
+        phone: pedido.usuarios?.phone || "", 
+        name: pedido.usuarios?.name || "",
+        forma_pagamento: formaPagamento,
+        nome_turma: turmaFormatada // Passa o nome e o ano certinho para o backend
+      })
     });
+    
     if (!response.ok) {
       console.error("Erro ao atualizar status do pedido:", response.statusText);
     } else {
@@ -75,26 +96,45 @@ export default function PedidosPage({ vendas, adminData }) {
     }
   };
 
-  const handleCancelarClick = (idvenda) => {
-    setModalState({ isOpen: true, pedidoId: idvenda, isLoading: false });
+  // Tratamento inteligente para diferenciar Venda Física de Digital
+  const handleEntregueClick = (pedido) => {
+    // Se o pedido já tem forma_pagamento (Venda Física), atualiza direto no banco
+    if (pedido.metodo_pagamento) {
+      atualizarStatus(pedido.idvenda, "entregue", pedido, pedido.forma_pagamento);
+    } else {
+      // Se não tem forma_pagamento (Venda Digital pendente), abre o Pop-up
+      setPaymentModal({
+        isOpen: true,
+        pedido: pedido,
+        metodo: "dinheiro",
+        isLoading: false
+      });
+    }
   };
 
-  const confirmCancelar = async () => {
-    setModalState(prev => ({ ...prev, isLoading: true }));
-    await atualizarStatus(modalState.pedidoId, "cancelado");
-    setModalState({ isOpen: false, pedidoId: null, isLoading: false });
+  const handleConfirmarEntrega = async () => {
+    if (!paymentModal.pedido) return;
+    setPaymentModal(prev => ({ ...prev, isLoading: true }));
+    
+    await atualizarStatus(
+      paymentModal.pedido.idvenda, 
+      "entregue", 
+      paymentModal.pedido.usuarios, 
+      paymentModal.metodo
+    );
+    
+    setPaymentModal({ isOpen: false, pedido: null, metodo: "dinheiro", isLoading: false });
   };
 
   return (
     <main className="min-h-screen pb-28">
-      <AdminHeaderPage titulo="PEDIDOS"  nometurma={adminData.turma?.nomecurso || `SUPER ADM`} anoturma={adminData.turma?.ano || 'mod'} logo={adminData.turma?.logo || '/hackerman.png'}  />
+      <AdminHeaderPage titulo="PEDIDOS" nometurma={adminData.turma?.nomecurso || `SUPER ADM`} anoturma={adminData.turma?.ano || 'mod'} logo={adminData.turma?.logo || '/hackerman.png'}  />
       <div className="h-40"></div>
 
       <div className="p-4 max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {pedidosatual.map((pedido) => {
             const st = statusConfig[pedido.status];
-            const cancelado = pedido.status === "cancelado";
             const entregue = pedido.status === "entregue";
             return (
               <div
@@ -105,9 +145,9 @@ export default function PedidosPage({ vendas, adminData }) {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-bold tracking-tight">Pedido #{pedido.idvenda}</h3>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: st.cor }} />
-                    <span className="text-xs font-semibold" style={{ color: st.cor }}>
-                      {st.label}
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: st?.cor || "#000" }} />
+                    <span className="text-xs font-semibold" style={{ color: st?.cor || "#000" }}>
+                      {st?.label || pedido.status}
                     </span>
                   </div>
                 </div>
@@ -116,23 +156,33 @@ export default function PedidosPage({ vendas, adminData }) {
                 <div className="space-y-1 mb-4 text-sm">
                   <p><span className="font-semibold">Cliente:</span> {pedido.usuarios?.name || 'Administrador'}</p>
                   <p><span className="font-semibold">Quantidade:</span> {pedido.venda_produto?.[0]?.quantidade ?? 0}</p>
+                  
+                  {/* Badge visual opcional para mostrar o método se ele já existir */}
+                  {pedido.forma_pagamento && (
+                    <p>
+                      <span className="font-semibold">Pagamento:</span>{" "}
+                      <span className="bg-zinc-100 text-zinc-700 text-xs px-2 py-0.5 rounded-md uppercase font-bold">
+                        {pedido.forma_pagamento}
+                      </span>
+                    </p>
+                  )}
+
                   <div>
                     <span className="font-semibold">Itens:</span>
                     <ul className="list-disc list-inside ml-2 opacity-60">
                       {pedido.venda_produto?.map((item) => (
                         <li key={item.produtos.idproduto}>{item.produtos?.nome} {item.observacao ? `(${item.observacao})`: ""}</li>
                       ))}
-                      
                     </ul>
                   </div>
                 </div>
 
                 {/* Botões de ação */}
-                {!cancelado && !entregue && (
+                { !entregue && (
                   <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => atualizarStatus(pedido.idvenda, "preparando", pedido.usuarios)}
+                        onClick={() => atualizarStatus(pedido.idvenda, "preparando", pedido)}
                         disabled={pedido.status === "sendo_feito" || pedido.status === "pronto" || pedido.status === "entregue"}
                         className="flex-1 flex items-center justify-center gap-1 bg-[#026A4C] hover:bg-[#037a58] active:scale-95 text-white py-2 px-3 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
                       >
@@ -140,29 +190,22 @@ export default function PedidosPage({ vendas, adminData }) {
                         Preparar
                       </button>
                       <button
-                        onClick={() => atualizarStatus(pedido.idvenda, "pronto", pedido.usuarios)}
-                        disabled={pedido.status === "pago" || pedido.status === "pronto" || pedido.status === "entregue"}
+                        onClick={() => atualizarStatus(pedido.idvenda, "pronto", pedido)}
+                        disabled={pedido.status === "pago" || pedido.status === "aguardando_pagamento" || pedido.status === "pronto" || pedido.status === "entregue"}
                         className="flex-1 flex items-center justify-center gap-1 bg-[#026A4C] hover:bg-[#037a58] active:scale-95 text-white py-2 px-3 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
                       >
                         <Check className="h-4 w-4" />
                         Pronto
                       </button>
                     </div>
+                    
                     <button 
-                      onClick={() => atualizarStatus(pedido.idvenda, "entregue", pedido.usuarios)}
+                      onClick={() => handleEntregueClick(pedido)}
                       disabled={pedido.status !== "pronto"}
                       className="flex-1 flex items-center justify-center gap-1 bg-[#026A4C] hover:bg-[#037a58] active:scale-95 text-white py-2 px-3 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
                     >
                       <PackageCheck />
                       Entregue
-                    </button>
-                    <button
-                      onClick={() => atualizarStatus(pedido.idvenda, "cancelado", pedido.usuarios)}
-                      disabled={pedido.status === "entregue"}
-                      className="w-full flex items-center justify-center gap-1 bg-[#D95032] hover:bg-[#E05A3F] active:scale-95 text-white py-2 rounded-full font-medium transition duration-300 shadow-md text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
-                    >
-                      <X className="h-4 w-4" />
-                      Cancelar
                     </button>
                   </div>
                 )}
@@ -176,15 +219,51 @@ export default function PedidosPage({ vendas, adminData }) {
         </div>
       </div>
 
-      <ConfirmationModal
-        isOpen={modalState.isOpen}
-        title="Cancelar Pedido"
-        message={`Tem certeza que deseja cancelar o Pedido #${modalState.pedidoId}? Esta ação não pode ser desfeita.`}
-        actionType="cancel"
-        onConfirm={confirmCancelar}
-        onCancel={() => setModalState({ isOpen: false, pedidoId: null, isLoading: false })}
-        isLoading={modalState.isLoading}
-      />
+      {/* POP-UP / MODAL SELEÇÃO DE PAGAMENTO */}
+      {paymentModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white text-zinc-900 rounded-[24px] p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="text-xl font-bold tracking-tight mb-2">Finalizar Entrega</h3>
+            <p className="text-sm text-zinc-500 mb-5">
+              Este pedido digital não possui método de pagamento registrado. Selecione como o cliente pagou:
+            </p>
+            
+            <div className="mb-6">
+              <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-2">
+                Forma de Pagamento
+              </label>
+              <select
+                value={paymentModal.metodo}
+                onChange={(e) => setPaymentModal(prev => ({ ...prev, metodo: e.target.value }))}
+                className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#026A4C] focus:border-transparent transition"
+              >
+                <option value="dinheiro">Dinheiro</option>
+                <option value="pix">Pix</option>
+                <option value="debito">Débito</option>
+                <option value="credito">Crédito</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleConfirmarEntrega}
+                disabled={paymentModal.isLoading}
+                className="w-full flex items-center justify-center bg-[#026A4C] hover:bg-[#037a58] text-white py-3 rounded-full font-semibold transition text-sm shadow-md disabled:opacity-50"
+              >
+                {paymentModal.isLoading ? "Salvando..." : "Confirmar e Entregar"}
+              </button>
+              
+              <button
+                onClick={() => setPaymentModal({ isOpen: false, pedido: null, metodo: "dinheiro", isLoading: false })}
+                disabled={paymentModal.isLoading}
+                className="w-full py-2.5 text-zinc-500 hover:text-zinc-800 font-medium text-sm transition text-center"
+              >
+                Voltar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

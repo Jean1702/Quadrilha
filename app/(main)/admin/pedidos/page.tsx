@@ -37,11 +37,12 @@ export default async function Pedido(){
             produtos(
                 *
             )
-        )
+        ),
+        turma(*)
     
     `)
     .order('criada_em', { ascending: false })
-    .in("status", [ "sendo_feito", "pago", "pronto"]);
+    .in("status", [ "sendo_feito", "pago", "pronto", "aguardando_pagamento"]);
 
     if (!adminData.is_superadmin) {
         vendas = vendas.eq("idturma", adminData.idturma);
