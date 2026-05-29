@@ -2,64 +2,60 @@ import PedidosPage from "@/components/pedidosAdmin"
 import { CreateClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
-export default async function Pedido(){
+export default async function Pedido() {
     
     const supabase = await CreateClient();
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user ) {
+    if (!user) {
         redirect('/loginadm');
     }
 
-    const { data : adminData, error : adminError } = await supabase
-    .from("admin")
-    .select(`
-        *,
-        turma (*)
-    `)
-    .eq("user_id", user.id)
-    .single(); 
+    const { data: adminData, error: adminError } = await supabase
+        .from("admin")
+        .select(`
+            *,
+            turma (*)
+        `)
+        .eq("user_id", user.id)
+        .single(); 
     
     if (adminError || !adminData) {
         console.error("Acesso negado: Usuário comum tentou acessar o admin.");
         redirect('/loginadm'); 
     }
 
-    let vendas = supabase
-    .from("venda")
-    .select(`
-        *,
-        usuarios (*),
-        venda_produto(
-            quantidade,
-            observacao,
-            produtos(
-                *
+    // 1. Corrigido: Removida a vírgula sobrando no final do select
+    let queryVendas = supabase
+        .from("venda")
+        .select(`
+            *,
+            usuarios (*),
+            venda_produto(
+                quantidade,
+                observacao,
+                produtos(*)
             )
-        ),
-    
-    `)
- 
-    .order('criada_em', { ascending: false })
-    .in("status", [ "sendo_feito", "pago", "pronto"]);
+        `)
+        .order('criada_em', { ascending: false })
+        .in("status", [ "sendo_feito", "pago", "pronto"]);
 
+    // 2. Corrigido: Removido o filtro aninhado inválido que quebrava a query
     if (!adminData.is_superadmin) {
-        vendas = vendas.eq("idturma", adminData.idturma);
-        vendas = vendas.eq("venda_produto.produtos.idturma", adminData.idturma);
+        queryVendas = queryVendas.eq("idturma", adminData.idturma);
     } 
     
-    let {data: venda, error: vendaError} = await vendas;
+    let { data: venda, error: vendaError } = await queryVendas;
     
     if (vendaError) {
-        console.error("Erro ao buscar vendas:", vendaError);
+        console.error("Erro REAL ao buscar vendas:", vendaError.message); // Agora vai mostrar exatamente se der erro
         venda = [];
     }
-   console.log(vendas)
 
-    return(
+    return (
         <>
-            <PedidosPage vendas={venda} adminData={adminData} />
+            <PedidosPage vendas={venda || []} adminData={adminData} />
         </>
     )
 }
