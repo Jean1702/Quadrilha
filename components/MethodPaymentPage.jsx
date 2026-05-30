@@ -53,7 +53,6 @@ export default function MethodPaymentPage() {
                         initialization: {
                             amount: total,
                             payer: {
-                                email: 'test_user_123456@testuser.com', // E-mail de teste do comprador
                                 entityType: 'individual' // Mantém a correção para CPF
                             },
                         },
